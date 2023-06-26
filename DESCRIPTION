@@ -1,0 +1,43 @@
+Package: pump
+Type: Package
+Title: Access Ellipse Data Hub and other platforms
+Version: 0.0.1
+Authors@R: 
+  c(person(
+      given = "Patrick",
+      family = "Poncet",
+      role = c("aut", "cre"),
+      email = "patrick@infoscope.ca"),
+    person(
+      given = "Hugues-Étienne",
+      family = "Moisan-Plante",
+      role = c("aut"),
+      email = "huguesmp@outlook.com")
+  )
+Description: The goal of `{pump}` is to make it easier to access data 
+    stored in the Ellipse Data Hub.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    checkmate,
+    glue,
+    jsonlite,
+    lambdr,
+    logger,
+    magrittr,
+    paws,
+    rlang,
+    sys,
+    uuid
+Remotes: 
+RoxygenNote: 7.2.3
+Suggests: 
+    covr,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/ellipse-science/pump/
+BugReports: https://github.com/ellipse-science/pump/issues
