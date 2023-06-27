@@ -15,7 +15,7 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext
   logger::log_info("committing object to datalake")
   
   td <- tempdir()
-  filname <- paste(objectname, object_ext, sep = ".")
+  filename <- paste(objectname, object_ext, sep = ".")
 
   # todo : detect object type (df, list, character etc) and write accordingly
   write(object, file.path(td, filename))
