@@ -23,7 +23,7 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext
   names(metadata) <- paste("x-amz-meta-", names(metadata), sep = "")
   
   aws.s3::put_object(
-    file = filename, 
+    file = file.path(td, filename), 
     object = objectname, 
     bucket = "ellipse-datalake",
     headers = metadata
