@@ -19,10 +19,15 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext
 
   # todo : detect object type (df, list, character etc) and write accordingly
   write(object, file.path(td, filename))
+
+  names(metadata) <- paste("x-amz-meta-", names(metadata), sep = "")
   
   aws.s3::put_object(
     file = filename, 
     object = object, 
-    bucket = "ellipse-datalake"
+    bucket = "ellipse-datalake",
+    headers = metadata
   )
+
+  aws.s3::putobject()
 }
