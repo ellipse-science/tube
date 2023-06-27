@@ -1,2 +1,2 @@
 export("version")
-export("commit_df_to_datalake")
+export("commit_r_object_to_datalake")
