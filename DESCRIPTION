@@ -23,12 +23,11 @@ Imports:
     checkmate,
     glue,
     jsonlite,
-    lambdr,
     logger,
     magrittr,
-    paws,
     rlang,
     sys,
+    aws.s3,
     uuid
 Remotes: 
 RoxygenNote: 7.2.3
