@@ -1,6 +1,8 @@
 #' commits a dataframe to an S3 object
-#' @param df
+#' @param object
 #' @param metadata
+#' @param objectname
+#' @param object_ext
 #' @param bucket
 #'
 #' @examples
@@ -9,14 +11,18 @@
 #' }
 #'
 #' @export
-commit_df_to_datalake <- function(df, metadata, objectname, bucket) {
-  logger::log_info("committing df to datalake")
+commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext, bucket) {
+  logger::log_info("committing object to datalake")
   
   td <- tempdir()
-  write.csv(df, file.path(td, "object.csv"))
+  filname <- paste(objectname, object_ext, sep = ".")
+
+  # todo : detect object type (df, list, character etc) and write accordingly
+  write(object, file.path(td, filename))
+  
   aws.s3::put_object(
-    file = file.path(td, "object.csv"), 
-    object = objectname, 
+    file = filename, 
+    object = object, 
     bucket = "ellipse-datalake"
   )
 }
