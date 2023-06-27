@@ -26,7 +26,7 @@ version <- function() {
 #'
 #' @export
 convert_url_to_key <- function(url) {
-  r <- gsub(" |-|:|/|\\.|&|\\?|=", "_", paste(format(Sys.time(), "%Y-%m-%d-%H-%M"), url, sep="_"))
+  r <- gsub(" |-|:|/|\\.|&|\\?|=", "_", url)
   r <- gsub("https?___", "", r)
   return(r)
 }
