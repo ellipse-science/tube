@@ -29,5 +29,4 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext
     headers = metadata
   )
 
-  aws.s3::putobject()
 }
