@@ -11,7 +11,7 @@
 #' }
 #'
 #' @export
-commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext, bucket) {
+commit_r_object_to_datalake <- function(object, metadata, objectname, path, object_ext, bucket, refresh_data) {
   logger::log_info("committing object to datalake")
   
   td <- tempdir()
@@ -24,7 +24,7 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, object_ext
   
   aws.s3::put_object(
     file = file.path(td, filename), 
-    object = objectname, 
+    object = paste(path, objectname, "/"), 
     bucket = "ellipse-datalake",
     headers = metadata
   )
