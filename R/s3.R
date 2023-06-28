@@ -26,7 +26,8 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, path, obje
     file = file.path(td, filename), 
     object = paste(path,objectname,sep="/"),
     bucket = bucket,
-    headers = metadata
+    headers = metadata,
+    verbose = TRUE
   )
 
 }
