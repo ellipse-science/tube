@@ -1,9 +1,11 @@
-#' commits a dataframe to an S3 object
+#' commits an R object to an S3 bucket
 #' @param object
 #' @param metadata
 #' @param objectname
+#' @param path
 #' @param object_ext
 #' @param bucket
+#' @param refresh_data
 #'
 #' @examples
 #' \dontrun{
@@ -12,7 +14,10 @@
 #'
 #' @export
 commit_r_object_to_datalake <- function(object, metadata, objectname, path, object_ext, bucket, refresh_data) {
-  logger::log_info("committing object to datalake")
+  logger::log_debug("[pump::commit_r_object_to_datalake] entering function")
+  logger::log_info("[pump::commit_r_object_to_datalake] committing object to datalake")
+
+  # TODO: checkmate parameters validations and error handling
   
   td <- tempdir()
   filename <- paste(objectname, object_ext, sep = ".")
@@ -29,4 +34,41 @@ commit_r_object_to_datalake <- function(object, metadata, objectname, path, obje
     headers = metadata
   )
 
+  logger::log_debug("[pump::commit_r_object_to_datalake] exiting function")
 }
+
+
+
+#' retrieves a list of R object from an S3 bucket
+#' @param bucket
+#' @param metadata
+#' @param objectname
+#' @param path
+#' @param object_ext
+#' @param bucket
+#' @param refresh_data
+#'
+#' @examples
+#' \dontrun{
+#'   # pute some sample code here as an example
+#' }
+#'
+#' @export
+get_datalake_inventory <- function(bucket, path, metadata_filter) {
+  logger::log_debug("[pump::get_datalake_inventory] entering function")
+  logger::log_info("[pump::get_datalake_inventory] committing object to datalake")
+
+  # TODO: checkmate parameters validations and error handling
+  
+  names(metadata_filter) <- paste("x-amz-meta-", names(metadata_filter), sep = "")
+  
+  r <- aws.s3::get_bucket(
+    bucket = bucket,
+    path = path,
+    headers =  metadata_filter
+  )
+
+  logger::log_debug("[pump::commit_r_object_to_datalake] exiting function")
+  return(r)
+}
+
