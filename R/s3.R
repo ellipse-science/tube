@@ -13,7 +13,7 @@
 #' }
 #'
 #' @export
-commit_r_object_to_datalake <- function(aws_client, object, tags, objectname, path, object_ext, bucket, refresh_data) {
+commit_r_object_to_datalake <- function(aws_client, bucket, object, tags, objectname, path, object_ext, refresh_data) {
   logger::log_debug("[pump::commit_r_object_to_datalake] entering function")
   logger::log_info("[pump::commit_r_object_to_datalake] committing object to datalake")
 
