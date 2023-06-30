@@ -26,6 +26,18 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, tags, object
   write(object, file.path(td, filename))
 
   #names(metadata) <- paste("x-amz-meta-", names(metadata), sep = "")
+  logger::log_debug(
+    paste(
+      "[pump::commit_r_object_to_datalake] bucket=",
+      bucket,
+      " key=",
+      paste(path,objectname,sep="/"),
+      " tags=",
+      URLencode(paste(names(tags), tags, collapse="&", sep="=")),
+      sep = ""
+    )
+  )
+
   aws_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
