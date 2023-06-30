@@ -30,7 +30,7 @@ commit_r_object_to_datalake <- function(aws_client, object, tags, objectname, pa
     Bucket = bucket,
     Body = file.path(td, filename),
     Key = paste(path,objectname,sep="/"),
-    Tagging = paste(tags, names(tags), collapse="&", sep="=")
+    Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )
 
   aws_client$put_object_tagging(
