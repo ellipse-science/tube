@@ -62,7 +62,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, tags, object
 #' }
 #'
 #' @export
-get_datalake_inventory <- function(bucket, path, tags_filter) {
+get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
   logger::log_debug("[pump::get_datalake_inventory] entering function")
   logger::log_info("[pump::get_datalake_inventory] listing object from datalake")
 
@@ -70,12 +70,14 @@ get_datalake_inventory <- function(bucket, path, tags_filter) {
   
   #names(metadata_filter) <- paste("x-amz-meta-", names(metadata_filter), sep = "")
 
-  r <- s3_client$list_objects_v2(
+  r <- aws_client$list_objects_v2(
     Bucket = bucket, 
     Prefix = paste(path, "/", sep=""),
     Delimiter = "/")
 
   r$Contents[[1]] <- NULL
+
+  l <- list()
 
   for (o in r$Contents) {
     t <- s3_client$get_object_tagging(datalake_bucket, o$Key)
@@ -99,6 +101,6 @@ get_datalake_inventory <- function(bucket, path, tags_filter) {
 
 
   logger::log_debug("[pump::commit_r_object_to_datalake] exiting function")
-  return(r)
+  return(l)
 }
 
