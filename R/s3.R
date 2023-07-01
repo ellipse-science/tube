@@ -80,7 +80,7 @@ get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
   l <- list()
 
   for (o in r$Contents) {
-    t <- s3_client$get_object_tagging(datalake_bucket, o$Key)
+    t <- aws_client$get_object_tagging(datalake_bucket, o$Key)
     t$VersionId <- NULL
     df <- as.data.frame(sapply((sapply(t, unname)), unname))
     names(df) <- unlist(df[1,])
