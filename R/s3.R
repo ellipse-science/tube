@@ -64,7 +64,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, tags, object
 #' @export
 get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
   logger::log_debug("[pump::get_datalake_inventory] entering function")
-  logger::log_info("[pump::get_datalake_inventory] listing object from datalake")
+  logger::log_info("[pump::get_datalake_inventory] listing objects from datalake")
 
   # TODO: checkmate parameters validations and error handling
   
@@ -79,6 +79,8 @@ get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
 
   l <- list()
 
+  logger::log_info("[pump::get_datalake_inventory] filtering objects in datalake")
+
   for (o in r$Contents) {
     t <- aws_client$get_object_tagging(bucket, o$Key)
     t$VersionId <- NULL
@@ -88,7 +90,7 @@ get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
     l1 <- lapply(as.list(df), unlist)
     int <- intersect(names(l1), names(tags_filter))
     l2 <- l1[int]
-    if (FALSE %in% (l2 %in% tags_filter == names(l2) %in% names(tags_filters))) next
+    if (FALSE %in% (l2 %in% tags_filter == names(l2) %in% names(tags_filter))) next
     l[length(l)+1] <-list(l1)
   }
 
