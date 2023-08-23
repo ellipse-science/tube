@@ -14,7 +14,7 @@ Authors@R:
       role = c("aut"),
       email = "huguesmp@outlook.com")
   )
-Description: The goal of `{pump}` is to make it easier to access data 
+Description: The goal of `{pumpr}` is to make it easier to access data 
     stored in the Ellipse Data Hub.
 License: MIT + file LICENSE
 Encoding: UTF-8
