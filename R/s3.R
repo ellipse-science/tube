@@ -48,7 +48,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
     list(
       metadata = c(
         metadata,
-        format = object_ext,
+        format = object_ext
       ),
       data = object
     ),
