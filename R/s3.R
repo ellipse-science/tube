@@ -57,7 +57,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
 
   # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
-  filename <- paste(objectname, object_ext, sep = ".")
+  filename <- paste(objectname, "json", sep = ".")
 
   # todo : detect object type (df, list, character etc) and write accordingly
   write(json_object, file.path(td, filename))
@@ -67,7 +67,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
   aws_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
-    Key = paste(base_path,objectname,sep="/"),
+    Key = paste(base_path,filename,sep="/"),
     #Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )  
 
