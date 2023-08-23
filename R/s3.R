@@ -35,7 +35,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
       history_schema == "YYYY" ~ format(Sys.Date(), format="%Y"),
       history_schema == "YYYY/MM" ~ format(Sys.Date(), format="%Y/%m"),
       history_schema == "YYYY/MM/DD" ~ format(Sys.Date(), format="%Y/%m/%d"),
-      history_schema == "YYYY/MM/DD/HH" ~ format(Sys.time(), format="%Y/%m/%d/%H/%M"),
+      history_schema == "YYYY/MM/DD/HH" ~ format(Sys.time(), format="%Y/%m/%d/%H"),
       history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
     )
 
