@@ -13,24 +13,62 @@
 #' }
 #'
 #' @export
-commit_r_object_to_datalake <- function(aws_client, bucket, object, tags, objectname, path, object_ext, refresh_data) {
+commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, objectname, base_path, object_ext, keep_history, history_schema, refresh_data) {
   logger::log_debug("[pump::commit_r_object_to_datalake] entering function")
   logger::log_info("[pump::commit_r_object_to_datalake] committing object to datalake")
 
   # TODO: checkmate parameters validations and error handling
   
+  # figure our path (s3 prefix) based on whether we have to keep_history or not
+  if (keep_history) {
+    # we'll handle the history_granularity later
+    # for now if keey history, then we partition the path based on partition schema
+    # Partition schemas:
+    # YYYY
+    # YYYY/MM
+    # YYYY/MM/DD
+    # YYYY/MM/DD/HH
+    # YYYY/WEEKNUM 
+
+    # compute the partition prefix
+    partition_prefix <- dplyr::case_when(
+      history_schema == "YYYY" ~ format(Sys.Date(), format="%Y"),
+      history_schema == "YYYY/MM" ~ format(Sys.Date(), format="%Y/%m"),
+      history_schema == "YYYY/MM/DD" ~ format(Sys.Date(), format="%Y/%m/%d"),
+      history_schema == "YYYY/MM/DD/HH" ~ format(Sys.time(), format="%Y/%m/%d/%H/%M"),
+      history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
+    )
+
+    path <- paste(path, partition_prefix, sep="/")
+
+  }
+
+  # build json object
+  json_object <- jsonlite::toJSON(
+    list(
+      metadata = c(
+        metadata,
+        format = object_ext,
+      )
+      data = object
+    ),
+    auto_unbox = T
+  )
+
+  # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
   filename <- paste(objectname, object_ext, sep = ".")
 
   # todo : detect object type (df, list, character etc) and write accordingly
-  write(object, file.path(td, filename))
+  write(json_object, file.path(td, filename))
 
-  #names(metadata) <- paste("x-amz-meta-", names(metadata), sep = "")
+
+  # put the object in s3 bucket 
   aws_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
     Key = paste(path,objectname,sep="/"),
-    Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
+    #Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )  
 
   #TODO : Error management
