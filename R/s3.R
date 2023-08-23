@@ -14,8 +14,8 @@
 #'
 #' @export
 commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, objectname, base_path, object_ext, keep_history, history_schema, refresh_data) {
-  logger::log_debug("[pump::commit_r_object_to_datalake] entering function")
-  logger::log_info("[pump::commit_r_object_to_datalake] committing object to datalake")
+  logger::log_debug("[pumpr::commit_r_object_to_datalake] entering function")
+  logger::log_info("[pumpr::commit_r_object_to_datalake] committing object to datalake")
 
   # TODO: checkmate parameters validations and error handling
   
@@ -39,7 +39,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
       history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
     )
 
-    path <- paste(path, partition_prefix, sep="/")
+    base_path <- paste(base_path, partition_prefix, sep="/")
 
   }
 
@@ -67,7 +67,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
   aws_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
-    Key = paste(path,objectname,sep="/"),
+    Key = paste(base_path,objectname,sep="/"),
     #Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )  
 
@@ -80,7 +80,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
   #   headers = metadata
   # )
 
-  logger::log_debug("[pump::commit_r_object_to_datalake] exiting function")
+  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
 }
 
 
@@ -101,8 +101,8 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
 #'
 #' @export
 get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
-  logger::log_debug("[pump::get_datalake_inventory] entering function")
-  logger::log_info("[pump::get_datalake_inventory] listing objects from datalake")
+  logger::log_debug("[pumpr::get_datalake_inventory] entering function")
+  logger::log_info("[pumpr::get_datalake_inventory] listing objects from datalake")
 
   # TODO: checkmate parameters validations and error handling
   
@@ -117,7 +117,7 @@ get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
 
   l <- list()
 
-  logger::log_info("[pump::get_datalake_inventory] filtering objects in datalake")
+  logger::log_info("[pumpr::get_datalake_inventory] filtering objects in datalake")
 
   for (o in r$Contents) {
     t <- aws_client$get_object_tagging(bucket, o$Key)
@@ -140,7 +140,7 @@ get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
   # )
 
 
-  logger::log_debug("[pump::commit_r_object_to_datalake] exiting function")
+  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
   return(l)
 }
 
