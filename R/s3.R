@@ -60,7 +60,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
   filename <- paste(objectname, "json", sep = ".")
 
   # todo : detect object type (df, list, character etc) and write accordingly
-  write(json_object, file.path(td, filename))
+  write(object, file.path(td, filename))
 
 
   # put the object in s3 bucket 
