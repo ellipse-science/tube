@@ -68,6 +68,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
     Bucket = bucket,
     Body = file.path(td, filename),
     Key = paste(base_path,filename,sep="/"),
+    ContentType = "charset=utf-8"
     #Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )  
 
