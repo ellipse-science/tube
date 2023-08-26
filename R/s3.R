@@ -3,7 +3,6 @@
 #' @param metadata
 #' @param objectname
 #' @param path
-#' @param object_ext
 #' @param bucket
 #' @param refresh_data
 #'
@@ -13,11 +12,12 @@
 #' }
 #'
 #' @export
-commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, objectname, base_path, object_ext, keep_history, history_schema, refresh_data) {
+commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, objectname, base_path, keep_history, history_schema, refresh_data) {
   logger::log_debug("[pumpr::commit_r_object_to_datalake] entering function")
   logger::log_info("[pumpr::commit_r_object_to_datalake] committing object to datalake")
 
   # TODO: checkmate parameters validations and error handling
+  checkmate::assertChoice(metadata$format, c("pdf", "html", "xml", "json", "docx", "xlsx", "csv"))
   
   # figure our path (s3 prefix) based on whether we have to keep_history or not
   if (keep_history) {
@@ -46,10 +46,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, object, metadata, ob
   # build json object
   json_object <- jsonlite::toJSON(
     list(
-      metadata = c(
-        metadata,
-        format = object_ext
-      ),
+      metadata = metadata,
       data = object
     ),
     auto_unbox = T
