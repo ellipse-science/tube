@@ -43,10 +43,15 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
   }
 
+  #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
+  #ist(split_metadata)
+
+  names(metadata) <- paste("metadata", names(metadata), sep = ".")
+
   # build json object
   json_object <- jsonlite::toJSON(
-    list(
-      metadata = metadata,
+    c(
+      metadata,
       data = object
     ),
     auto_unbox = T
