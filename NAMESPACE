@@ -1,3 +1,4 @@
+importFrom(magrittr,`%>%`)
 export("version")
 export("commit_r_object_to_datalake")
 export("get_r_object_from_datalake")
