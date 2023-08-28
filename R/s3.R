@@ -4,6 +4,8 @@
 #' @param objectname
 #' @param path
 #' @param bucket
+#' @param keep_histrory
+#' @param history_schema
 #' @param refresh_data
 #'
 #' @examples
@@ -85,6 +87,54 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
   logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
 }
+
+
+
+
+
+#' retreieves and returns an R object to an S3 bucket
+#' @param object
+#' @param metadata
+#' @param objectname
+#' @param path
+#' @param bucket
+#' @param keep_histrory
+#' @param history_schema
+#' @param refresh_data
+#'
+#' @examples
+#' \dontrun{
+#'   # pute some sample code here as an example
+#' }
+#'
+#' @export
+get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path, history_version) {
+  logger::log_debug("[pumpr::get_r_object_from_datalake] entering function")
+  logger::log_info("[pumpr::get_r_object_from_datalake] retrieving object to datalake")
+
+  # TODO: checkmate parameters validations and error handling
+
+  # put the object in s3 bucket 
+  # TODO: mettre la gestion des erreur autour de ce code
+  object <- aws_client$get_object( 
+    Bucket = bucket,
+    Key = paste(base_path, objectname, sep="/")
+  )
+
+  rerurn(object$Body %>%  rawToChar)
+
+  #TODO : Error management
+
+  # aws.s3::put_object(
+  #   file = file.path(td, filename), 
+  #   object = paste(path,objectname,sep="/"),
+  #   bucket = bucket,
+  #   headers = metadata
+  # )
+
+  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
+}
+
 
 
 
