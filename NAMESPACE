@@ -1,4 +1,5 @@
 export("version")
 export("commit_r_object_to_datalake")
+export("get_r_object_from_datalake")
 export("get_datalake_inventory")
 export("convert_url_to_key")
