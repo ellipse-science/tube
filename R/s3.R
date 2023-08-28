@@ -108,7 +108,14 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 #' @export
 get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path, history_version) {
   logger::log_debug("[pumpr::get_r_object_from_datalake] entering function")
-  logger::log_info("[pumpr::get_r_object_from_datalake] retrieving object to datalake")
+  logger::log_info(
+    paste(
+      "[pumpr::get_r_object_from_datalake] retrieving object",
+      paste(base_path, objectname, sep="/"),
+      "from bucket",
+      bucket
+    )
+  )
 
   # TODO: checkmate parameters validations and error handling
 
@@ -118,6 +125,9 @@ get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path
     Bucket = bucket,
     Key = paste(base_path, objectname, sep="/")
   )
+
+  
+  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function and returning rawToChar object")
 
   rerurn(object$Body %>%  rawToChar)
 
@@ -130,7 +140,6 @@ get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path
   #   headers = metadata
   # )
 
-  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
 }
 
 
