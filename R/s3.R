@@ -106,7 +106,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 #' }
 #'
 #' @export
-get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path, history_version = "") {
+get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname, history_version = "") {
   logger::log_debug("[pumpr::get_r_object_from_datalake] entering function")
   logger::log_info(
     paste(
