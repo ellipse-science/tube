@@ -1,9 +1,10 @@
 #' commits an R object to an S3 bucket
-#' @param object
-#' @param metadata
-#' @param objectname
-#' @param path
+#' @param aws_client
 #' @param bucket
+#' @param metadata
+#' @param object
+#' @param objectname
+#' @param base_path
 #' @param keep_histrory
 #' @param history_schema
 #' @param refresh_data
@@ -93,14 +94,11 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
 
 #' retreieves and returns an R object to an S3 bucket
-#' @param object
-#' @param metadata
-#' @param objectname
-#' @param path
+#' @param aws_client
 #' @param bucket
-#' @param keep_histrory
-#' @param history_schema
-#' @param refresh_data
+#' @param objectname
+#' @param base_path
+#' @param history_version
 #'
 #' @examples
 #' \dontrun{
@@ -139,13 +137,10 @@ get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path
 
 
 #' retrieves a list of R object from an S3 bucket
+#' @param aws_client
 #' @param bucket
-#' @param metadata
-#' @param objectname
 #' @param path
-#' @param object_ext
-#' @param bucket
-#' @param refresh_data
+#' @param metadata_filter
 #'
 #' @examples
 #' \dontrun{
@@ -153,7 +148,7 @@ get_r_object_from_datalake <- function(aws_client, bucket, objectname, base_path
 #' }
 #'
 #' @export
-get_datalake_inventory <- function(aws_client, bucket, path, tags_filter) {
+get_datalake_inventory <- function(aws_client, bucket, path, metadata_filter) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
   logger::log_info("[pumpr::get_datalake_inventory] listing objects from datalake")
 
