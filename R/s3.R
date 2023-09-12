@@ -150,7 +150,7 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 #'
 #' @export
 get_datalake_content <- function(datalake_name, data_filter = NULL,  metadata_filter = NULL, history_filter = NULL, pipeline_handler = "lambda") {
-  logger::log_debug("[pumpr::get_datalake_inventory] entering function")
+  logger::log_debug("[pumpr::get_datalake_content] entering function")
 
   # TODO: checkmate parameters validations and error handling
 
