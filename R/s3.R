@@ -58,7 +58,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
   # build json object
   json_object <- jsonlite::toJSON(
     c(
-      key = paste(base_path,filename,sep="/"),
+      key = gsub(".json$", "", paste(base_path,filename,sep="/")),
       metadata,
       data = object
     ),
