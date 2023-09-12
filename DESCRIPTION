@@ -20,16 +20,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    checkmate,
-    glue,
-    jsonlite,
-    logger,
-    magrittr,
-    rlang,
-    sys,
-    noctua,
-    DBI,
-    uuid
 Remotes: 
 RoxygenNote: 7.2.3
 Suggests: 
