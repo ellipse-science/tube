@@ -27,7 +27,10 @@ Imports:
     magrittr,
     rlang,
     sys,
-    aws.s3,
+    paws.s3,
+    paws.analytics,
+    noctua,
+    DBI,
     uuid
 Remotes: 
 RoxygenNote: 7.2.3
