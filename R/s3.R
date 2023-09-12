@@ -119,7 +119,7 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
   )
 
   
-  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function and returning rawToChar object")
+  logger::log_debug("[pumpr::get_r_object_from_datalake] exiting function and returning rawToChar object")
 
   return(object$Body %>%  rawToChar)
 
@@ -170,16 +170,16 @@ get_datalake_content <- function(datalake_name, data_filter = NULL,  metadata_fi
     )
   }
 
-  logger::log_debug(paste("[", scriptname, "] listing tables", sep = ""))
+  logger::log_debug("[pumpr::get_datalake_content] listing tables")
   DBI::dbListTables(con)
 
-  logger::log_debug(paste("[", scriptname, "] executing query", sep = ""))
+  logger::log_debug("pumpr::get_datalake_content] executing query")
   res <- DBI::dbExecute(con, "SELECT * FROM \"datalake-agora\".\"a_qc_press_releases\";")
 
   df <- DBI::dbFetch(res)
   DBI::dbClearResult(res)
 
-  logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
+  logger::log_debug("[pumpr::get_datalake_content] exiting function")
   return(df)
 }
 
