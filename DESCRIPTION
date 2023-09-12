@@ -27,8 +27,6 @@ Imports:
     magrittr,
     rlang,
     sys,
-    paws.s3,
-    paws.analytics,
     noctua,
     DBI,
     uuid
