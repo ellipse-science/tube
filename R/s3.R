@@ -151,44 +151,32 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 #' @export
 get_datalake_content <- function(aws_client, bucket, path, metadata_filter, history_filter) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
-  logger::log_info("[pumpr::get_datalake_inventory] listing objects from datalake")
 
   # TODO: checkmate parameters validations and error handling
+
+  con <- DBI::dbConnect(
+    noctua::athena(),
+    aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+    s3_staging_dir='s3://ellipse-datalake/',
+    region_name='ca-central-1'
+  )
+
+  con <- DBI::dbConnect(
+    noctua::athena(),
+    s3_staging_dir='s3://ellipse-datalake/',
+    region_name='ca-central-1'
+  )
+
+  logger::log_debug(paste("[", scriptname, "] listing tables", sep = ""))
+  DBI::dbListTables(con)
+
+  logger::log_debug(paste("[", scriptname, "] executing query", sep = ""))
+  res <- DBI::dbExecute(con, "SELECT * FROM \"datalake-agora\".\"a_qc_press_releases\";")
+
+  df <- DBI::dbFetch(res)
+  DBI::dbClearResult(res)
   
-  #names(metadata_filter) <- paste("x-amz-meta-", names(metadata_filter), sep = "")
-
-  r <- aws_client$list_objects_v2(
-    Bucket = bucket, 
-    Prefix = paste(path, "/", sep=""),
-    Delimiter = "/")
-
-  r$Contents[[1]] <- NULL
-
-  l <- list()
-
-  logger::log_info("[pumpr::get_datalake_inventory] filtering objects in datalake")
-
-  for (o in r$Contents) {
-    t <- aws_client$get_object_tagging(bucket, o$Key)
-    t$VersionId <- NULL
-    df <- as.data.frame(sapply((sapply(t, unname)), unname))
-    names(df) <- unlist(df[1,])
-    df <- df[-c(1),]
-    l1 <- lapply(as.list(df), unlist)
-    int <- intersect(names(l1), names(tags_filter))
-    l2 <- l1[int]
-    if (FALSE %in% (l2 %in% tags_filter == names(l2) %in% names(tags_filter))) next
-    l[length(l)+1] <-list(l1)
-  }
-
-  # r <- aws.s3::get_bucket(
-  #   bucket = bucket,
-  #   prefix = paste(path, "/", sep=""),
-  #   delimiter = "/",
-  #   headers =  metadata_filter
-  # )
-
-
   logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
   return(l)
 }
