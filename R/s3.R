@@ -51,22 +51,22 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
   names(metadata) <- paste("metadata", names(metadata), sep = ".")
 
+  # we're in lambda so we'll use a temporary fildsystem
+  td <- tempdir()
+  filename <- paste(objectname, "json", sep = ".")
+
   # build json object
   json_object <- jsonlite::toJSON(
     c(
+      key = paste(base_path,filename,sep="/"),
       metadata,
       data = object
     ),
     auto_unbox = T
   )
 
-  # we're in lambda so we'll use a temporary fildsystem
-  td <- tempdir()
-  filename <- paste(objectname, "json", sep = ".")
-
   # todo : detect object type (df, list, character etc) and write accordingly
   write(json_object, file.path(td, filename))
-
 
   # put the object in s3 bucket 
   aws_client$put_object(
@@ -74,17 +74,9 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
     Body = file.path(td, filename),
     Key = paste(base_path,filename,sep="/"),
     ContentType = "application/json; charset=utf-8"
-    #Tagging = URLencode(paste(names(tags), tags, collapse="&", sep="="))
   )  
 
   #TODO : Error management
-
-  # aws.s3::put_object(
-  #   file = file.path(td, filename), 
-  #   object = paste(path,objectname,sep="/"),
-  #   bucket = bucket,
-  #   headers = metadata
-  # )
 
   logger::log_debug("[pumpr::commit_r_object_to_datalake] exiting function")
 }
@@ -145,7 +137,7 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 
 
 
-#' retrieves a list of R object from an S3 bucket
+#' retrieves a list of R object from an S3 bucket through GLUE
 #' @param aws_client
 #' @param bucket
 #' @param path
@@ -157,7 +149,7 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 #' }
 #'
 #' @export
-get_datalake_inventory <- function(aws_client, bucket, path, metadata_filter) {
+get_datalake_content <- function(aws_client, bucket, path, metadata_filter, history_filter) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
   logger::log_info("[pumpr::get_datalake_inventory] listing objects from datalake")
 
