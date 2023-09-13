@@ -49,7 +49,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
   #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
   #ist(split_metadata)
 
-  names(metadata) <- paste("metadata", names(metadata), sep = ".")
+  names(metadata) <- paste("metadata", names(metadata), sep = "_")
 
   # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
@@ -149,15 +149,25 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 #' }
 #'
 #' @export
-get_datalake_content <- function(datalake_name, data_filter = NULL,  metadata_filter = NULL, history_filter = NULL, download_data = FALSE, pipeline_handler = "lambda") {
+get_datalake_content <- function(
+                              data_source, 
+                              columns = NULL, 
+                              filter = NULL,
+                              download_data = FALSE,
+                              pipeline_handler = "lambda") {
+
   logger::log_debug("[pumpr::get_datalake_content] entering function")
+
+  datalake_name <- strsplit(data_source, "\\.")[[1]][1]
+  database_name <- strsplit(data_source, "\\.")[[1]][2]
+  table_name <- strsplit(data_source, "\\.")[[1]][3]
 
   # TODO: checkmate parameters validations and error handling
 
   if (pipeline_handler == "lambda") {
     con <- DBI::dbConnect(
       noctua::athena(),
-      s3_staging_dir=paste("s3://", datalake_name, "ellipse-datalake/", sep=""),
+      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   } else {
@@ -165,7 +175,7 @@ get_datalake_content <- function(datalake_name, data_filter = NULL,  metadata_fi
       noctua::athena(),
       aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
       aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-      s3_staging_dir=paste("s3://", datalake_name, "ellipse-datalake/", sep=""),
+      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   }
@@ -173,8 +183,36 @@ get_datalake_content <- function(datalake_name, data_filter = NULL,  metadata_fi
   logger::log_debug("[pumpr::get_datalake_content] listing tables")
   DBI::dbListTables(con)
 
-  logger::log_debug("pumpr::get_datalake_content] executing query")
-  res <- DBI::dbExecute(con, "SELECT * FROM \"datalake-agora\".\"a_qc_press_releases\";")
+  logger::log_debug("[pumpr::get_datalake_content] executing query")
+
+  columns <- list("key", "metadata.object_type")
+  filter < list(
+      metadata=list(metadata.political_party="CAQ"), 
+      data=list()
+    )
+
+  res <- DBI::dbExecute(
+    con, 
+    paste(
+      "SELECT ", 
+      "key",
+      " FROM \"",
+      database_name,
+      "\".\"",
+      table_name,
+      "\" WHERE ",
+      trimws(
+        paste(
+          if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
+          if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          sep = " "
+        )
+      ),
+      ";",
+      sep = ""
+    )
+  )
 
   df <- DBI::dbFetch(res)
   DBI::dbClearResult(res)
