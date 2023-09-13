@@ -223,7 +223,7 @@ get_datalake_content <- function(
 #' }
 #'
 #' @export
-get_warehouse_content <- function(
+get_datawarehouse_content <- function(
                               data_source, 
                               columns = list(), 
                               filter = list(),
