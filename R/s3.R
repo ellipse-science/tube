@@ -1,17 +1,12 @@
 #' commits an R object to an S3 bucket
-#' @param aws_client
-#' @param bucket
-#' @param metadata
-#' @param object
-#' @param objectname
-#' @param base_path
-#' @param keep_histrory
-#' @param history_schema
-#' @param refresh_data
+#' @param PARM1
+#' @param PARM2
+#' @param PARM3
+#' @param PARM4
 #'
 #' @examples
 #' \dontrun{
-#'   # pute some sample code here as an example
+#'   # put some sample code here as an example
 #' }
 #'
 #' @export
@@ -86,15 +81,14 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
 
 #' retreieves and returns an R object to an S3 bucket
-#' @param aws_client
-#' @param bucket
-#' @param objectname
-#' @param base_path
-#' @param history_version
+#' @param PARM1
+#' @param PARM2
+#' @param PARM3
+#' @param PARM4
 #'
 #' @examples
 #' \dontrun{
-#'   # pute some sample code here as an example
+#'   # put some sample code here as an example
 #' }
 #'
 #' @export
@@ -137,15 +131,15 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 
 
 
-#' retrieves a list of R object from an S3 bucket through GLUE
-#' @param aws_client
-#' @param bucket
-#' @param path
-#' @param metadata_filter
+#' retrieves a list and returns a dataframe of R objects from an S3 bucket through GLUE
+#' @param PARM1
+#' @param PARM2
+#' @param PARM3
+#' @param PARM4
 #'
 #' @examples
 #' \dontrun{
-#'   # pute some sample code here as an example
+#'   # put some sample code here as an example
 #' }
 #'
 #' @export
@@ -215,3 +209,82 @@ get_datalake_content <- function(
   return(df)
 }
 
+
+
+#' retrieves a list and returns a dataframe of R objects from an S3 bucket through GLUE
+#' @param PARM1
+#' @param PARM2
+#' @param PARM3
+#' @param PARM4
+#'
+#' @examples
+#' \dontrun{
+#'   # put some sample code here as an example
+#' }
+#'
+#' @export
+get_warehouse_content <- function(
+                              data_source, 
+                              columns = list(), 
+                              filter = list(),
+                              download_data = FALSE,
+                              pipeline_handler = "lambda") {
+
+  logger::log_debug("[pumpr::get_datawarehouse_content] entering function")
+
+  datawarehouse_name <- strsplit(data_source, "\\.")[[1]][1]
+  database_name <- strsplit(data_source, "\\.")[[1]][2]
+  table_name <- strsplit(data_source, "\\.")[[1]][3]
+
+  # TODO: checkmate parameters validations and error handling
+
+  if (pipeline_handler == "lambda") {
+    con <- DBI::dbConnect(
+      noctua::athena(),
+      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
+      region_name='ca-central-1'
+    )
+  } else {
+    con <- DBI::dbConnect(
+      noctua::athena(),
+      aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
+      aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
+      region_name='ca-central-1'
+    )
+  }
+
+  logger::log_debug("[pumpr::get_datawarehouse_content] listing tables")
+  DBI::dbListTables(con)
+
+  logger::log_debug("[pumpr::get_datawarehouse_content] executing query")
+
+  res <- DBI::dbExecute(
+    con, 
+    paste(
+      "SELECT ", 
+      if (typeof(columns) == "list") paste(columns, collapse = ","),
+      " FROM \"",
+      database_name,
+      "\".\"",
+      table_name,
+      "\" WHERE ",
+      trimws(
+        paste(
+          if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
+          if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          sep = " "
+        )
+      ),
+      ";",
+      sep = ""
+    )
+  )
+
+  df <- DBI::dbFetch(res)
+  DBI::dbClearResult(res)
+
+  logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
+  return(df)
+}
