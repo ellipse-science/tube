@@ -151,8 +151,8 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 #' @export
 get_datalake_content <- function(
                               data_source, 
-                              columns = NULL, 
-                              filter = NULL,
+                              columns = list(), 
+                              filter = list(),
                               download_data = FALSE,
                               pipeline_handler = "lambda") {
 
@@ -185,17 +185,11 @@ get_datalake_content <- function(
 
   logger::log_debug("[pumpr::get_datalake_content] executing query")
 
-  columns <- list("key", "metadata.object_type")
-  filter < list(
-      metadata=list(metadata.political_party="CAQ"), 
-      data=list()
-    )
-
   res <- DBI::dbExecute(
     con, 
     paste(
       "SELECT ", 
-      "key",
+      if (typeof(columns) == "list") paste(columns, collapse = ","),
       " FROM \"",
       database_name,
       "\".\"",
