@@ -259,31 +259,54 @@ get_datawarehouse_content <- function(
 
   logger::log_debug("[pumpr::get_datawarehouse_content] executing query")
 
-  res <- DBI::dbExecute(
-    con, 
-    paste(
-      "SELECT ", 
-      if (typeof(columns) == "list") paste(columns, collapse = ","),
-      " FROM \"",
-      database_name,
-      "\".\"",
-      table_name,
-      "\" WHERE ",
-      trimws(
+  res <- NULL
+  res <- tryCatch(
+    expr = {
+      DBI::dbExecute(
+        con, 
         paste(
-          if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
-          if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
-          if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
-          sep = " "
+          "SELECT ", 
+          if (typeof(columns) == "list") paste(columns, collapse = ","),
+          " FROM \"",
+          database_name,
+          "\".\"",
+          table_name,
+          "\" WHERE ",
+          trimws(
+            paste(
+              if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
+              if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
+              if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+              sep = " "
+            )
+          ),
+          ";",
+          sep = ""
         )
-      ),
-      ";",
-      sep = ""
-    )
+      )
+    },
+    error = function(e) {
+      if (grepl("TABLE_NOT_FOUND", e$message)) {
+        msg <- paste(
+          "[pumpr::get_datawarehouse_content]",
+          "The table specified",
+          data_source,
+          "does not exist...  the dataframe returned is NULL"
+        )
+        logger::log_error(msg)
+        return(NULL)
+      }
+    },
+    finally = function() {
+    }
   )
 
   df <- DBI::dbFetch(res)
   DBI::dbClearResult(res)
+
+  if (nrow(df) == 0) {
+    logger::log_warn("[pumpr::get_datawarehouse_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+  }
 
   logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
   return(df)
