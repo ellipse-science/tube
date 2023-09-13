@@ -301,11 +301,15 @@ get_datawarehouse_content <- function(
     }
   )
 
-  df <- DBI::dbFetch(res)
-  DBI::dbClearResult(res)
+  if (!is.null(res)) {
+    df <- DBI::dbFetch(res)
+    DBI::dbClearResult(res)
 
-  if (nrow(df) == 0) {
-    logger::log_warn("[pumpr::get_datawarehouse_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+    if (nrow(df) == 0) {
+      logger::log_warn("[pumpr::get_datawarehouse_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+    }
+  } else {
+    df <- NULL
   }
 
   logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
