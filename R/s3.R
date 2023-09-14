@@ -473,14 +473,14 @@ commit_dataframe_to_datawarehouse <- function(
     }
 
     td <- tempdir()
-    filename <- paste(file.path(td, key), ".parquet", sep="")
+    filename <- tempfile()
 
     arrow::write_parquet(dataframe, filename)
 
     s3_client$put_object(
       Bucket = datawarehouse$name,
       Body = filename,
-      Key = paste(prefix, key, sep="/")
+      Key = paste(prefix, paste(key, ".parquet", sep=""), sep="/")
     )  
   }
 
