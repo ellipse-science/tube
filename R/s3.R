@@ -174,8 +174,8 @@ logger::log_debug("[pumpr::get_datalake_content] entering function")
     )
   }
 
-  logger::log_debug("[pumpr::get_datalake_content] listing tables")
-  DBI::dbListTables(con)
+  #logger::log_debug("[pumpr::get_datalake_content] listing tables")
+  #DBI::dbListTables(con)
 
   logger::log_debug("[pumpr::get_datalake_content] executing query")
 
@@ -315,32 +315,59 @@ get_datawarehouse_content <- function(
     )
   }
 
-  logger::log_debug("[pumpr::get_datawarehouse_content] listing tables")
-  DBI::dbListTables(con)
+  #logger::log_debug("[pumpr::get_datawarehouse_content] listing tables")
+  #DBI::dbListTables(con)
 
   logger::log_debug("[pumpr::get_datawarehouse_content] executing query")
 
+  columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",")
+  filter_string <- if (!is.null(unlist(filter))) {
+    paste(
+      "WHERE ",
+      trimws(
+        paste(
+          if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
+          if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+          sep = " "
+        )
+      )
+    )
+  } else {
+    ""
+  }
+
+  logger::log_debug( 
+    paste(
+      "[pumpr::get_datalake_content] query string is",
+      paste(
+        "SELECT ", 
+        columns_string,
+        " FROM \"",
+        database_name,
+        "\".\"",
+        table_name,
+        filter_string,
+        ";",
+        sep = ""
+      )
+    )
+  )
   res <- NULL
+
   res <- tryCatch(
     expr = {
       DBI::dbExecute(
         con, 
         paste(
           "SELECT ", 
-          if (typeof(columns) == "list") paste(columns, collapse = ","),
+          columns_string,
           " FROM \"",
           database_name,
           "\".\"",
           table_name,
-          "\" WHERE ",
-          trimws(
-            paste(
-              if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
-              if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
-              if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
-              sep = " "
-            )
-          ),
+          "\"",
+          filter_string,
           ";",
           sep = ""
         )
@@ -355,11 +382,17 @@ get_datawarehouse_content <- function(
           "does not exist...  the dataframe returned is NULL"
         )
         logger::log_error(msg)
-        return(NULL)
+      } else {
+        msg <- paste(
+          "[pumpr::get_datawarehouse_content]",
+          "an error occurred",
+          e$message
+        )
+        logger::log_error(msg)
       }
+      return(NULL)
     },
-    finally = function() {
-    }
+    finally = {}
   )
 
   if (!is.null(res)) {
@@ -370,7 +403,8 @@ get_datawarehouse_content <- function(
       logger::log_warn("[pumpr::get_datawarehouse_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
     }
   } else {
-    df <- NULL
+    logger::log_debug("[pumpr::get_datalake_content] setting null dataframe")
+    df <- NULL  
   }
 
   logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
