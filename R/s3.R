@@ -121,12 +121,18 @@ commit_r_object_to_datalake <- function(
 #' }
 #'
 #' @export
-get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname, history_version = "") {
+get_r_object_from_datalake <- function(
+  s3_client, 
+  bucket, 
+  prefix, 
+  key, 
+  history_version = "") {
+
   logger::log_debug("[pumpr::get_r_object_from_datalake] entering function")
   logger::log_info(
     paste(
       "[pumpr::get_r_object_from_datalake] retrieving object",
-      paste(base_path, objectname, sep="/"),
+      paste(prefix, key, sep="/"),
       "from bucket",
       bucket
     )
@@ -136,25 +142,16 @@ get_r_object_from_datalake <- function(aws_client, bucket, base_path, objectname
 
   # put the object in s3 bucket 
   # TODO: mettre la gestion des erreur autour de ce code
-  object <- aws_client$get_object( 
+  object <- s3_client$get_object( 
     Bucket = bucket,
-    Key = paste(base_path, objectname, sep="/")
+    Key = paste(prefix, paste(key,".json",sep=""), sep="/")
   )
 
-  
   logger::log_debug("[pumpr::get_r_object_from_datalake] exiting function and returning rawToChar object")
 
   return(object$Body %>%  rawToChar)
 
   #TODO : Error management
-
-  # aws.s3::put_object(
-  #   file = file.path(td, filename), 
-  #   object = paste(path,objectname,sep="/"),
-  #   bucket = bucket,
-  #   headers = metadata
-  # )
-
 }
 
 
