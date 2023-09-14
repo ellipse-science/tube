@@ -47,12 +47,13 @@ commit_r_object_to_datalake <- function(
       history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
     )
 
-    partition <- paste(partition, partition_suffix, sep="/")
+    partition <- paste(prefix, partition_suffix, sep="/")
 
     metadata$partitionned = "TRUE"
     metadata$partition_schema = history_schema
     metadata$partition = partition_suffix
   } else {
+    partition <- ""
     metadata$partitionned = "FALSE"
     metadata$partition_schema <- NA_character_
     metadata$partition <- NA_character_
