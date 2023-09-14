@@ -465,7 +465,7 @@ commit_dataframe_to_datawarehouse <- function(
       s3_client <<- paws.storage::s3(
         config = list(
           credentials = list(
-            creds = aws_credentials
+            creds = datawarehouse$credentials
           ),
           region = Sys.getenv("AWS_REGION")
         )
@@ -478,7 +478,7 @@ commit_dataframe_to_datawarehouse <- function(
     arrow::write_parquet(dataframe, filename)
 
     s3_client$put_object(
-      Bucket = datawarehouse,
+      Bucket = datawarehouse$name,
       Body = filename,
       Key = paste(prefix, key, sep="/")
     )  
