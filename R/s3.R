@@ -44,6 +44,8 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
     metadata$partition = partition_prefix
   } else {
     metadata$partitionned = "FALSE"
+    metadata$partition_schema <- NA_character_
+    metadata$partition <- NA_character_
   }
 
   #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
