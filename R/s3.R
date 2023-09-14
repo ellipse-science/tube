@@ -149,7 +149,10 @@ get_r_object_from_datalake <- function(
 
   logger::log_debug("[pumpr::get_r_object_from_datalake] exiting function and returning rawToChar object")
 
-  return(object$Body %>%  rawToChar)
+  raw_to_char <- object$Body %>%  rawToChar
+  json_to_list <- jsonlite::fromJSON(raw_to_char)
+
+  return(json_to_list)
 
   #TODO : Error management
 }
