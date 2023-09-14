@@ -39,6 +39,11 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
     base_path <- paste(base_path, partition_prefix, sep="/")
 
+    metadata$partitionned = "TRUE"
+    metadata$partition_schema = history_schema
+    metadata$partition = partition_prefix
+  } else {
+    metadata$partitionned = "FALSE"
   }
 
   #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
@@ -53,7 +58,8 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
   # build json object
   json_object <- jsonlite::toJSON(
     c(
-      key = gsub(".json$", "", paste(base_path,filename,sep="/")),
+      #key = gsub(".json$", "", paste(base_path,filename,sep="/")),
+      key = gsub(".json$", "", filename),
       metadata,
       data = object
     ),
