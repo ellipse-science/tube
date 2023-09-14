@@ -28,14 +28,9 @@ commit_r_object_to_datalake <- function(
   checkmate::assertChoice(
     metadata$content_type, 
     c(
-      "application/pdf", 
-      "application/html", 
-      "application/rss\+xml",
-      "application/xml", 
-      "application/json", 
-      "application/docx", 
-      "application/xlsx", 
-      "application/csv"
+      "text/html", 
+      "application/rss\\+xml",
+      "application/json"
     )
   )
   
