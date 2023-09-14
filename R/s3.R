@@ -26,12 +26,12 @@ commit_r_object_to_datalake <- function(
 
   # TODO: checkmate parameters validations and error handling
   checkmate::assertChoice(
-    metadata$content_type, 
-    c(
-      "text/html; charset=UTF-8", 
+    tolower(metadata$content_type), 
+    tolower(c(
+      "text/html; charset=utf-8",
       "application/rss\\+xml",
       "application/json"
-    )
+    ))
   )
   
   # figure our path (s3 prefix) based on whether we have to keep_history or not
