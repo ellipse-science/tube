@@ -10,7 +10,17 @@
 #' }
 #'
 #' @export
-commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, objectname, base_path, keep_history, history_schema, refresh_data) {
+commit_r_object_to_datalake <- function(
+  s3_client,
+  bucket, 
+  key, 
+  metadata, 
+  data, 
+  prefix, 
+  keep_history, 
+  history_schema, 
+  refresh_data) {
+
   logger::log_debug("[pumpr::commit_r_object_to_datalake] entering function")
   logger::log_info("[pumpr::commit_r_object_to_datalake] committing object to datalake")
 
@@ -29,7 +39,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
     # YYYY/WEEKNUM 
 
     # compute the partition prefix
-    partition_prefix <- dplyr::case_when(
+    partition_suffix <- dplyr::case_when(
       history_schema == "YYYY" ~ format(Sys.Date(), format="%Y"),
       history_schema == "YYYY/MM" ~ format(Sys.Date(), format="%Y/%m"),
       history_schema == "YYYY/MM/DD" ~ format(Sys.Date(), format="%Y/%m/%d"),
@@ -37,11 +47,11 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
       history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
     )
 
-    base_path <- paste(base_path, partition_prefix, sep="/")
+    base_path <- paste(partition, partition_suffix, sep="/")
 
     metadata$partitionned = "TRUE"
     metadata$partition_schema = history_schema
-    metadata$partition = partition_prefix
+    metadata$partition = partition_suffix
   } else {
     metadata$partitionned = "FALSE"
     metadata$partition_schema <- NA_character_
@@ -55,7 +65,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
 
   # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
-  filename <- paste(objectname, "json", sep = ".")
+  filename <- paste(key, "json", sep = ".")
 
   # build json object
   json_object <- jsonlite::toJSON(
@@ -63,7 +73,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
       #key = gsub(".json$", "", paste(base_path,filename,sep="/")),
       key = gsub(".json$", "", filename),
       metadata,
-      data = object
+      data
     ),
     auto_unbox = T
   )
