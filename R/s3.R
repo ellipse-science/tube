@@ -44,7 +44,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
   #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
   #ist(split_metadata)
 
-  names(metadata) <- paste("metadata", names(metadata), sep = ".")
+  names(metadata) <- paste("metadata", names(metadata), sep = "_")
 
   # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
