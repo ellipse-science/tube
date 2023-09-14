@@ -1,6 +1,7 @@
 importFrom(magrittr,`%>%`)
 export("version")
 export("commit_r_object_to_datalake")
+export("commit_dataframe_to_datawarehouse")
 export("get_r_object_from_datalake")
 export("get_datalake_content")
 export("get_datawarehouse_content")
