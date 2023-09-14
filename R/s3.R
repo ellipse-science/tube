@@ -28,7 +28,7 @@ commit_r_object_to_datalake <- function(
   checkmate::assertChoice(
     metadata$content_type, 
     c(
-      "text/html", 
+      "text/html; charset=UTF-8", 
       "application/rss\\+xml",
       "application/json"
     )
