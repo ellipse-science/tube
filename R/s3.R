@@ -25,7 +25,18 @@ commit_r_object_to_datalake <- function(
   logger::log_info("[pumpr::commit_r_object_to_datalake] committing object to datalake")
 
   # TODO: checkmate parameters validations and error handling
-  checkmate::assertChoice(metadata$format, c("pdf", "html", "xml", "json", "docx", "xlsx", "csv"))
+  checkmate::assertChoice(
+    metadata$content_type, 
+    c(
+      "application/pdf", 
+      "application/html", 
+      "application/xml", 
+      "application/json", 
+      "application/docx", 
+      "application/xlsx", 
+      "application/csv"
+    )
+  )
   
   # figure our path (s3 prefix) based on whether we have to keep_history or not
   if (keep_history) {
