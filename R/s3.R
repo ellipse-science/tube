@@ -30,6 +30,7 @@ commit_r_object_to_datalake <- function(
     c(
       "application/pdf", 
       "application/html", 
+      "application/rss\+xml",
       "application/xml", 
       "application/json", 
       "application/docx", 
