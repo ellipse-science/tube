@@ -82,7 +82,7 @@ commit_r_object_to_datalake <- function(
   write(json_object, file.path(td, filename))
 
   # put the object in s3 bucket 
-  aws_client$put_object(
+  s3_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
     Key = paste(base_path,filename,sep="/"),
