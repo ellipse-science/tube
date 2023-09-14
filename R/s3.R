@@ -44,7 +44,7 @@ commit_r_object_to_datalake <- function(aws_client, bucket, metadata, object, ob
   #split_metadata <- paste(paste("metadata", names(metadata), sep="."), metadata, collapse = ",", sep = ":")
   #ist(split_metadata)
 
-  names(metadata) <- paste("metadata", names(metadata), sep = "_")
+  names(metadata) <- paste("metadata", names(metadata), sep = ".")
 
   # we're in lambda so we'll use a temporary fildsystem
   td <- tempdir()
@@ -150,7 +150,7 @@ get_datalake_content <- function(
                               download_data = FALSE,
                               pipeline_handler = "lambda") {
 
-  logger::log_debug("[pumpr::get_datalake_content] entering function")
+logger::log_debug("[pumpr::get_datalake_content] entering function")
 
   datalake_name <- strsplit(data_source, "\\.")[[1]][1]
   database_name <- strsplit(data_source, "\\.")[[1]][2]
@@ -179,16 +179,10 @@ get_datalake_content <- function(
 
   logger::log_debug("[pumpr::get_datalake_content] executing query")
 
-  res <- DBI::dbExecute(
-    con, 
+  columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",")
+  filter_string <- if (!is.null(unlist(filter))) {
     paste(
-      "SELECT ", 
-      if (typeof(columns) == "list") paste(columns, collapse = ","),
-      " FROM \"",
-      database_name,
-      "\".\"",
-      table_name,
-      "\" WHERE ",
+      "WHERE ",
       trimws(
         paste(
           if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
@@ -196,14 +190,81 @@ get_datalake_content <- function(
           if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
           sep = " "
         )
-      ),
-      ";",
-      sep = ""
+      )
+    )
+  } else {
+    ""
+  }
+
+  logger::log_debug( 
+    paste(
+      "[pumpr::get_datalake_content] query string is",
+      paste(
+        "SELECT ", 
+        columns_string,
+        " FROM \"",
+        database_name,
+        "\".\"",
+        table_name,
+        filter_string,
+        ";",
+        sep = ""
+      )
     )
   )
+  res <- NULL
 
-  df <- DBI::dbFetch(res)
-  DBI::dbClearResult(res)
+  res <- res <- tryCatch(
+    expr = {
+      DBI::dbExecute(
+        con, 
+        paste(
+          "SELECT ", 
+          columns_string,
+          " FROM \"",
+          database_name,
+          "\".\"",
+          table_name,
+          "\"",
+          filter_string,
+          ";",
+          sep = ""
+        )
+      )
+    },
+    error = function(e) {
+      if (grepl("TABLE_NOT_FOUND", e$message)) {
+        msg <- paste(
+          "[pumpr::get_datawarehouse_content]",
+          "The table specified",
+          data_source,
+          "does not exist...  the dataframe returned is NULL"
+        )
+        logger::log_error(msg)
+      } else {
+        msg <- paste(
+          "[pumpr::get_datawarehouse_content]",
+          "an error occurred",
+          e$message
+        )
+        logger::log_error(msg)
+      }
+      return(NULL)
+    },
+    finally = {}
+  )
+
+  if (!is.null(res)) {
+    df <- DBI::dbFetch(res)
+    DBI::dbClearResult(res)
+
+    if (nrow(df) == 0) {
+      logger::log_warn("[pumpr::get_datalake_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+    }
+  } else {
+    logger::log_debug("[pumpr::get_datalake_content] setting null dataframe")
+    df <- NULL
+  }
 
   logger::log_debug("[pumpr::get_datalake_content] exiting function")
   return(df)
