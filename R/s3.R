@@ -47,7 +47,7 @@ commit_r_object_to_datalake <- function(
       history_schema == "YYYY/WEEKNUM" ~ format(Sys.time(), format="%Y/%W"),      
     )
 
-    base_path <- paste(partition, partition_suffix, sep="/")
+    partition <- paste(partition, partition_suffix, sep="/")
 
     metadata$partitionned = "TRUE"
     metadata$partition_schema = history_schema
@@ -85,7 +85,7 @@ commit_r_object_to_datalake <- function(
   s3_client$put_object(
     Bucket = bucket,
     Body = file.path(td, filename),
-    Key = paste(base_path,filename,sep="/"),
+    Key = paste(partition, filename, sep="/"),
     ContentType = "application/json; charset=utf-8"
   )  
 
