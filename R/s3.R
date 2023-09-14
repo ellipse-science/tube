@@ -11,15 +11,15 @@
 #'
 #' @export
 commit_r_object_to_datalake <- function(
-  s3_client,
-  bucket, 
-  key, 
-  metadata, 
-  data, 
-  prefix, 
-  keep_history, 
-  history_schema, 
-  refresh_data) {
+                                    s3_client,
+                                    bucket, 
+                                    key, 
+                                    metadata, 
+                                    data, 
+                                    prefix, 
+                                    keep_history, 
+                                    history_schema, 
+                                    refresh_data) {
 
   logger::log_debug("[pumpr::commit_r_object_to_datalake] entering function")
   logger::log_info("[pumpr::commit_r_object_to_datalake] committing object to datalake")
@@ -118,11 +118,11 @@ commit_r_object_to_datalake <- function(
 #'
 #' @export
 get_r_object_from_datalake <- function(
-  s3_client, 
-  bucket, 
-  prefix, 
-  key, 
-  history_version = "") {
+                                  s3_client, 
+                                  bucket, 
+                                  prefix, 
+                                  key, 
+                                  history_version = "") {
 
   logger::log_debug("[pumpr::get_r_object_from_datalake] entering function")
   logger::log_info(
@@ -175,7 +175,7 @@ get_datalake_content <- function(
                               download_data = FALSE,
                               pipeline_handler = "lambda") {
 
-logger::log_debug("[pumpr::get_datalake_content] entering function")
+  logger::log_debug("[pumpr::get_datalake_content] entering function")
 
   datalake_name <- strsplit(data_source, "\\.")[[1]][1]
   database_name <- strsplit(data_source, "\\.")[[1]][2]
@@ -310,11 +310,11 @@ logger::log_debug("[pumpr::get_datalake_content] entering function")
 #'
 #' @export
 get_datawarehouse_content <- function(
-                              data_source, 
-                              columns = list(), 
-                              filter = list(),
-                              download_data = FALSE,
-                              pipeline_handler = "lambda") {
+                                  data_source, 
+                                  columns = list(), 
+                                  filter = list(),
+                                  download_data = FALSE,
+                                  pipeline_handler = "lambda") {
 
   logger::log_debug("[pumpr::get_datawarehouse_content] entering function")
 
@@ -434,4 +434,54 @@ get_datawarehouse_content <- function(
 
   logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
   return(df)
+}
+
+
+#' retrieves a list and returns a dataframe of R objects from an S3 bucket through GLUE
+#' @param PARM1
+#' @param PARM2
+#' @param PARM3
+#' @param PARM4
+#'
+#' @examples
+#' \dontrun{
+#'   # put some sample code here as an example
+#' }
+#'
+#' @export
+commit_dataframe_to_datawarehouse <- function(
+                                          datawarehouse,
+                                          dataframe,
+                                          prefix,
+                                          key,
+                                          pipeline_handler = "local") {
+  
+  checkmate::assert_choice(datawarehouse$type, c("bucket"))
+
+  if (datawarehouse$type == "bucket") {
+    if (pipeline_handler == "lambda") {
+      s3_client <- paws.storage::s3()
+    } else {
+      s3_client <<- paws.storage::s3(
+        config = list(
+          credentials = list(
+            creds = aws_credentials
+          ),
+          region = Sys.getenv("AWS_REGION")
+        )
+      )
+    }
+
+    td <- tempdir()
+    filename <- paste(file.path(td, key), ".parquet", sep="")
+
+    arrow::write_parquet(dataframe, filename)
+
+    s3_client$put_object(
+      Bucket = datawarehouse,
+      Body = filename,
+      Key = paste(prefix, key, sep="/")
+    )  
+  }
+
 }
