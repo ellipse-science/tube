@@ -1,5 +1,5 @@
 #' @export
-list_datawarehouses() <- function() {
+list_datawarehouses <- function() {
 
 }
 
