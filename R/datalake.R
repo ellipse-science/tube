@@ -207,7 +207,6 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   logger::log_debug("[pumpr::get_datalake_content] building query")
 
-  columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",")
   filter_string <- if (!is.null(unlist(filter))) {
     paste(
       "WHERE ",
