@@ -47,6 +47,28 @@ list_datalake_tables <- function(credentials, datalake_name) {
 
 
 
+#' @export 
+get_datalake_table_info <- function(credentials, datalake_name, table_name) {
+  logger::log_debug("[pumpr::get_datalake_inventory] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+  logger::log_debug("[pumpr::put_datalake_object] instanciating s3 client")
+  glue_client <- paws.analytics::glue(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  logger::log_debug("[pumpr::get_datalake_content] getting list of tables and their properties")
+
+  table <- glue_client$get_table(DatabaseName = datalake_name, Name = table_name)
+  df <- as.data.frame(do.call(rbind, table))
+
+  return(df)
+}
+
+
+
 #' @export
 get_datalake_object <- function(credendials, datalake_name, prefix, partition, key) {
   logger::log_debug("[pumpr::get_datalake_object] entering function")
