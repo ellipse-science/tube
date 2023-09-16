@@ -225,7 +225,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   query_string <- paste(
     "SELECT key, metadata_*", #columns_string,
-    " FROM \"", datalake_name,"\".\"", table_name,
+    " FROM \"", datalake_name,"\".\"", table_name, "\" ",
     filter_string,";",
     sep = ""
   )
