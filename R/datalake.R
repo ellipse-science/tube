@@ -142,7 +142,7 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
   # build json object
   json_object <- jsonlite::toJSON(
     c(
-      key,
+      list(key = key),
       metadata,
       data
     ),
