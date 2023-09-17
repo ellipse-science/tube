@@ -119,7 +119,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   s3_client$put_object(
     Bucket = datawarehouse_name,
     Body = filename,
-    Key = paste(prefix, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
   )  
   
 }
