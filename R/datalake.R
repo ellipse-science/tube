@@ -206,7 +206,7 @@ refresh_datalake_inventory <- function(credentials, datalake_name, table_name) {
 
 
 #' @export 
-get_datalake_inventory <- function(credentials, datalake_name, table_name, filter, download_data = FALSE) {
+get_datalake_inventory <- function(credentials, datalake_name, table_name, filter = NULL, download_content = FALSE) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -245,12 +245,12 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     ""
   }
 
-  if (!download_data) {
+  if (!download_content) {
     table_properties <- get_datalake_table_info(credentials, datalake_name, table_name)
     columns_string <- strsplit(table_properties$StorageDescriptor[[1]]$SerdeInfo$Parameters$paths, ",")
     columns_string <- paste(columns_string[[1]][grep("metadata", columns_string[[1]])], collapse=",")
   } else {
-    columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",") else "*"
+    columns_string <- if (!is.null(unlist(columns))) paste(columns, collapse = ",") else "*"
   }
 
   query_string <- paste(
