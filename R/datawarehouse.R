@@ -3,14 +3,18 @@ list_datawarehouses <- function() {
 
 }
 
+
+
+
+
 #' @export
 get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, columns = NULL, filter = NULL) {
-  logger::log_debug("[pumpr::get_datawarehouse_content] entering function")
+  logger::log_debug("[pumpr::get_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::get_datalake_inventory] opening noctua athena DBI connection")
+  logger::log_debug("[pumpr::get_datawarehouse_table] opening noctua athena DBI connection")
   if (exists("credentials") && length(credentials) > 0 && !is.null(credentials) && !is.na(credentials)) {
     con <- DBI::dbConnect(
       noctua::athena(),
@@ -28,7 +32,7 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   }
 
 
-  logger::log_debug("[pumpr::get_datawarehouse_content] building query")
+  logger::log_debug("[pumpr::get_datawarehouse_table] building query")
 
   columns_string <- if (!is.null(unlist(columns))) paste(columns, collapse = ",") else "*"
   filter_string <- if (!is.null(unlist(filter))) {
@@ -49,11 +53,11 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
   query_string <- paste(
     "SELECT ", columns_string, 
-    " FROM \"", datalake_name, "\".\"", table_name, "\"",
+    " FROM \"", datawarehouse_name, "\".\"", table_name, "\"",
     filter_string, ";", sep = "")
 
-  logger::log_debug(paste("[pumpr::get_datalake_content] query string is", query_string))
-  logger::log_debug("[pumpr::get_datalake_content] executing query")
+  logger::log_debug(paste("[pumpr::get_datawarehouse_table] query string is", query_string))
+  logger::log_debug("[pumpr::get_datawarehouse_table] executing query")
 
   res <- NULL
 
@@ -61,13 +65,13 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     expr = { DBI::dbExecute(con, query_string) },
     error = function(e) {
       if (grepl("TABLE_NOT_FOUND", e$message)) {
-        msg <- paste("[pumpr::get_datawarehouse_content] The table specified",
+        msg <- paste("[pumpr::get_datawarehouse_table] The table specified",
           data_source,
           "does not exist...  the dataframe returned is NULL"
         )
         logger::log_error(msg)
       } else {
-        msg <- paste("[pumpr::get_datawarehouse_content] an error occurred: ", e$message)
+        msg <- paste("[pumpr::get_datawarehouse_table] an error occurred: ", e$message)
         logger::log_error(msg)
       }
       return(NULL)
@@ -80,30 +84,46 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     DBI::dbClearResult(res)
 
     if (nrow(df) == 0) {
-      logger::log_warn("[pumpr::get_datawarehouse_content] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+      logger::log_warn("[pumpr::get_datawarehouse_table] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
     }
   } else {
-    logger::log_debug("[pumpr::get_datalake_content] setting null dataframe")
+    logger::log_debug("[pumpr::get_datawarehouse_table] setting null dataframe")
     df <- NULL  
   }
 
-  logger::log_debug("[pumpr::get_datawarehouse_content] exiting function")
+  logger::log_debug("[pumpr::get_datawarehouse_table] exiting function")
   return(df)
 }
+
+
+
+
 
 #' @export
 put_datawarehouse_table <- function() {
 
 }
 
+
+
+
+
 #' @export 
 update_datawarehouse_table <- function() {
 }
+
+
+
+
 
 #' @export 
 get_datawarehouse_inventory <- function() {
 
 }
+
+
+
+
 
 #' @export 
 refresh_datawarehouse_inventory <- function() {
