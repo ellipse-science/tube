@@ -85,7 +85,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
   logger::log_info(
     paste(
       "[pumpr::get_datalake_object] retrieving object",
-      paste(prefix, key, sep="/"),
+      paste(prefix, partition, paste(key, ".json", sep=""), sep="/"),
       "from bucket",
       datalake_name
     )
