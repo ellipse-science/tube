@@ -206,7 +206,7 @@ refresh_datalake_inventory <- function(credentials, datalake_name, table_name) {
 
 
 #' @export 
-get_datalake_inventory <- function(credentials, datalake_name, table_name, filter) {
+get_datalake_table <- function(credentials, datalake_name, table_name, filter, download_data = FALSE) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -231,7 +231,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   filter_string <- if (!is.null(unlist(filter))) {
     paste(
-      "WHERE ",
+      " WHERE ",
       trimws(
         paste(
           if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
@@ -245,15 +245,23 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     ""
   }
 
+  if (!download_data) {
+    table_properties <- get_datalake_table_info(credentials, datalake_name, table_name)
+    columns_string <- strsplit(table_properties$StorageDescriptor[[1]]$SerdeInfo$Parameters$paths, ",")
+    columns_string <- paste(columns_string[[1]][grep("metadata", columns_string[[1]])], collapse=",")
+  } else {
+    columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",") else "*"
+  }
+
   query_string <- paste(
-    "SELECT key, metadata_*", #columns_string,
-    " FROM \"", datalake_name,"\".\"", table_name, "\" ",
-    filter_string,";",
+    "SELECT ", columns_string,
+    " FROM \"", datalake_name,"\".\"", table_name, "\"",
+    if (nchar(filter_string) > 0) filter_string else NULL,";",
     sep = ""
+
   )
 
   logger::log_debug(paste("[pumpr::get_datalake_content] query string is", query_string))
-
   logger::log_debug("[pumpr::get_datalake_content] executing query")
 
   res <- NULL
