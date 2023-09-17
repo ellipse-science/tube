@@ -74,7 +74,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
   logger::log_debug("[pumpr::get_datalake_object] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  prefix <- if (is.na(prefix)) NULL else prefix
+  partition <- if (is.na(partition)) NULL else partition
 
   logger::log_debug("[pumpr::list_datalakes] instanciating s3 client")
   s3_client <- paws.storage::s3(
