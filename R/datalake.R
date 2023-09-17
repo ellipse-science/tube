@@ -206,7 +206,7 @@ refresh_datalake_inventory <- function(credentials, datalake_name, table_name) {
 
 
 #' @export 
-get_datalake_table <- function(credentials, datalake_name, table_name, filter, download_data = FALSE) {
+get_datalake_inventory <- function(credentials, datalake_name, table_name, filter, download_data = FALSE) {
   logger::log_debug("[pumpr::get_datalake_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
