@@ -70,7 +70,7 @@ get_datalake_table_info <- function(credentials, datalake_name, table_name) {
 
 
 #' @export
-get_datalake_object <- function(credendials, datalake_name, prefix, partition, key) {
+get_datalake_object <- function(credentials, datalake_name, prefix, partition, key) {
   logger::log_debug("[pumpr::get_datalake_object] entering function")
 
   # TODO: checkmate parameters validations and error handling
