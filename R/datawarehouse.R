@@ -146,6 +146,19 @@ get_datawarehouse_inventory <- function() {
 
 
 #' @export 
-refresh_datawarehouse_inventory <- function() {
+refresh_datawarehouse_inventory <- function(credentials, datawarehouse_name, table_name) {
+  logger::log_debug("[pumpr::refresh_datawarehouse_inventory] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+  logger::log_debug("[pumpr::refresh_datawarehouse_inventory] checking input parameters")
+  
+  logger::log_debug("[pumpr::refresh_datawarehouse_inventory] instanciating s3 client")
+  glue_client <- paws.analytics::glue(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  glue_client$start_crawler(Name = paste(datawarehouse_name, table_name, "crawler", sep = "-"))
 
 }
