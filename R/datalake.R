@@ -249,6 +249,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     table_properties <- get_datalake_table_info(credentials, datalake_name, table_name)
     columns_string <- strsplit(table_properties$StorageDescriptor[[1]]$SerdeInfo$Parameters$paths, ",")
     columns_string <- paste(columns_string[[1]][grep("metadata", columns_string[[1]])], collapse=",")
+    columns_string <- paste("key", columns_string, sep=",")
   } else {
     columns_string <- if (!is.null(unlist(columns))) paste(columns, collapse = ",") else "*"
   }
