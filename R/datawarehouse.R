@@ -66,7 +66,7 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     error = function(e) {
       if (grepl("TABLE_NOT_FOUND", e$message)) {
         msg <- paste("[pumpr::get_datawarehouse_table] The table specified",
-          data_source,
+          table_name,
           "does not exist...  the dataframe returned is NULL"
         )
         logger::log_error(msg)
