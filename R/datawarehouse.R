@@ -16,13 +16,13 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
       noctua::athena(),
       aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
       aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   } else {
     con <- DBI::dbConnect(
       noctua::athena(),
-      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   }
