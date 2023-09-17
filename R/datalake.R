@@ -255,7 +255,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   query_string <- paste(
     "SELECT ", columns_string,
-    " FROM \"", datalake_name,"\".\"", table_name, "\"",
+    " FROM \"", datalake_name, "\".\"", table_name, "\"",
     if (nchar(filter_string) > 0) filter_string else NULL,";",
     sep = ""
 
@@ -266,7 +266,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   res <- NULL
 
-  res <- res <- tryCatch(
+  res <- tryCatch(
     expr = {DBI::dbExecute(con, query_string)},
     error = function(e) {
       if (grepl("TABLE_NOT_FOUND", e$message)) {
@@ -276,7 +276,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
         )
         logger::log_error(msg)
       } else {
-        msg <- paste("[pumpr::get_datawarehouse_content] an error occurred", e$message)
+        msg <- paste("[pumpr::get_datawarehouse_content] an error occurred: ", e$message)
         logger::log_error(msg)
       }
       return(NULL)

@@ -7,34 +7,30 @@ list_datawarehouses <- function() {
 get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, columns = NULL, filter = NULL) {
   logger::log_debug("[pumpr::get_datawarehouse_content] entering function")
 
-  datawarehouse_name <- strsplit(data_source, "\\.")[[1]][1]
-  database_name <- strsplit(data_source, "\\.")[[1]][2]
-  table_name <- strsplit(data_source, "\\.")[[1]][3]
-
   # TODO: checkmate parameters validations and error handling
 
-  if (pipeline_handler == "lambda") {
+  # TODO: checkmate parameters validations and error handling
+  logger::log_debug("[pumpr::get_datalake_inventory] opening noctua athena DBI connection")
+  if (exists("credentials") && length(credentials) > 0 && !is.null(credentials) && !is.na(credentials)) {
     con <- DBI::dbConnect(
       noctua::athena(),
-      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
+      aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
+      aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   } else {
     con <- DBI::dbConnect(
       noctua::athena(),
-      aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
-      aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
   }
 
-  #logger::log_debug("[pumpr::get_datawarehouse_content] listing tables")
-  #DBI::dbListTables(con)
 
-  logger::log_debug("[pumpr::get_datawarehouse_content] executing query")
+  logger::log_debug("[pumpr::get_datawarehouse_content] building query")
 
-  columns_string <- if (typeof(columns) == "list") paste(columns, collapse = ",")
+  columns_string <- if (!is.null(unlist(columns))) paste(columns, collapse = ",") else "*"
   filter_string <- if (!is.null(unlist(filter))) {
     paste(
       "WHERE ",
@@ -51,29 +47,27 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     ""
   }
 
-  query <- paste(
-    "SELECT ", columns_string, " FROM \"", database_name, "\".\"",
-    table_name, "\"", filter_string, ";", sep = "")
+  query_string <- paste(
+    "SELECT ", columns_string, 
+    " FROM \"", datalake_name, "\".\"", table_name, "\"",
+    filter_string, ";", sep = "")
 
-  logger::log_debug(paste("[pumpr::get_datalake_content] query string is", query))
-  
+  logger::log_debug(paste("[pumpr::get_datalake_content] query string is", query_string))
+  logger::log_debug("[pumpr::get_datalake_content] executing query")
+
   res <- NULL
 
   res <- tryCatch(
-    expr = { DBI::dbExecute(con, query) },
+    expr = { DBI::dbExecute(con, query_string) },
     error = function(e) {
       if (grepl("TABLE_NOT_FOUND", e$message)) {
-        msg <- paste(
-          "[pumpr::get_datawarehouse_content] The table specified",
+        msg <- paste("[pumpr::get_datawarehouse_content] The table specified",
           data_source,
           "does not exist...  the dataframe returned is NULL"
         )
         logger::log_error(msg)
       } else {
-        msg <- paste(
-          "[pumpr::get_datawarehouse_content] an error occurred: ",
-          e$message
-        )
+        msg <- paste("[pumpr::get_datawarehouse_content] an error occurred: ", e$message)
         logger::log_error(msg)
       }
       return(NULL)
