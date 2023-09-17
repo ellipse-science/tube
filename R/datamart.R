@@ -1,10 +1,14 @@
 #' @export
-list_datamarts <- function(credentials) {
+list_datamarts <- function() {
 
 }
 
+
+
+
+
 #' @export
-get_datamart_table <- function(credentials, datamart_name, table_name) {
+get_datamart_table <- function(credentials, datamart_name, table_name, columns = NULL, filter = NULL) {
   logger::log_debug("[pumpr::get_datamart_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -91,22 +95,90 @@ get_datamart_table <- function(credentials, datamart_name, table_name) {
   return(df)
 }
 
+
+
+
+
 #' @export
-put_datamart_table <- function(credentials, datamart_name, dataframe, table_name) {
+put_datamart_table <- function(credentials, datamart_name, table_name, dataframe) {
+  logger::log_debug("[pumpr::put_datamart_table] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+
+  logger::log_debug("[pumpr::put_datamart_table] instanciating s3 client")
+  s3_client <- paws.storage::s3(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  filename <- tempfile()
+
+  arrow::write_parquet(dataframe, filename)
+
+  s3_client$put_object(
+    Bucket = datamart_name,
+    Body = filename,
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
+  )  
+  
+}
+
+
+
+
+
+#' @export 
+update_datamart_table <- function(credentials, datamart_name, table_name, dataframe) {
+    logger::log_debug("[pumpr::update_datamart_table] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+
+  logger::log_debug("[pumpr::update_datamart_table] instanciating s3 client")
+  s3_client <- paws.storage::s3(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  filename <- tempfile()
+
+  arrow::write_parquet(dataframe, filename)
+
+  s3_client$put_object(
+    Bucket = datamart_name,
+    Body = filename,
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
+  )  
+}
+
+
+
+
+
+#' @export 
+get_datamart_inventory <- function() {
 
 }
 
-#' @export 
-update_datamart_table <- function(credentials, datamart_name, dataframe, table_name, update_type) {
 
-}
 
-#' @export 
-get_datamart_inventory <- function(credentials, datamart_name) {
 
-}
 
 #' @export 
-refresh_datamart_inventory <- function() {
+refresh_datamart_inventory <- function(credentials, datamart_name, table_name) {
+  logger::log_debug("[pumpr::refresh_datamart_inventory] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+  logger::log_debug("[pumpr::refresh_datamart_inventory] checking input parameters")
+  
+  logger::log_debug("[pumpr::refresh_datamart_inventory] instanciating s3 client")
+  glue_client <- paws.analytics::glue(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  glue_client$start_crawler(Name = paste(datamart_name, table_name, "crawler", sep = "-"))
 
 }
