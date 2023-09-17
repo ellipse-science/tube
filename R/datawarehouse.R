@@ -129,7 +129,27 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
 
 #' @export 
-update_datawarehouse_table <- function() {
+update_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, dataframe) {
+    logger::log_debug("[pumpr::put_datawarehouse_table] entering function")
+
+  # TODO: checkmate parameters validations and error handling
+
+  logger::log_debug("[pumpr::list_datalakes] instanciating s3 client")
+  s3_client <- paws.storage::s3(
+    config = c(
+      credentials, 
+      close_connection = TRUE)
+  )
+
+  filename <- tempfile()
+
+  arrow::write_parquet(dataframe, filename)
+
+  s3_client$put_object(
+    Bucket = datawarehouse_name,
+    Body = filename,
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
+  )  
 }
 
 
