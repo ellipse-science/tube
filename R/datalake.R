@@ -239,6 +239,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
       s3_staging_dir=paste("s3:/", datalake_name, table_name, sep="/"),
       region_name='ca-central-1'
     )
+    credentials <- list()
   }
 
   logger::log_debug("[pumpr::get_datalake_inventory] building query")
