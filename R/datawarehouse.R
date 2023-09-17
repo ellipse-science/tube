@@ -105,7 +105,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
   # TODO: checkmate parameters validations and error handling
 
-  logger::log_debug("[pumpr::list_datalakes] instanciating s3 client")
+  logger::log_debug("[pumpr::put_datawarehouse_table] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials, 
@@ -130,11 +130,11 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
 #' @export 
 update_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, dataframe) {
-    logger::log_debug("[pumpr::put_datawarehouse_table] entering function")
+    logger::log_debug("[pumpr::update_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
 
-  logger::log_debug("[pumpr::list_datalakes] instanciating s3 client")
+  logger::log_debug("[pumpr::update_datawarehouse_table] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials, 
