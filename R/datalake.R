@@ -74,7 +74,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
   logger::log_debug("[pumpr::get_datalake_object] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  partition <- if (is.na(partition)) NULL else partition
+  partition <- if (is.na(partition)) "" else partition
 
   logger::log_debug("[pumpr::list_datalakes] instanciating s3 client")
   s3_client <- paws.storage::s3(
@@ -86,7 +86,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
   logger::log_info(
     paste(
       "[pumpr::get_datalake_object] retrieving object",
-      paste(prefix, partition, paste(key, ".json", sep=""), sep="/"),
+      gsub("//", "/", paste(prefix, partition, paste(key, ".json", sep=""), sep="/")),
       "from bucket",
       datalake_name
     )
@@ -95,7 +95,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
   # TODO: mettre la gestion des erreurs autour de ce code
   object <- s3_client$get_object( 
     Bucket = datalake_name,
-    Key = paste(prefix, partition, paste(key, ".json", sep=""), sep="/")
+    Key = gsub("//", "/", paste(prefix, partition, paste(key, ".json", sep=""), sep="/"))
   )
 
   logger::log_debug("[pumpr::get_r_object_from_datalake] exiting function and returning rawToChar object")
