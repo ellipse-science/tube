@@ -53,7 +53,7 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
       ""
     }
   } else {
-    if (typeof(filter) == "string") {
+    if (typeof(filter) == "character") {
       filter_string <- filter
     } else {
       msg <- "[pumpr::get_datawarehouse_table] please use a list with variable = 'value' format or a string with SQL syntax for the filter"
