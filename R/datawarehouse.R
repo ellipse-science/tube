@@ -35,20 +35,30 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   logger::log_debug("[pumpr::get_datawarehouse_table] building query")
 
   columns_string <- if (!is.null(unlist(columns))) paste(columns, collapse = ",") else "*"
-  filter_string <- if (!is.null(unlist(filter))) {
-    paste(
-      "WHERE ",
-      trimws(
-        paste(
-          if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
-          if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
-          if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
-          sep = " "
+
+  if (typeof(filter) == "list") {
+    filter_string <- if (!is.null(unlist(filter))) {
+      paste(
+        "WHERE ",
+        trimws(
+          paste(
+            if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
+            if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
+            if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+            sep = " "
+          )
         )
       )
-    )
+    } else {
+      ""
+    }
   } else {
-    ""
+    if (typeof(filter) == "string") {
+      filter_string <- filter
+    } else {
+      msg <- "[pumpr::get_datawarehouse_table] please use a list with variable = 'value' format or a string with SQL syntax for the filter"
+      rlang::abort(msg)
+    }
   }
 
   query_string <- paste(
