@@ -22,7 +22,7 @@ get_dictionary <- function(datawarehouse_name, topic, lang = c("en","fr"), crede
 
   raw_to_char <- object$Body %>% rawToChar
   csv_text <- textConnection(raw_to_char)
-  dict_df <- utils::read.csv2(csv_text, encoding = "UTF-8")
+  dict_df <- utils::read.csv2(csv, encoding = "UTF-8")
 
   # Filter on language provided in lang if language is a dictionary feature
   if (!is.null(dict_df$language)) {
