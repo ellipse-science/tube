@@ -9,13 +9,13 @@ aws_session <- function(id, key) {
     )
   )
 
-  r <- list()
-
-  r$credentials <- creds
-  r$datalake <- list_datalake_bucket(creds)
-  r$datawarehouse <- list_datawarehouse_bucket(creds)
-  r$datamarts <- list_datamarts_bucket(creds)
-  r$athena_staging <- list_athena_staging_bucket(creds)
+  r <- list(
+    credentials = creds,
+    datalake = list_datalake_bucket(creds),
+    datawarehouse = list_datawarehouse_bucket(creds),
+    datamarts = list_datamarts_bucket(creds),
+    athena_staging = list_athena_staging_bucket(creds)
+  )
 
   return(r)
 }
