@@ -1,9 +1,9 @@
 importFrom(magrittr,`%>%`)
 export("version")
 
-export(aws_connect)
+export(aws_session)
 
-export("list_datalakes")
+export("list_datalake_bucket")
 export("list_datalake_tables")
 export("get_datalake_table_info")
 export("put_datalake_object")
@@ -11,14 +11,14 @@ export("get_datalake_object")
 export("get_datalake_inventory")
 export("refresh_datalake_inventory")
 
-export("list_datawarehouses")
+export("list_datawarehouse_bucket")
 export("get_datawarehouse_table")
 export("put_datawarehouse_table")
 export("update_datawarehouse_table")
 export("get_datawarehouse_inventory")
 export("refresh_datawarehouse_inventory")
 
-export("list_datawarehouses")
+export("list_datamarts_bucket")
 export("get_datamart_table")
 export("put_datamart_table")
 export("update_datamart_table")
