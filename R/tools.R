@@ -51,11 +51,13 @@ list_buckets <- function(type, credentials) {
 
   logger::log_debug("[pumpr::list_buckets] wrangling result")
   list <- unlist(r$Buckets)
-  datalake_list <- list[grep(type, list)]
-  datalake_list <- as.list(as.data.frame(datalake_list))
+  bucket_list <- list[grep(type, list)]
+  bucket_list <- as.list(bucket_list)
+  names(bucket_list) <- ""
+  bucket_list <- unlist(bucket_list)
 
   logger::log_debug("[pumpr::list_buckets] returning results")
-  return(datalake_list)
+  return(bucket_list)
 }
 
 list_athena_staging_bucket <- function(credentials) {
