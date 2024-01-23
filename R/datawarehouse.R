@@ -2,14 +2,22 @@
 list_datawarehouse_bucket <- function(credentials) {
   logger::log_debug("[tube::list_datalakes] entering function")
 
-  datalake_list <- list_buckets("datawarehouse", credentials)
+  datalake_list <- list_s3_buckets("datawarehouse", credentials)
 
   logger::log_debug("[tube::list_datalakes] returning results")
   return(datalake_list)
 }
 
 
+#' @export
+list_datawarehouse_database <- function(credentials) {
+  logger::log_debug("[tube::list_datawarehouse_database] entering function")
 
+  datawarehouse_database <- list_glue_databases("datawarehouse", credentials)
+
+  logger::log_debug("[tube::list_datawarehouse_database] returning results")
+  return(datawarehouse_database)
+}
 
 
 #' @export
@@ -47,11 +55,11 @@ get_datawarehouse_table <- function(session, table_name, columns = NULL, filter 
         "WHERE ",
         trimws(
           paste(
-            if (length(filter$metadata)) 
+            if (length(filter$metadata))
               paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep = ""), sep = "=", collapse = " AND ")) else "",
-            if (length(filter$metadata) && length(filter$data) > 0) 
+            if (length(filter$metadata) && length(filter$data) > 0)
               "AND" else "",
-            if (length(filter$data)) 
+            if (length(filter$data))
               paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
             sep = " "
           )

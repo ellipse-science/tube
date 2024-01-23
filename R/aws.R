@@ -12,8 +12,10 @@ aws_session <- function(id, key) {
   r <- list(
     credentials = creds,
     datalake = list_datalake_bucket(creds),
-    datawarehouse = list_datawarehouse_bucket(creds),
-    datamarts = list_datamarts_bucket(creds),
+    datawarehouse_bucket = list_datawarehouse_bucket(creds),
+    datawarehouse_database = list_datawarehouse_database(creds),
+    datamarts_bucket = list_datamarts_bucket(creds),
+    datamarts_databases = list_datamarts_databases(creds),
     athena_staging = list_athena_staging_bucket(creds)
   )
 

@@ -9,7 +9,15 @@ list_datamarts_bucket <- function(credentials) {
 }
 
 
+#' @export
+list_datawarehouse_database <- function(credentials) {
+  logger::log_debug("[tube::list_datawarehouse_database] entering function")
 
+  datawarehouse_database <- list_glue_databases("datamart", credentials)
+
+  logger::log_debug("[tube::list_datawarehouse_database] returning results")
+  return(datawarehouse_database)
+}
 
 
 #' @export

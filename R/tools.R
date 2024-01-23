@@ -14,6 +14,7 @@ version <- function() {
 }
 
 
+
 #' convert a url into a string
 #'
 #' @param url
@@ -33,8 +34,9 @@ convert_url_to_key <- function(url) {
 }
 
 
+
 #' @export 
-list_buckets <- function(type, credentials) {
+list_s3_buckets <- function(type, credentials) {
   logger::log_debug("[tube::list_buckets] entering function")
 
   logger::log_debug("[tube::list_buckets] instanciating s3 client")
@@ -60,11 +62,37 @@ list_buckets <- function(type, credentials) {
   return(bucket_list)
 }
 
+
+
 list_athena_staging_bucket <- function(credentials) {
   logger::log_debug("[tube::list_datalakes] entering function")
 
-  datalake_list <- list_buckets("athenaqueryresults", credentials)
+  datalake_list <- list_s3_buckets("athenaqueryresults", credentials)
 
   logger::log_debug("[tube::list_datalakes] returning results")
   return(datalake_list)
+}
+
+
+
+#' @export
+list_glue_databases <- function(type, credentials) {
+  logger::log_debug("[tube::list_glue_databases] entering function")
+
+  logger::log_debug("[tube::list_glue_databases] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = credentials
+  )
+
+  logger::log_debug("[tube::list_glue_databases] listing databases")
+  r <- glue_client$get_databases()
+
+  logger::log_debug("[tube::list_buckets] wrangling result")
+  list <- unlist(r$DatabaseList)
+  database_list <- list[grep(type, list)]
+  database_list <- as.list(database_list)
+  names(database_list) <- ""
+  database_list <- unlist(database_list)
+
+  return(database_list)
 }
