@@ -13,7 +13,7 @@ list_datawarehouse_bucket <- function(credentials) {
 
 
 #' @export
-get_datawarehouse_table <- function(session, datawarehouse_name, table_name, columns = NULL, filter = NULL) {
+get_datawarehouse_table <- function(session, table_name, columns = NULL, filter = NULL) {
   logger::log_debug("[pumpr::get_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -31,7 +31,7 @@ get_datawarehouse_table <- function(session, datawarehouse_name, table_name, col
   } else {
     con <- DBI::dbConnect(
       noctua::athena(),
-      s3_staging_dir=paste("s3:/", datawarehouse_name, table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", session$datawarehouse, table_name, sep="/"),
       region_name='ca-central-1'
     )
   }
@@ -47,9 +47,12 @@ get_datawarehouse_table <- function(session, datawarehouse_name, table_name, col
         "WHERE ",
         trimws(
           paste(
-            if (length(filter$metadata)) paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep=""), sep="=", collapse=" AND ")) else "",
-            if (length(filter$metadata) && length(filter$data) > 0) "AND" else "",
-            if (length(filter$data)) paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
+            if (length(filter$metadata)) 
+              paste(paste(names(filter$metadata), paste("'", filter$metadata, "'", sep = ""), sep = "=", collapse = " AND ")) else "",
+            if (length(filter$metadata) && length(filter$data) > 0) 
+              "AND" else "",
+            if (length(filter$data)) 
+              paste(paste(names(filter$data), paste("'", filter$data, "'", sep=""), sep="=", collapse=" AND ")) else "",
             sep = " "
           )
         )
@@ -67,8 +70,8 @@ get_datawarehouse_table <- function(session, datawarehouse_name, table_name, col
   }
 
   query_string <- paste(
-    "SELECT ", columns_string, 
-    " FROM \"", datawarehouse_name, "\".\"", table_name, "\"",
+    "SELECT ", columns_string,
+    " FROM \"", session$datawarehouse, "\".\"", table_name, "\"",
     filter_string, ";", sep = "")
 
   logger::log_debug(paste("[pumpr::get_datawarehouse_table] query string is", query_string))
@@ -115,7 +118,7 @@ get_datawarehouse_table <- function(session, datawarehouse_name, table_name, col
 
 
 #' @export
-put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, dataframe) {
+put_datawarehouse_table <- function(session, table_name, dataframe) {
   logger::log_debug("[pumpr::put_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -123,7 +126,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   logger::log_debug("[pumpr::put_datawarehouse_table] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
-      credentials,
+      session$credentials,
       close_connection = TRUE)
   )
 
@@ -132,9 +135,9 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   arrow::write_parquet(dataframe, filename)
 
   s3_client$put_object(
-    Bucket = datawarehouse_name,
+    Bucket = session$datawarehouse,
     Body = filename,
-    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep = ""), sep = "/")
   )
 
 }
@@ -144,7 +147,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
 
 #' @export 
-update_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, dataframe) {
+update_datawarehouse_table <- function(session, table_name, dataframe) {
   logger::log_debug("[pumpr::update_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
@@ -152,7 +155,7 @@ update_datawarehouse_table <- function(credentials, datawarehouse_name, table_na
   logger::log_debug("[pumpr::update_datawarehouse_table] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
-      credentials, 
+      session$credentials, 
       close_connection = TRUE)
   )
 
@@ -161,17 +164,17 @@ update_datawarehouse_table <- function(credentials, datawarehouse_name, table_na
   arrow::write_parquet(dataframe, filename)
 
   s3_client$put_object(
-    Bucket = datawarehouse_name,
+    Bucket = session$datawarehouse,
     Body = filename,
-    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
-  )  
+    Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep = ""), sep = "/")
+  )
 }
 
 
 
 
 
-#' @export 
+#' @export
 get_datawarehouse_inventory <- function() {
 
 }
@@ -180,20 +183,20 @@ get_datawarehouse_inventory <- function() {
 
 
 
-#' @export 
-refresh_datawarehouse_inventory <- function(credentials, datawarehouse_name, table_name) {
+#' @export
+refresh_datawarehouse_inventory <- function(session, table_name) {
   logger::log_debug("[pumpr::refresh_datawarehouse_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
   logger::log_debug("[pumpr::refresh_datawarehouse_inventory] checking input parameters")
-  
+
   logger::log_debug("[pumpr::refresh_datawarehouse_inventory] instanciating s3 client")
   glue_client <- paws.analytics::glue(
     config = c(
-      credentials, 
+      session$credentials, 
       close_connection = TRUE)
   )
 
-  glue_client$start_crawler(Name = paste(datawarehouse_name, table_name, "crawler", sep = "-"))
+  glue_client$start_crawler(Name = paste(session$datawarehouse, table_name, "crawler", sep = "-"))
 
 }
