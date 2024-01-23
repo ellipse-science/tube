@@ -9,6 +9,8 @@ aws_session <- function(id, key) {
     )
   )
 
+  r <- list()
+
   r$credentials <- creds
   r$datalake <- list_datalake_bucket(creds)
   r$datawarehouse <- list_datawarehouse_bucket(creds)
