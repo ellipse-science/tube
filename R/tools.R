@@ -40,7 +40,7 @@ list_buckets <- function(type, credentials) {
   logger::log_debug("[pumpr::list_buckets] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
-      credentials, 
+      credentials,
       close_connection = TRUE)
   )
 
@@ -57,7 +57,6 @@ list_buckets <- function(type, credentials) {
   logger::log_debug("[pumpr::list_buckets] returning results")
   return(datalake_list)
 }
-
 
 list_athena_staging_bucket <- function(credentials) {
   logger::log_debug("[pumpr::list_datalakes] entering function")

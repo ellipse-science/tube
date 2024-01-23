@@ -1,4 +1,4 @@
-#' @export 
+#' @export
 aws_session <- function(id, key) {
   creds <- list(
     credentials = list(
