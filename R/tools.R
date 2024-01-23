@@ -35,36 +35,36 @@ convert_url_to_key <- function(url) {
 
 #' @export 
 list_buckets <- function(type, credentials) {
-  logger::log_debug("[pumpr::list_buckets] entering function")
+  logger::log_debug("[tube::list_buckets] entering function")
 
-  logger::log_debug("[pumpr::list_buckets] instanciating s3 client")
+  logger::log_debug("[tube::list_buckets] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
       close_connection = TRUE)
   )
 
-  logger::log_debug("[pumpr::list_buckets] listing buckets")
+  logger::log_debug("[tube::list_buckets] listing buckets")
   r <- s3_client$list_buckets()
 
   #TODO: error management if no bucket is returned
 
-  logger::log_debug("[pumpr::list_buckets] wrangling result")
+  logger::log_debug("[tube::list_buckets] wrangling result")
   list <- unlist(r$Buckets)
   bucket_list <- list[grep(type, list)]
   bucket_list <- as.list(bucket_list)
   names(bucket_list) <- ""
   bucket_list <- unlist(bucket_list)
 
-  logger::log_debug("[pumpr::list_buckets] returning results")
+  logger::log_debug("[tube::list_buckets] returning results")
   return(bucket_list)
 }
 
 list_athena_staging_bucket <- function(credentials) {
-  logger::log_debug("[pumpr::list_datalakes] entering function")
+  logger::log_debug("[tube::list_datalakes] entering function")
 
   datalake_list <- list_buckets("athenaqueryresults", credentials)
 
-  logger::log_debug("[pumpr::list_datalakes] returning results")
+  logger::log_debug("[tube::list_datalakes] returning results")
   return(datalake_list)
 }

@@ -1,10 +1,10 @@
 #' @export
 get_dictionary <- function(datawarehouse_name, topic, lang = c("en","fr"), credentials) {
-    logger::log_debug("[pumpr::get_dictionary] entering function")
+    logger::log_debug("[tube::get_dictionary] entering function")
 
   # TODO: checkmate parameters validations and error handling
 
-  logger::log_debug("[pumpr::get_dictionary] instanciating s3 client")
+  logger::log_debug("[tube::get_dictionary] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials, 

@@ -1,10 +1,10 @@
 #' @export
 list_datalake_bucket <- function(credentials) {
-  logger::log_debug("[pumpr::list_datalakes] entering function")
+  logger::log_debug("[tube::list_datalakes] entering function")
 
   datalake_list <- list_buckets("datalake", credentials)
 
-  logger::log_debug("[pumpr::list_datalakes] returning results")
+  logger::log_debug("[tube::list_datalakes] returning results")
   return(datalake_list)
 }
 
@@ -12,17 +12,17 @@ list_datalake_bucket <- function(credentials) {
 
 #' @export 
 list_datalake_tables <- function(credentials, datalake_name) {
-  logger::log_debug("[pumpr::list_datalake_tables] entering function")
+  logger::log_debug("[tube::list_datalake_tables] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::list_datalake_tables] instanciating s3 client")
+  logger::log_debug("[tube::list_datalake_tables] instanciating s3 client")
   glue_client <- paws.analytics::glue(
     config = c(
       credentials, 
       close_connection = TRUE)
   )
 
-  logger::log_debug("[pumpr::list_datalake_tables] getting list of tables and their properties")
+  logger::log_debug("[tube::list_datalake_tables] getting list of tables and their properties")
 
   tables <- glue_client$get_tables(DatabaseName = datalake_name)
   df <- as.data.frame(do.call(rbind, tables$TableList))
@@ -34,17 +34,17 @@ list_datalake_tables <- function(credentials, datalake_name) {
 
 #' @export 
 get_datalake_table_info <- function(credentials, datalake_name, table_name) {
-  logger::log_debug("[pumpr::get_datalake_table_info] entering function")
+  logger::log_debug("[tube::get_datalake_table_info] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::get_datalake_table_info] instanciating s3 client")
+  logger::log_debug("[tube::get_datalake_table_info] instanciating s3 client")
   glue_client <- paws.analytics::glue(
     config = c(
       credentials, 
       close_connection = TRUE)
   )
 
-  logger::log_debug("[pumpr::get_datalake_table_info] getting list of tables and their properties")
+  logger::log_debug("[tube::get_datalake_table_info] getting list of tables and their properties")
 
   table <- glue_client$get_table(DatabaseName = datalake_name, Name = table_name)
   df <- as.data.frame(do.call(rbind, table))
@@ -56,12 +56,12 @@ get_datalake_table_info <- function(credentials, datalake_name, table_name) {
 
 #' @export
 get_datalake_object <- function(credentials, datalake_name, prefix, partition, key) {
-  logger::log_debug("[pumpr::get_datalake_object] entering function")
+  logger::log_debug("[tube::get_datalake_object] entering function")
 
   # TODO: checkmate parameters validations and error handling
   partition <- if (is.na(partition)) "" else partition
 
-  logger::log_debug("[pumpr::get_datalake_object] instanciating s3 client")
+  logger::log_debug("[tube::get_datalake_object] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials, 
@@ -70,7 +70,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
 
   logger::log_info(
     paste(
-      "[pumpr::get_datalake_object] retrieving object",
+      "[tube::get_datalake_object] retrieving object",
       gsub("//", "/", paste(prefix, partition, paste(key, ".json", sep=""), sep="/")),
       "from bucket",
       datalake_name
@@ -83,7 +83,7 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
     Key = gsub("//", "/", paste(prefix, partition, paste(key, ".json", sep=""), sep="/"))
   )
 
-  logger::log_debug("[pumpr::get_datalake_object] exiting function and returning rawToChar object")
+  logger::log_debug("[tube::get_datalake_object] exiting function and returning rawToChar object")
 
   raw_to_char <- object$Body %>%  rawToChar
   json_to_list <- jsonlite::fromJSON(raw_to_char)
@@ -97,10 +97,10 @@ get_datalake_object <- function(credentials, datalake_name, prefix, partition, k
 
 #' @export
 put_datalake_object <- function(credentials, datalake_name, prefix, partition_schema = NULL, key, metadata, data, refresh_data = FALSE) {
-  logger::log_debug("[pumpr::put_datalake_object] entering function")
+  logger::log_debug("[tube::put_datalake_object] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::put_datalake_object] checking input parameters")
+  logger::log_debug("[tube::put_datalake_object] checking input parameters")
   checkmate::assertChoice(
     tolower(metadata$content_type), 
     tolower(c(
@@ -110,7 +110,7 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
     ))
   )
 
-  logger::log_debug("[pumpr::put_datalake_object] instanciating s3 client")
+  logger::log_debug("[tube::put_datalake_object] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials, 
@@ -143,7 +143,7 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
   names(metadata) <- paste("metadata", names(metadata), sep = "_")
 
   # we're in lambda so we'll use a temporary fildsystem
-  logger::log_info("[pumpr::put_datalake_object] writing temporary file to disk")
+  logger::log_info("[tube::put_datalake_object] writing temporary file to disk")
 
   td <- tempdir()
   filename <- paste(key, "json", sep = ".")
@@ -162,7 +162,7 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
   write(json_object, file.path(td, filename))
 
   # put the object in s3 bucket 
-  logger::log_info("[pumpr::put_datalake_object] committing object to datalake")
+  logger::log_info("[tube::put_datalake_object] committing object to datalake")
   s3_client$put_object(
     Bucket = datalake_name,
     Body = file.path(td, filename),
@@ -171,13 +171,13 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
   )  
 
   # remove tmp file
-  logger::log_info("[pumpr::put_datalake_object] removing temporary file from disk")
+  logger::log_info("[tube::put_datalake_object] removing temporary file from disk")
   file.remove(file.path(td, filename))
 
 
   #TODO : Error management
 
-  logger::log_debug("[pumpr::put_datalake_object] exiting function")
+  logger::log_debug("[tube::put_datalake_object] exiting function")
 }
 
 
@@ -185,12 +185,12 @@ put_datalake_object <- function(credentials, datalake_name, prefix, partition_sc
 
 #' @export 
 refresh_datalake_inventory <- function(credentials, datalake_name, table_name) {
-  logger::log_debug("[pumpr::refresh_datalake_inventory] entering function")
+  logger::log_debug("[tube::refresh_datalake_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::refresh_datalake_inventory] checking input parameters")
+  logger::log_debug("[tube::refresh_datalake_inventory] checking input parameters")
   
-  logger::log_debug("[pumpr::refresh_datalake_inventory] instanciating s3 client")
+  logger::log_debug("[tube::refresh_datalake_inventory] instanciating s3 client")
   glue_client <- paws.analytics::glue(
     config = c(
       credentials, 
@@ -206,10 +206,10 @@ refresh_datalake_inventory <- function(credentials, datalake_name, table_name) {
 
 #' @export 
 get_datalake_inventory <- function(credentials, datalake_name, table_name, filter = NULL, download_content = FALSE) {
-  logger::log_debug("[pumpr::get_datalake_inventory] entering function")
+  logger::log_debug("[tube::get_datalake_inventory] entering function")
 
   # TODO: checkmate parameters validations and error handling
-  logger::log_debug("[pumpr::get_datalake_inventory] opening noctua athena DBI connection")
+  logger::log_debug("[tube::get_datalake_inventory] opening noctua athena DBI connection")
   if (exists("credentials") && length(credentials) > 0 && !is.null(credentials) && !is.na(credentials)) {
     con <- DBI::dbConnect(
       noctua::athena(),
@@ -227,7 +227,7 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     credentials <- list()
   }
 
-  logger::log_debug("[pumpr::get_datalake_inventory] building query")
+  logger::log_debug("[tube::get_datalake_inventory] building query")
 
   filter_string <- if (!is.null(unlist(filter))) {
     paste(
@@ -262,8 +262,8 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
 
   )
 
-  logger::log_debug(paste("[pumpr::get_datalake_inventory] query string is", query_string))
-  logger::log_debug("[pumpr::get_datalake_inventory] executing query")
+  logger::log_debug(paste("[tube::get_datalake_inventory] query string is", query_string))
+  logger::log_debug("[tube::get_datalake_inventory] executing query")
 
   res <- NULL
 
@@ -271,13 +271,13 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     expr = {DBI::dbExecute(con, query_string)},
     error = function(e) {
       if (grepl("TABLE_NOT_FOUND", e$message)) {
-        msg <- paste("[pumpr::get_datalake_inventory] The table specified",
+        msg <- paste("[tube::get_datalake_inventory] The table specified",
           data_source,
           "does not exist...  the dataframe returned is NULL"
         )
         logger::log_error(msg)
       } else {
-        msg <- paste("[pumpr::get_datalake_inventory] an error occurred: ", e$message)
+        msg <- paste("[tube::get_datalake_inventory] an error occurred: ", e$message)
         logger::log_error(msg)
       }
       return(NULL)
@@ -290,14 +290,14 @@ get_datalake_inventory <- function(credentials, datalake_name, table_name, filte
     DBI::dbClearResult(res)
 
     if (nrow(df) == 0) {
-      logger::log_warn("[pumpr::get_datalake_inventory] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+      logger::log_warn("[tube::get_datalake_inventory] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
     }
   } else {
-    logger::log_debug("[pumpr::get_datalake_inventory] setting null dataframe")
+    logger::log_debug("[tube::get_datalake_inventory] setting null dataframe")
     df <- NULL
   }
 
-  logger::log_debug("[pumpr::get_datalake_inventory] exiting function")
+  logger::log_debug("[tube::get_datalake_inventory] exiting function")
   return(df)
 }
 
