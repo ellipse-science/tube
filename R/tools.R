@@ -87,10 +87,13 @@ list_glue_databases <- function(type, credentials) {
   logger::log_debug("[tube::list_glue_databases] listing databases")
   r <- glue_client$get_databases()
 
-  logger::log_debug("[tube::list_s3_buckets] wrangling result")
+  logger::log_debug("[tube::list_glue_databases] wrangling result")
   list <- unlist(r$DatabaseList)
   database_list <- list[grep(type, list)]
   database_list <- as.list(database_list)
+  if (length(database_list) == 0) {
+    return(NULL)
+  }
   names(database_list) <- ""
   database_list <- unlist(database_list)
 
