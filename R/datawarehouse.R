@@ -80,7 +80,7 @@ get_datawarehouse_table <- function(session, table_name, columns = NULL, filter 
 
   query_string <- paste(
     "SELECT ", columns_string,
-    " FROM \"", session$datawarehouse, "\".\"", table_name, "\"",
+    " FROM \"", session$datawarehouse_database, "\".\"", table_name, "\"",
     filter_string, ";", sep = "")
 
   logger::log_debug(paste("[tube::get_datawarehouse_table] query string is", query_string))
