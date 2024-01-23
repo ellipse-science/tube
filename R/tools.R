@@ -62,7 +62,7 @@ list_buckets <- function(type, credentials) {
 list_athena_staging_bucket <- function(credentials) {
   logger::log_debug("[pumpr::list_datalakes] entering function")
 
-  datalake_list <- list_buckets("datamart", credentials)
+  datalake_list <- list_buckets("athenaqueryresults", credentials)
 
   logger::log_debug("[pumpr::list_datalakes] returning results")
   return(datalake_list)
