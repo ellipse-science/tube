@@ -20,6 +20,7 @@ list_datawarehouse_database <- function(credentials) {
 }
 
 
+
 #' @export
 get_datawarehouse_table <- function(session, table_name, columns = NULL, filter = NULL) {
   logger::log_debug("[tube::get_datawarehouse_table] entering function")
@@ -39,7 +40,7 @@ get_datawarehouse_table <- function(session, table_name, columns = NULL, filter 
   } else {
     con <- DBI::dbConnect(
       noctua::athena(),
-      s3_staging_dir=paste("s3:/", session$datawarehouse, table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", session$athena_staging_bucket, table_name, sep="/"),
       region_name='ca-central-1'
     )
   }
