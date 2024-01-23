@@ -1,6 +1,11 @@
 #' @export
-list_datawarehouses <- function() {
+list_datawarehouse_bucket <- function(credentials) {
+  logger::log_debug("[pumpr::list_datalakes] entering function")
 
+  datalake_list <- list_buckets("datawarehouse", credentials)
+
+  logger::log_debug("[pumpr::list_datalakes] returning results")
+  return(datalake_list)
 }
 
 
@@ -8,19 +13,19 @@ list_datawarehouses <- function() {
 
 
 #' @export
-get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, columns = NULL, filter = NULL) {
+get_datawarehouse_table <- function(session, datawarehouse_name, table_name, columns = NULL, filter = NULL) {
   logger::log_debug("[pumpr::get_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
 
   # TODO: checkmate parameters validations and error handling
   logger::log_debug("[pumpr::get_datawarehouse_table] opening noctua athena DBI connection")
-  if (exists("credentials") && length(credentials) > 0 && !is.null(credentials) && !is.na(credentials)) {
+  if (exists("credentials") && length(session$credentials) > 0 && !is.null(session$credentials) && !is.na(session$credentials)) {
     con <- DBI::dbConnect(
       noctua::athena(),
       aws_access_key_id=Sys.getenv("AWS_ACCESS_KEY_ID"),
       aws_secret_access_key=Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-      # s3_staging_dir=paste("s3:/", "pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3", table_name, sep="/"),
+      s3_staging_dir=paste("s3:/", session$athena_staging_bucket, table_name, sep="/"),
       region_name='ca-central-1'
     )
   } else {
@@ -94,19 +99,19 @@ get_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     DBI::dbClearResult(res)
 
     if (nrow(df) == 0) {
-      logger::log_warn("[pumpr::get_datawarehouse_table] The query was successful but the dataframe returned is empty.  Check the columns or the filter you sent to the function")
+      logger::log_warn(
+        "[pumpr::get_datawarehouse_table] The query was successful but the dataframe returned is empty.\
+         Check the columns or the filter you sent to the function."
+      )
     }
   } else {
     logger::log_debug("[pumpr::get_datawarehouse_table] setting null dataframe")
-    df <- NULL  
+    df <- NULL
   }
 
   logger::log_debug("[pumpr::get_datawarehouse_table] exiting function")
   return(df)
 }
-
-
-
 
 
 #' @export
@@ -118,7 +123,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
   logger::log_debug("[pumpr::put_datawarehouse_table] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
-      credentials, 
+      credentials,
       close_connection = TRUE)
   )
 
@@ -130,8 +135,8 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
     Bucket = datawarehouse_name,
     Body = filename,
     Key = paste(table_name, paste(table_name, format(Sys.time(), format="%Y-%m-%d-%H:%M"), ".parquet", sep=""), sep="/")
-  )  
-  
+  )
+
 }
 
 
@@ -140,7 +145,7 @@ put_datawarehouse_table <- function(credentials, datawarehouse_name, table_name,
 
 #' @export 
 update_datawarehouse_table <- function(credentials, datawarehouse_name, table_name, dataframe) {
-    logger::log_debug("[pumpr::update_datawarehouse_table] entering function")
+  logger::log_debug("[pumpr::update_datawarehouse_table] entering function")
 
   # TODO: checkmate parameters validations and error handling
 

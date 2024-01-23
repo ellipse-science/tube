@@ -1,6 +1,11 @@
 #' @export
-list_datamarts <- function() {
+list_datamarts_bucket <- function(credentials) {
+  logger::log_debug("[pumpr::list_datalakes] entering function")
 
+  datalake_list <- list_buckets("datamart", credentials)
+
+  logger::log_debug("[pumpr::list_datalakes] returning results")
+  return(datalake_list)
 }
 
 
