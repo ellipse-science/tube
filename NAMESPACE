@@ -27,4 +27,6 @@ export("refresh_datamart_inventory")
 
 export("get_dictionary")
 
+export("get_dimension")
+
 export("convert_url_to_key")
