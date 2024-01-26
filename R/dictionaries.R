@@ -6,7 +6,7 @@ get_dictionary <- function(session, topic, lang = c("en", "fr")) {
     session,
     paste("dict-", topic, sep = ""),
     columns = list(),
-    filter = list()
+    filter = ""
   )
 
   # Filter on language provided in lang if language is a dictionary feature
