@@ -1,5 +1,19 @@
+#' Create an AWS session object
+#'
+#' @param id An AWS access key id
+#' @param key An AWS secret access key
+#'
+#' @returns An AWS session object
 #' @export
-aws_session <- function(id, key) {
+aws_session <- function(id = NULL, key = NULL) {
+  if (is.null(id)) {
+    id <- Sys.getenv("AWS_ACCESS_KEY_ID")
+  }
+
+  if (is.null(key)) {
+    key <- Sys.getenv("AWS_SECRET_ACCESS_KEY")
+  }
+
   creds <- list(
     credentials = list(
       creds = list(
