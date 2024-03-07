@@ -133,6 +133,9 @@ list_glue_tables <- function(type, datamart = NULL, credentials) {
     return(NULL)
   }
 
+  # For now just return the full unprocessed list
+  # TODO: add some processing to make it easier for researchers
+  #       to parse
   table_list <- r
 
   return(table_list)
