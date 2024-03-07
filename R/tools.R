@@ -99,3 +99,41 @@ list_glue_databases <- function(type, credentials) {
 
   return(database_list)
 }
+
+
+#' @export
+list_glue_tables <- function(type, datamart = NULL, credentials) {  
+  logger::log_debug("[tube::list_glue_tables] entering function")
+  table_list <- list()
+
+  logger::log_debug("[tube::list_glue_tables] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = credentials
+  )
+
+  if (is.null(datamart) && type == "datawarehouse") {
+    logger::log_info("[tube::list_glue_tables] listing tables from the datawarehouse")
+    dwh_db <- list_glue_databases("datawarehouse", credentials)
+    if (is.null(dwh_db)) {
+      logger::log_error("[tube::list_glue_tables] no datawarehouse database found")
+      return(NULL)
+    }
+    r <- glue_client$get_tables("", dwh_db)
+  } else {
+    if (is.null(datamart) && type == "datamart") {
+      logger::log_error("[tube::list_glue_tables] datamart type provided, but no datamart name provided")
+      return(NULL)
+    } else {
+      logger::log_info("[tube::list_glue_tables] listing tables from the datamart")
+      r <- glue_client$get_tables("", datamart)
+    }
+  }
+
+  if (length(r) == 0) {
+    return(NULL)
+  }
+
+  table_list <- r
+
+  return(table_list)
+}

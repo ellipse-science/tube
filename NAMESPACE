@@ -12,6 +12,7 @@ export("get_datalake_inventory")
 export("refresh_datalake_inventory")
 
 export("list_datawarehouse_bucket")
+export("list_datawarehouse_tables")
 export("get_datawarehouse_table")
 export("put_datawarehouse_table")
 export("update_datawarehouse_table")
