@@ -20,6 +20,17 @@ list_datawarehouse_database <- function(credentials) {
 }
 
 
+#' @export
+list_datawarehouse_tables <- function(credentials) {
+  logger::log_debug("[tube::list_datawarehouse_tables] entering function")
+
+  datawarehouse_database <- list_glue_tables(type = "datawarehouse", credentials = credentials)
+
+  logger::log_debug("[tube::list_datawarehouse_tables] returning results")
+  return(datawarehouse_database)
+}
+
+
 
 #' @export
 get_datawarehouse_table <- function(session, table_name, columns = NULL, filter = NULL) {
