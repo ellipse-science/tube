@@ -1,8 +1,8 @@
 Package: tube
 Type: Package
 Title: Access Ellipse Data Hub on AWS
-Version: 0.0.1
-Authors@R: 
+Version: 0.0.1.9000
+Authors@R:
   c(person(
       given = "Patrick",
       family = "Poncet",
@@ -14,19 +14,19 @@ Authors@R:
       role = c("aut"),
       email = "huguesmp@outlook.com")
   )
-Description: The goal of `{tube}` is to make it easier to access data 
+Description: The goal of `{tube}` is to make it easier to access data
     stored in the Ellipse Data Hub. Package dependency is logger, noctua, paws.analytics, paws.storage
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: 
-Remotes: 
+Remotes:
 RoxygenNote: 7.2.3
-Imports: 
+Imports:
+    magrittr,
     noctua,
     paws.analytics,
-    paws.storage,
-Suggests: 
+    paws.storage
+Suggests:
     covr,
     knitr,
     rmarkdown,
