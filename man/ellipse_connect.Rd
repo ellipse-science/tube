@@ -2,7 +2,7 @@
 % Please edit documentation in R/ellipse.R
 \name{ellipse_connect}
 \alias{ellipse_connect}
-\title{Connexion à la plateforme de données ellipse sur AWS}
+\title{Se connecter à la plateforme de données ellipse sur AWS}
 \usage{
 ellipse_connect()
 }

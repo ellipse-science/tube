@@ -2,7 +2,7 @@
 % Please edit documentation in R/ellipse.R
 \name{ellipse_discover}
 \alias{ellipse_discover}
-\title{Découverte des tables disponibles sur la plateforme ellipse, ainsi que leur
+\title{Découvrir les tables disponibles sur la plateforme ellipse, ainsi que leur
 contenu}
 \usage{
 ellipse_discover(con, table = NULL)

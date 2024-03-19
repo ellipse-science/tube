@@ -1,6 +1,6 @@
 memoized_aws_session <- memoise::memoise(aws_session)
 
-#' Connexion à la plateforme de données ellipse sur AWS
+#' Se connecter à la plateforme de données ellipse sur AWS
 #'
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
@@ -31,7 +31,7 @@ ellipse_connect <- function() {
 
 }
 
-#' Découverte des tables disponibles sur la plateforme ellipse, ainsi que leur
+#' Découvrir les tables disponibles sur la plateforme ellipse, ainsi que leur
 #' contenu
 #'
 #' Si aucune table n'est passée en paramètre, un sommaire des tables disponibles
@@ -67,4 +67,21 @@ ellipse_discover <- function(con, table = NULL) {
                                      startsWith(table, "dim-") ~ "Dimension",
                                      .default = "De quessé?")) %>% # nolint
     dplyr::select(categorie, table)
+}
+
+#' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param table Une table que l'on souhaite interroger avec `dplyr`.
+#'
+#' @returns Une table Athena qui peut être interrogée dans un _pipeline_
+#'   `dplyr`.
+#' @export
+ellipse_read <- function(con, table) {
+  tables <- DBI::dbListTables(con)
+  if (!table %in% tables) {
+    cli::cli_alert_danger("La table demandée est inconnue.")
+    return(NULL)
+  }
+  dplyr::tbl(con, table)
 }
