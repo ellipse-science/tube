@@ -31,6 +31,55 @@ ellipse_connect <- function() {
 
 }
 
+#' Obtenir le domaine de valeurs pour les dimensions d'une table donnée
+#'
+#' @details
+#' Les tables de données sur AWS sont segmentées en _partitions_. Les requêtes
+#' qui ciblent une plage précise dans ces partitions réduisent les coûts
+#' d'utilisation de la plateforme, parce que les données à l'extérieur de cette
+#' plage ne sont pas lues par _AWS Athena_.
+#'
+#' Cette fonction permet d'obtenir les valeurs possibles des partitions d'une
+#' table donnée afin de mieux cibler nos requêtes ensuite.
+#'
+#' @inheritParams ellipse_discover
+#' @param max_n Le nombre maximal de valeurs possible avant de retourner un
+#'   résumé. Si la valeur est de `0` (défaut) toutes les valeurs sont
+#'   retournées.
+#'
+#' @returns Une liste dont chaque élément est un `data.frame` concernant une
+#'   partition de `table`. Si la partition contient plus de `max_n` valeur,
+#'   le `data.frame` retourné est un résumé plutôt qu'une énumération exhaustive
+#'   de chacune des valeurs.
+#'
+#' @importFrom rlang :=
+#' @export
+ellipse_partitions <- function(con, table, max_n = 0) {
+  df <- ellipse_discover(con, table) |> dplyr::filter(is_partition)
+  parts <- dplyr::pull(df, col_name)
+  athena_table <- ellipse_query(con, table)
+  res <- list()
+  for (l in seq_len(nrow(df))) {
+    part <- parts[l]
+    df_values <-
+      athena_table |>
+      dplyr::distinct(dplyr::across({{ part }})) |>
+      dplyr::arrange(dplyr::across({{ part }})) |>
+      dplyr::collect()
+    if (nrow(df_values) > max_n && max_n > 0) {
+      my_min <- dplyr::slice_head(df_values) |> dplyr::pull({{ part }})
+      my_max <- dplyr::slice_tail(df_values) |> dplyr::pull({{ part }})
+      sub_df <- tibble::tibble(partition = part,
+                               min = my_min,
+                               max = my_max)
+      res[[length(res) + 1]] <- sub_df
+    } else {
+      res[[length(res) + 1]] <- df_values
+    }
+  }
+  return(res)
+}
+
 #' Découvrir les tables disponibles sur la plateforme ellipse, ainsi que leur
 #' contenu
 #'
@@ -60,12 +109,12 @@ ellipse_discover <- function(con, table = NULL) {
   }
   tibble::tibble(table = tables) %>%
     dplyr::mutate(categorie =
-                    dplyr::case_when(startsWith(table, "a-") ~ "Agora+",
-                                     startsWith(table, "c-") ~ "Civimètre+",
-                                     startsWith(table, "r-") ~ "Radar+",
+                    dplyr::case_when(startsWith(table, "a-")    ~ "Agora+",
+                                     startsWith(table, "c-")    ~ "Civimètre+",
+                                     startsWith(table, "r-")    ~ "Radar+",
                                      startsWith(table, "dict-") ~ "Dictionnaire", # nolint
-                                     startsWith(table, "dim-") ~ "Dimension",
-                                     .default = "De quessé?")) %>% # nolint
+                                     startsWith(table, "dim-")  ~ "Dimension",
+                                     .default = "De quessé?")) %>%
     dplyr::select(categorie, table)
 }
 
@@ -77,7 +126,7 @@ ellipse_discover <- function(con, table = NULL) {
 #' @returns Une table Athena qui peut être interrogée dans un _pipeline_
 #'   `dplyr`.
 #' @export
-ellipse_read <- function(con, table) {
+ellipse_query <- function(con, table) {
   tables <- DBI::dbListTables(con)
   if (!table %in% tables) {
     cli::cli_alert_danger("La table demandée est inconnue.")
