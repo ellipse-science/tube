@@ -61,14 +61,13 @@ La première étape de toute analyse est de rencenser les données à notre disp
  8 Dimension    dim-institutions
  9 Dimension    dim-parliament-members
 10 Dimension    dim-parties
-11 De quessé?   dim_parties
-12 Radar+       r-media-frontpages
-13 Radar+       r-media-headlines
+11 Radar+       r-media-frontpages
+12 Radar+       r-media-headlines
 ```
 
 Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce moment, les tables retournées sont celles contenues dans l'entrepôt de données (_data warehouse_).
 
-Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit:
+Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit :
 
 ```r
 [ins] r$> ellipse_discover(con, "a-parliament-debates")
@@ -92,7 +91,7 @@ INFO [2024-03-24 21:04:59] [tube::list_glue_tables] listing tables from the data
 
 Le concept de _partition_ est important. Le scan d'une table complète peut être très long et croissant selon la grosseur de la table. L'utilisation de partitions permet d'orienter la lecture des données en arrière plan pour lire directement les données souhaitées et ainsi, améliore grandement les performances d'utilisation des données et réduit les coûts d'exploitation (**AWS facture proportionnellement à la quantité de données lues**).
 
-Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_ c'est-à-dire que les données d'une table sont regroupées selon les valeurs de certaines variables. Regrouper les données de cette façon permet une efficacité accrue lorsqu'on fait une requête pour utiliser les données. Ainsi, il est recommandé d'utiliser ces variables lorsqu'on veut cibler un sous-ensemble de données. Pour ce faire, il faut connaître les valeurs que peuvent prendre ces variables partitionnées.
+Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_, c'est-à-dire que les données d'une table sont regroupées selon les valeurs de certaines variables. Regrouper les données de cette façon permet une efficacité accrue lorsqu'on fait une requête pour utiliser les données. Ainsi, il est recommandé d'utiliser ces variables lorsqu'on veut cibler un sous-ensemble de données. Pour ce faire, il faut connaître les valeurs que peuvent prendre ces variables partitionnées.
 
 Dans l'exemple ci-haut, on voit que `institution_id` et `event_date` sont des variables partitionnées. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
 
@@ -207,4 +206,4 @@ Les fonctions exportées commencent par :
 
 Elles requièrent en général les informations d'identification obtenues via la fonction `aws_session()`.
 
-Cette interface est toute indiquée pour l'écriture de raffineurs. Plusieurs exemples de sont utilisation sont disponibles dans le dépôt [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners), plus particulierèment sous [refiners/examples](https://github.com/ellipse-science/aws-refiners/blob/main/refiners/examples/examples.R).
+Cette interface est toute indiquée pour l'écriture de raffineurs. Plusieurs exemples de son utilisation sont disponibles dans le dépôt [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners), plus particulierèment sous [refiners/examples](https://github.com/ellipse-science/aws-refiners/blob/main/refiners/examples/examples.R).
