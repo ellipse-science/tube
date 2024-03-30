@@ -2,27 +2,21 @@
 % Please edit documentation in R/ellipse.R
 \name{ellipse_partitions}
 \alias{ellipse_partitions}
-\title{Obtenir le domaine de valeurs pour les dimensions d'une table donnée}
+\title{Obtenir le domaine de valeurs pour les dimensions d'une table}
 \usage{
-ellipse_partitions(con, table, max_n = 0)
+ellipse_partitions(con, table)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
 \item{table}{Une table pour laquelle on veut obtenir les informations.}
-
-\item{max_n}{Le nombre maximal de valeurs possible avant de retourner un
-résumé. Si la valeur est de \code{0} (défaut) toutes les valeurs sont
-retournées.}
 }
 \value{
-Une liste dont chaque élément est un \code{data.frame} concernant une
-partition de \code{table}. Si la partition contient plus de \code{max_n} valeur,
-le \code{data.frame} retourné est un résumé plutôt qu'une énumération exhaustive
-de chacune des valeurs.
+Un \code{tibble} contenant le nombre d'observations par valeur de
+groupement des variables partitionnées.
 }
 \description{
-Obtenir le domaine de valeurs pour les dimensions d'une table donnée
+Obtenir le domaine de valeurs pour les dimensions d'une table
 }
 \details{
 Les tables de données sur AWS sont segmentées en \emph{partitions}. Les requêtes

@@ -96,58 +96,70 @@ Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_, c'
 Dans l'exemple ci-haut, on voit que `institution_id` et `event_date` sont des variables partitionnées. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
 
 ```r
-[ins] r$> ellipse_partitions(con, "a-parliament-debates")
-INFO [2024-03-24 21:22:54] [tube::list_glue_tables] listing tables from the datawarehouse
+[ins] r$> parts <- ellipse_partitions(con, "a-parliament-debates")
+INFO [2024-03-30 09:53:16] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
-INFO: (Data scanned: 0 Bytes)
-[[1]]
-# A tibble: 2 × 1
-  institution_id
-  <chr>
-1 CACOMMONS
-2 QCASSNAT
 
-[[2]]
-# A tibble: 43 × 1
-   event_date
-   <date>
- 1 2007-01-29
- 2 2023-11-29
- 3 2023-11-30
- 4 2023-12-01
- 5 2023-12-05
- 6 2023-12-06
- 7 2023-12-07
- 8 2023-12-08
- 9 2023-12-12
-10 2023-12-13
-# ℹ 33 more rows
+[ins] r$> parts
+# A tibble: 78 × 3
+   institution_id event_date       n
+   <chr>          <date>     <int64>
+ 1 CACOMMONS      2007-01-29     245
+ 2 CACOMMONS      2023-12-12    1764
+ 3 CACOMMONS      2023-12-13    1872
+ 4 CACOMMONS      2023-12-14    3392
+ 5 CACOMMONS      2023-12-15    2384
+ 6 CACOMMONS      2024-01-29     957
+ 7 CACOMMONS      2024-01-30    2984
+ 8 CACOMMONS      2024-01-31    2016
+ 9 CACOMMONS      2024-02-01    2625
+10 CACOMMONS      2024-02-02     805
+# ℹ 68 more rows
 # ℹ Use `print(n = ...)` to see more rows
 ```
 
-Une liste est retournée, dont chaque élément correspond aux valeurs possibles pour une des variables partitionnées de la table. Ces valeurs peuvent nous guider dans nos requêtes subséquentes. À l'usage, pour obtenir une partie des données, on remarquera que l'utilisation d'un filtre sur des variables partionnées sera beaucoup plus rapide que sur des variables non-partitionnées. Il est donc recommandé d'utiliser les filtres de variables partitionnées en premier puis ceux sur les variables non-partionnées pour raffiner.
+Un `tibble` est retourné. Chacune des lignes représente une combinaison de valeurs des variables partitionnées de la table, ainsi que le nombre d'observations associées.
 
-Si une des variables partitionnées comporte beaucoup de valeurs (c'est souvent le cas des dates), on peut obtenir un résumé plutôt qu'une liste exhaustive en mettant un maximum de valeurs avec le paramètre `max_n` :
+Ces valeurs peuvent nous guider dans nos requêtes subséquentes. À l'usage, pour obtenir une partie des données, on remarquera que l'utilisation d'un filtre sur des variables partionnées sera beaucoup plus rapide que sur des variables non-partitionnées. Il est donc recommandé d'utiliser les filtres de variables partitionnées en premier puis ceux sur les variables non-partionnées pour raffiner.
+
+Comme il s'agit d'un `tibble` ordinaire, on peut l'explorer avec les fonctions habituelles de `dplyr`:
 
 ```r
-[ins] r$> ellipse_partitions(con, "a-parliament-debates", max_n=20)
-INFO [2024-03-24 21:35:53] [tube::list_glue_tables] listing tables from the datawarehouse
-INFO: (Data scanned: 0 Bytes)
-INFO: (Data scanned: 0 Bytes)
-INFO: (Data scanned: 0 Bytes)
-[[1]]
-# A tibble: 2 × 1
+[ins] r$> dplyr::distinct(parts, institution_id)
+# A tibble: 3 × 1
   institution_id
   <chr>
 1 CACOMMONS
-2 QCASSNAT
+2 EUPARL
+3 QCASSNAT
 
-[[2]] # <- il y avait plus de 20 valeurs ici!
-# A tibble: 1 × 3
-  partition  min        max
-  <chr>      <date>     <date>
-1 event_date 2007-01-29 2024-03-22
+[ins] r$> dplyr::filter(parts, institution_id == "EUPARL") |> print(n = 30)
+# A tibble: 22 × 3
+   institution_id event_date       n
+   <chr>          <date>     <int64>
+ 1 EUPARL         2023-10-04     447
+ 2 EUPARL         2023-12-11     174
+ 3 EUPARL         2023-12-12     479
+ 4 EUPARL         2023-12-13     416
+ 5 EUPARL         2023-12-14     127
+ 6 EUPARL         2024-01-15     180
+ 7 EUPARL         2024-01-16     428
+ 8 EUPARL         2024-01-17     507
+ 9 EUPARL         2024-01-18     165
+10 EUPARL         2024-01-25       5
+11 EUPARL         2024-02-05     182
+12 EUPARL         2024-02-06     470
+13 EUPARL         2024-02-07     479
+14 EUPARL         2024-02-08     113
+15 EUPARL         2024-02-26     215
+16 EUPARL         2024-02-27     468
+17 EUPARL         2024-02-28     421
+18 EUPARL         2024-02-29     138
+19 EUPARL         2024-03-11     196
+20 EUPARL         2024-03-12     430
+21 EUPARL         2024-03-13     417
+22 EUPARL         2024-03-14     170
 ```
 
 ### Interroger les données
@@ -156,40 +168,98 @@ Maintenant qu'on a une idée des données qui nous intéressent et de la façon 
 
 La fonction `ellipse_query()` nous retourne un objet qui est exploitable avec `dplyr`.
 
-```r
-[ins] r$> df_agora <- ellipse_query(con, "a-parliament-debates")
-INFO: (Data scanned: 0 Bytes)
-```
+#### Pipeline des débats parlementaires
 
-Combien y a-t-il d'interventions par mois aux communes et à l'assemblée nationale?
+N'est-il pas intéressant d'étudier les termes proscrits à l'assemblée nationale?
 
 ```r
-[ins] r$> library(dplyr, warn.conflicts = FALSE)
-
-[ins] r$> library(lubridate, warn.conflicts = FALSE)
-
-[ins] r$> df_agora |>
-          mutate(year = year(event_date), month = month(event_date)) |>
-          count(institution_id, year, month, name = "n_interventions") |>
-          collect() |>
-          arrange(institution_id, year, month)
+[nav] r$> df <-
+            ellipse_query(con, "a-parliament-debates") |>
+            dplyr::filter(institution_id == "QCASSNAT", event_date == "2024-02-22") |>
+            dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
-# A tibble: 10 × 4
-   institution_id    year month n_interventions
-   <chr>          <int64> <chr>         <int64>
- 1 CACOMMONS         2007 01                245
- 2 CACOMMONS         2023 12               9412
- 3 CACOMMONS         2024 01               5957
- 4 CACOMMONS         2024 02              50526
- 5 CACOMMONS         2024 03               5275
- 6 QCASSNAT          2023 11               2228
- 7 QCASSNAT          2023 12              18541
- 8 QCASSNAT          2024 01               2980
- 9 QCASSNAT          2024 02              22556
-10 QCASSNAT          2024 03              19724
+INFO: (Data scanned: 1.03 MB)
+
+[ins] r$> df |>
+            dplyr::filter(stringr::str_detect(intervention_text, "fligne")) |>
+            dplyr::distinct(intervention_number, speaker_full_name, intervention_text)
+# A tibble: 4 × 3
+  intervention_number speaker_full_name intervention_text
+  <chr>               <chr>             <chr>
+1 371267-67           Marc Tanguay      Bien, Mme la Présidente, c'est une chose d'avoir les normes les plus sévères, puis c'en est une autre de décider de ne pas les app…
+2 371267-70           La Présidente     Je vous demande de faire très attention. Il y a un «fligne-flagne» pour d'autres sujets, dans le lexique, et vous le savez. Demeur…
+3 371267-71           M. Jolin-Barrette Mme la Présidente, «le fligne-flagne dans les garderies libérales» est à l'index. Alors, je pense, Mme la Présidente...
+4 371267-73           M. Jolin-Barrette ...je ne pense pas qu'on n'a pas le droit de dire «garderie» ici, mais le terme «fligne-flagne» est proscrit.
 ```
 
-Il faudrait plus de requêtes pour expliquer ces chiffres, bien sûr 🙂
+#### Pipeline des unes des médias
+
+On peut, par exemple, rechercher les titres des unes d'un média pour une journée particulière.
+
+```r
+[ins] r$> ellipse_discover(con, "r-media-headlines")
+INFO [2024-03-30 10:21:04] [tube::list_glue_tables] listing tables from the datawarehouse
+# A tibble: 9 × 4
+  table_name        col_name               col_type is_partition
+  <chr>             <chr>                  <chr>    <lgl>
+1 r-media-headlines date                   date     TRUE
+2 r-media-headlines media_id               string   TRUE
+3 r-media-headlines id                     string   FALSE
+4 r-media-headlines extraction_datetime    string   FALSE
+5 r-media-headlines title                  string   FALSE
+6 r-media-headlines author_id              string   FALSE
+7 r-media-headlines body                   string   FALSE
+8 r-media-headlines metadata_lake_item_key string   FALSE
+9 r-media-headlines metadata_url           string   FALSE
+
+[ins] r$> ellipse_partitions(con, "r-media-headlines")
+INFO [2024-03-30 10:21:51] [tube::list_glue_tables] listing tables from the datawarehouse
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 0 Bytes)
+# A tibble: 128 × 3
+   date       media_id       n
+   <date>     <chr>    <int64>
+ 1 2023-10-23 TVA           24
+ 2 2024-01-28 TVA           59
+ 3 2024-01-29 RCI            7
+ 4 2024-01-29 TVA          126
+ 5 2024-01-30 RCI          143
+ 6 2024-01-30 TVA          142
+ 7 2024-01-31 RCI          144
+ 8 2024-01-31 TVA          148
+ 9 2024-02-01 RCI          144
+10 2024-02-01 TVA          136
+# ℹ 118 more rows
+# ℹ Use `print(n = ...)` to see more rows
+
+[ins] r$> df <-
+            ellipse_query(con, "r-media-headlines") |>
+            dplyr::filter(date == as.Date("2024-01-30"), media_id == "RCI") |>
+            dplyr::collect()
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 526.42 KB)
+
+[ins] r$> df |>
+            dplyr::mutate(date_heure = lubridate::as_datetime(extraction_datetime,
+                                                              tz = "America/New_York")) |>
+            dplyr::distinct(date_heure, title)
+Date in ISO8601 format; converting timezone from UTC to "America/New_York".
+# A tibble: 143 × 2
+   date_heure          title
+   <dttm>              <chr>
+ 1 2024-01-31 02:34:33 Demandeurs d’asile : Ottawa ne répondra pas à toutes les demandes du Québec | Radio-Canada
+ 2 2024-01-30 18:04:33 Scandale de Hockey Canada :  McLeod et Dubé parmi les cinq joueurs accusés | Radio-Canada
+ 3 2024-01-30 23:54:33 Demandeurs d’asile : Ottawa ne répondra pas à toutes les demandes du Québec | Radio-Canada
+ 4 2024-01-31 03:24:34 Demandeurs d’asile : Ottawa ne répondra pas à toutes les demandes du Québec | Radio-Canada
+ 5 2024-01-30 16:44:34 Le nucléaire devrait faire partie de la solution après 2035, dit Hydro-Québec | Radio-Canada
+ 6 2024-01-30 15:04:33 Québec annonce 200 millions $ en allocations personnalisées aux RPA | Radio-Canada
+ 7 2024-01-30 17:54:33 Scandale de Hockey Canada :  McLeod et Dubé parmi les cinq joueurs accusés | Radio-Canada
+ 8 2024-01-31 00:54:33 Demandeurs d’asile : Ottawa ne répondra pas à toutes les demandes du Québec | Radio-Canada
+ 9 2024-01-30 19:04:33 Scandale de Hockey Canada : l’identité de 4 des 5 joueurs accusés est confirmée | Radio-Canada
+10 2024-01-30 23:34:33 Demandeurs d’asile : Ottawa ne répondra pas à toutes les demandes du Québec | Radio-Canada
+# ℹ 133 more rows
+# ℹ Use `print(n = ...)` to see more rows
+```
 
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 
