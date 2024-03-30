@@ -31,7 +31,7 @@ ellipse_connect <- function() {
 
 }
 
-#' Obtenir le domaine de valeurs pour les dimensions d'une table donnée
+#' Obtenir le domaine de valeurs pour les dimensions d'une table
 #'
 #' @details
 #' Les tables de données sur AWS sont segmentées en _partitions_. Les requêtes
@@ -43,41 +43,18 @@ ellipse_connect <- function() {
 #' table donnée afin de mieux cibler nos requêtes ensuite.
 #'
 #' @inheritParams ellipse_discover
-#' @param max_n Le nombre maximal de valeurs possible avant de retourner un
-#'   résumé. Si la valeur est de `0` (défaut) toutes les valeurs sont
-#'   retournées.
 #'
-#' @returns Une liste dont chaque élément est un `data.frame` concernant une
-#'   partition de `table`. Si la partition contient plus de `max_n` valeur,
-#'   le `data.frame` retourné est un résumé plutôt qu'une énumération exhaustive
-#'   de chacune des valeurs.
+#' @returns Un `tibble` contenant le nombre d'observations par valeur de
+#'   groupement des variables partitionnées.
 #'
-#' @importFrom rlang :=
 #' @export
-ellipse_partitions <- function(con, table, max_n = 0) {
+ellipse_partitions <- function(con, table) {
   df <- ellipse_discover(con, table) |> dplyr::filter(is_partition)
-  parts <- dplyr::pull(df, col_name)
-  athena_table <- ellipse_query(con, table)
-  res <- list()
-  for (l in seq_len(nrow(df))) {
-    part <- parts[l]
-    df_values <-
-      athena_table |>
-      dplyr::distinct(dplyr::across({{ part }})) |>
-      dplyr::arrange(dplyr::across({{ part }})) |>
-      dplyr::collect()
-    if (nrow(df_values) > max_n && max_n > 0) {
-      my_min <- dplyr::slice_head(df_values) |> dplyr::pull({{ part }})
-      my_max <- dplyr::slice_tail(df_values) |> dplyr::pull({{ part }})
-      sub_df <- tibble::tibble(partition = part,
-                               min = my_min,
-                               max = my_max)
-      res[[length(res) + 1]] <- sub_df
-    } else {
-      res[[length(res) + 1]] <- df_values
-    }
-  }
-  return(res)
+  partitions <- dplyr::pull(df, col_name)
+  ellipse_query(con, table) |>
+    dplyr::count(dplyr::across(dplyr::all_of(partitions))) |>
+    dplyr::collect() |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(partitions)))
 }
 
 #' Découvrir les tables disponibles sur la plateforme ellipse, ainsi que leur

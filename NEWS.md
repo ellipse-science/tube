@@ -1,3 +1,7 @@
+# tube (development version)
+
+* Change behavior of `ellipse_partitions`
+
 # tube 0.0.1.9003
 
 * Add functions to help discovery
