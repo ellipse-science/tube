@@ -1,4 +1,8 @@
-# tube (development version)
+# tube 0.0.1.9005
+
+* Add missing import for `logger`
+
+# tube 0.0.1.9004
 
 * Change behavior of `ellipse_partitions`
 
