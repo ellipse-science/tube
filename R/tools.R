@@ -64,14 +64,13 @@ list_s3_buckets <- function(type, credentials) {
 
 
 list_athena_staging_bucket <- function(credentials) {
-  logger::log_debug("[tube::list_datalakes] entering function")
+  logger::log_debug("[tube::list_athena_staging_bucket] entering function")
 
   datalake_list <- list_s3_buckets("athenaqueryresults", credentials)
 
-  logger::log_debug("[tube::list_datalakes] returning results")
+  logger::log_debug("[tube::list_athena_staging_bucket] returning results")
   return(datalake_list)
 }
-
 
 
 list_glue_databases <- function(type, credentials) {

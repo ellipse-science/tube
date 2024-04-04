@@ -1,4 +1,6 @@
-#' @export
+# Returns the datamart bucket
+# Private function
+#
 list_datamarts_bucket <- function(credentials) {
   logger::log_debug("[tube::list_datalakes] entering function")
 
