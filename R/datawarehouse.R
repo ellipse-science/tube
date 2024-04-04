@@ -1,4 +1,5 @@
-#' @export
+# Returns the datawarehouse bucket
+# Private function
 list_datawarehouse_bucket <- function(credentials) {
   logger::log_debug("[tube::list_datalakes] entering function")
 

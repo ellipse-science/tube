@@ -25,6 +25,7 @@ aws_session <- function(id = NULL, key = NULL) {
 
   r <- list(
     credentials = creds,
+    landing_zone_bucket = list_landing_zone_bucket(creds),
     datalake_bucket = list_datalake_bucket(creds),
     datawarehouse_bucket = list_datawarehouse_bucket(creds),
     datawarehouse_database = list_datawarehouse_database(creds),

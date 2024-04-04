@@ -1,3 +1,7 @@
+# tube 0.0.1.9006
+
+* Add `upload_to_landing_zone`
+
 # tube 0.0.1.9005
 
 * Add missing import for `logger`
