@@ -18,7 +18,7 @@ aws_session <- function(id = NULL, key = NULL) {
     credentials = list(
       creds = list(
         access_key_id = id,
-        secret_access_key = key
+        secret_access_key = key,
         session_token = Sys.getenv("AWS_SESSION_TOKEN")
       )
     )
