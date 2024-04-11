@@ -30,7 +30,6 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
     # Use UTC time as batch name
     batch <- format(Sys.time(), tz = "UTC", usetz = TRUE)
     batch <- gsub("UTC", "Z", batch)
-    batch <- gsub("Z-", "Z.000-", batch)
     batch <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", batch)
   } else {
     batch <- toupper(batch)
@@ -83,7 +82,6 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
     # and that the file is not overwritten
     filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", basename(file))
     filename <- gsub("UTC", "Z", filename)
-    filename <- gsub("Z-", "Z.000-", filename)
     filename <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", filename)
 
     key <- paste0(prefix, filename)
