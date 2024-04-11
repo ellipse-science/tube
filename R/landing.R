@@ -15,7 +15,7 @@ list_landing_zone_bucket <- function(credentials) {
 #' @param creds An AWS session object with your credentials and the aws ressources required
 #' @param local_folder The path to the local folder containing the files to upload
 #' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
-#' @param partition Optional parameter containing the prefix to add to the uploaded files in the landing zone bucket
+#' @param batch mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used
 #'
 #' @returns the status of each file upload
 #' @export
@@ -23,17 +23,20 @@ list_landing_zone_bucket <- function(credentials) {
 #'  r <- upload_to_landing_zone(aws_session(), "my_pipeline")
 #' print(r)
 #' }
-upload_to_landing_zone <- function(creds, local_folder, pipeline_name, partition = NULL) {
+upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
 
-  if (is.null(partition)) {
-    partition <- "DEFAULT"
+  if (is.null(batch)) {
+    # Use UTC time as batch name
+    batch <- format(Sys.time(), tz = "UTC", usetz = TRUE)
+  } else {
+    batch <- toupper(batch)
   }
 
   # checkmate on parameters
   checkmate::assert_string(local_folder)
   checkmate::assert_string(pipeline_name)
-  checkmate::assert_string(partition)
+  checkmate::assert_string(batch)
 
   # instanciate s3 client
   s3_client <- paws.storage::s3(
@@ -52,7 +55,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, partition
   })
 
   landing_zone_bucket <- creds$landing_zone_bucket
-  prefix <- paste0(pipeline_name, "/")
+  prefix <- paste0(pipeline_name, "/DEFAULT/")
 
   # verify if the pipeline exists in the landing zone bucket
   # by listing folders at the root of the landing zone bucket
@@ -72,13 +75,11 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, partition
 
   # upload files to the landing zone bucket
   for (file in files) {
-    key <- paste0(partition, "/", basename(file))
-
-    key <- paste0(prefix, key)
+    key <- paste0(prefix, basename(file))
 
     logger::log_debug(paste("[tube::upload_to_landing_zone] uploading file: ", file, " to key: ", key))
     tryCatch({
-      s3_client$put_object(Bucket = landing_zone_bucket, Key = key, Body = file)
+      s3_client$put_object(Bucket = landing_zone_bucket, Key = key, Body = file, Metadata=list(batch=batch))
       uploaded_files <- c(uploaded_files, key)
       logger::log_debug(paste("[tube::upload_to_landing_zone] file: ", file, " uploaded to key: ", key))
     }, error = function(e) {
