@@ -4,7 +4,7 @@
 \alias{upload_to_landing_zone}
 \title{Uploads the files in the specified local folder to the landing zone bucket}
 \usage{
-upload_to_landing_zone(creds, local_folder, pipeline_name, partition = NULL)
+upload_to_landing_zone(creds, local_folder, pipeline_name, batch)
 }
 \arguments{
 \item{creds}{An AWS session object with your credentials and the aws ressources required}
@@ -13,7 +13,7 @@ upload_to_landing_zone(creds, local_folder, pipeline_name, partition = NULL)
 
 \item{pipeline_name}{The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)}
 
-\item{partition}{Optional parameter containing the prefix to add to the uploaded files in the landing zone bucket}
+\item{batch}{mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used}
 }
 \value{
 the status of each file upload
