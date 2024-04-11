@@ -59,8 +59,8 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
 
   # verify if the pipeline exists in the landing zone bucket
   # by listing folders at the root of the landing zone bucket
-  objects <- s3_client$list_objects_v2(Bucket = landing_zone_bucket, Delimiter = "/")
-  prefixes_found <- sapply(objects$CommonPrefixes, function(x) x$Prefix == prefix)
+  objects <- s3_client$list_objects_v2(Bucket = landing_zone_bucket)
+  prefixes_found <- sapply(objects$Contents, function(x) x$Key == prefix)
   is_found <- any(prefixes_found)
 
   if (!is_found) {
