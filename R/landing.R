@@ -23,14 +23,14 @@ list_landing_zone_bucket <- function(credentials) {
 #'  r <- upload_to_landing_zone(aws_session(), "my_pipeline")
 #' print(r)
 #' }
-upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
+upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch=NULL) {
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
 
   if (is.null(batch)) {
-    # Use UTC time as batch name
-    batch <- format(Sys.time(), tz = "UTC", usetz = TRUE)
+    # Use UTC date as batch name
+    batch <- format(Sys.Date(), tz = "UTC", usetz = TRUE)
     batch <- gsub("UTC", "Z", batch)
-    batch <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", batch)
+    batch <- gsub("(\\d{4}-\\d{2}-\\d{2})\\sZ", "\\1Z", batch)
   } else {
     batch <- toupper(batch)
   }
