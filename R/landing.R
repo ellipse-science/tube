@@ -29,6 +29,9 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
   if (is.null(batch)) {
     # Use UTC time as batch name
     batch <- format(Sys.time(), tz = "UTC", usetz = TRUE)
+    batch <- gsub("UTC", "Z", batch)
+    batch <- gsub("Z-", "Z.000-", batch)
+    batch <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", batch)
   } else {
     batch <- toupper(batch)
   }
@@ -75,7 +78,15 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch) {
 
   # upload files to the landing zone bucket
   for (file in files) {
-    key <- paste0(prefix, basename(file))
+    # convert basename of file by appending the UTC date time in front of it
+    # this will ensure that the file is unique in the landing zone bucket
+    # and that the file is not overwritten
+    filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", basename(file))
+    filename <- gsub("UTC", "Z", filename)
+    filename <- gsub("Z-", "Z.000-", filename)
+    filename <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", filename)
+
+    key <- paste0(prefix, filename)
 
     logger::log_debug(paste("[tube::upload_to_landing_zone] uploading file: ", file, " to key: ", key))
     tryCatch({
