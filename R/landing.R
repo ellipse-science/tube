@@ -16,6 +16,7 @@ list_landing_zone_bucket <- function(credentials) {
 #' @param local_folder The path to the local folder containing the files to upload
 #' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
 #' @param batch mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used
+#' @param timestamp_files If TRUE, the files will be timestamped with the current date and time.  This will ensure that the files are unique in the landing zone bucket
 #'
 #' @returns the status of each file upload
 #' @export
@@ -23,7 +24,7 @@ list_landing_zone_bucket <- function(credentials) {
 #'  r <- upload_to_landing_zone(aws_session(), "my_pipeline")
 #' print(r)
 #' }
-upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch=NULL) {
+upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch=NULL, timestamp_files=FALSE) {
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
 
   if (is.null(batch)) {
@@ -77,12 +78,16 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch=NUL
 
   # upload files to the landing zone bucket
   for (file in files) {
-    # convert basename of file by appending the UTC date time in front of it
-    # this will ensure that the file is unique in the landing zone bucket
-    # and that the file is not overwritten
-    filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", basename(file))
-    filename <- gsub("UTC", "Z", filename)
-    filename <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", filename)
+    if (timestamp_files) {
+      # convert basename of file by appending the UTC date time in front of it
+      # this will ensure that the file is unique in the landing zone bucket
+      # and that the file is not overwritten
+      filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", basename(file))
+      filename <- gsub("UTC", "Z", filename)
+      filename <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", filename)
+    } else {
+      filename <- basename(file)
+    }
 
     key <- paste0(prefix, filename)
 
