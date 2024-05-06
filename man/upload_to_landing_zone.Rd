@@ -4,7 +4,13 @@
 \alias{upload_to_landing_zone}
 \title{Uploads the files in the specified local folder to the landing zone bucket}
 \usage{
-upload_to_landing_zone(creds, local_folder, pipeline_name, batch)
+upload_to_landing_zone(
+  creds,
+  local_folder,
+  pipeline_name,
+  batch = NULL,
+  timestamp_files = TRUE
+)
 }
 \arguments{
 \item{creds}{An AWS session object with your credentials and the aws ressources required}
@@ -14,6 +20,8 @@ upload_to_landing_zone(creds, local_folder, pipeline_name, batch)
 \item{pipeline_name}{The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)}
 
 \item{batch}{mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used}
+
+\item{timestamp_files}{If TRUE, the files will be timestamped with the current date and time.  This will ensure that the files are unique in the landing zone bucket}
 }
 \value{
 the status of each file upload
@@ -23,7 +31,7 @@ Uploads the files in the specified local folder to the landing zone bucket
 }
 \examples{
 \dontrun{
- r <- upload_to_landing_zone(aws_session(), "my_pipeline")
+ r <- upload_to_landing_zone(aws_session(), "my_filder", "my_pipeline", NULL, TRUE)
 print(r)
 }
 }

@@ -21,10 +21,10 @@ list_landing_zone_bucket <- function(credentials) {
 #' @returns the status of each file upload
 #' @export
 #' @examples \dontrun{
-#'  r <- upload_to_landing_zone(aws_session(), "my_pipeline")
+#'  r <- upload_to_landing_zone(aws_session(), "my_filder", "my_pipeline", NULL, TRUE)
 #' print(r)
 #' }
-upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch=NULL, timestamp_files=FALSE) {
+upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = NULL, timestamp_files = TRUE) {
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
 
   if (is.null(batch)) {
