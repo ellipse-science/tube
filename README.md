@@ -9,9 +9,14 @@ Interface R d'accès à la plateforme de données _Ellipse_.
 
 Pour accéder aux données de la plateforme, il faut configurer les clés d'accès AWS. Pour obtenir ces informations, contacter Patrick Poncet (@patoscope) sur Slack.
 
-Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarrage de la session R :
+Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarrage de la session R. Ce fichier réside à la racine de votre répertoire d'utilisateur. S'il n'existe pas, il faut le créer. L'emplacement est donc :
+
+* Windows : `C:\Users\<votre utilisateur>\.Renviron`
+* macOS : `/Users/<votre utilisateur>/.Renviron`
+* Linux : `/home/<votre utilisateur>/.Renviron`
 
 ```R
+# .Renviron
 AWS_ACCESS_KEY_ID=<identifiant de clé>
 AWS_SECRET_ACCESS_KEY=<clé d'accès secrète>
 ```
@@ -22,7 +27,7 @@ AWS_SECRET_ACCESS_KEY=<clé d'accès secrète>
 
 Ces fonctions sont bâties à même une architecture technique décrite dans la section [Interface technique](#interface-technique).
 
-Pour faciliter la découverte des fonctionnalités, les noms de fonction commencent par `ellipse_`. Lorsque `tube` est chargé avec `library(tube)`, taper `ell<TAB>` permet de voir rapidement les fonctions disponibles.
+Pour faciliter la découverte des fonctionnalités, les noms de fonction commencent par `ellipse_`. Lorsque `tube` est chargé dans RStudio avec `library(tube)`, taper les lettres `ell` dans la console R ou l'éditeur permet de voir rapidement les fonctions disponibles.
 
 Pour rappel, dans une session R, on peut taper `?<fonction>` pour obtenir de l'aide.
 
