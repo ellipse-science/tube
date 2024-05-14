@@ -91,7 +91,7 @@ ellipse_discover <- function(con, table = NULL) {
                                      startsWith(table, "r-")    ~ "Radar+",
                                      startsWith(table, "dict-") ~ "Dictionnaire", # nolint
                                      startsWith(table, "dim-")  ~ "Dimension",
-                                     .default = "De quessé?")) %>%
+                                     .default = "Autre")) %>%
     dplyr::select(categorie, table)
 }
 
