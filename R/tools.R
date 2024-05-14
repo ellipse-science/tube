@@ -62,7 +62,7 @@ list_s3_buckets <- function(type, credentials) {
 }
 
 
-
+#' @export
 list_athena_staging_bucket <- function(credentials) {
   logger::log_debug("[tube::list_athena_staging_bucket] entering function")
 

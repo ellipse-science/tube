@@ -1,4 +1,4 @@
-# tube (development version)
+# tube 0.0.2
 
 # tube 0.0.1.9006
 
