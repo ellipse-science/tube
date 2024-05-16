@@ -57,6 +57,10 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
     logger::log_error("[tube::upload_to_landing_zone] an error occurred while listing files in the local folder.  Check the path and the permissions")
   })
 
+  if (length(files) > 30) {
+    stop("Too many files in your folder, please limit to 30 files at a time")
+  }
+
   landing_zone_bucket <- creds$landing_zone_bucket
   prefix <- paste0(pipeline_name, "/DEFAULT/")
 
