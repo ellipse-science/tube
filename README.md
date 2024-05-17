@@ -282,3 +282,6 @@ Les fonctions exportées commencent par :
 Elles requièrent en général les informations d'identification obtenues via la fonction `aws_session()`.
 
 Cette interface est toute indiquée pour l'écriture de raffineurs. Plusieurs exemples de son utilisation sont disponibles dans le dépôt [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners), plus particulierèment sous [refiners/examples](https://github.com/ellipse-science/aws-refiners/blob/main/refiners/examples/examples.R).
+
+
+Pour la documentation conceptuelle de la plateforme de données du CAP, voir le répertoire [doc](https://github.com/ellipse-science/tube/doc)
