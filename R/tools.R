@@ -34,7 +34,7 @@ convert_url_to_key <- function(url) {
 }
 
 
-
+#' @export
 list_s3_buckets <- function(type, credentials) {
   logger::log_debug("[tube::list_s3_buckets] entering function")
 
@@ -72,7 +72,7 @@ list_athena_staging_bucket <- function(credentials) {
   return(datalake_list)
 }
 
-
+#' @export
 list_glue_databases <- function(type, credentials) {
   logger::log_debug("[tube::list_glue_databases] entering function")
 
@@ -97,7 +97,7 @@ list_glue_databases <- function(type, credentials) {
   return(database_list)
 }
 
-
+#' @export
 list_glue_tables <- function(type, datamart = NULL, credentials) {  
   logger::log_debug("[tube::list_glue_tables] entering function")
   table_list <- list()
