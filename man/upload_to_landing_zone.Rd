@@ -9,7 +9,7 @@ upload_to_landing_zone(
   local_folder,
   pipeline_name,
   batch = NULL,
-  timestamp_files = TRUE
+  timestamp_files = FALSE
 )
 }
 \arguments{
