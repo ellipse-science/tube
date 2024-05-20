@@ -61,6 +61,14 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
     stop("Too many files in your folder, please limit to 30 files at a time")
   }
 
+  nb_files_in_landing_zone <- check_landing_zone(creds, pipeline_name)
+  if (nb_files_in_landing_zone > 30) {
+    stop("Too many files currently remain in the landing zone.  \
+          Please wait for those files to be processed by the data platform before uploading more.\
+          The landing zone supports a maximum of 30 simultaneous files")
+  }
+
+
   landing_zone_bucket <- creds$landing_zone_bucket
   prefix <- paste0(pipeline_name, "/DEFAULT/")
 
@@ -125,7 +133,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 #' print(r)
 #' }
 check_landing_zone <- function(creds, pipeline_name) {
-  logger::log_debug("[tube::upload_to_landing_zone] entering function")
+  logger::log_debug("[tube::check_landing_zone] entering function")
 
   checkmate::assert_string(pipeline_name)
 
@@ -143,29 +151,21 @@ check_landing_zone <- function(creds, pipeline_name) {
   # by listing folders at the root of the landing zone bucket
   objects <- s3_client$list_objects_v2(Bucket = landing_zone_bucket)
 
-  filter_objects <- function(objects) {
-    lapply(objects, function(obj) {
-      if (grepl("^r-factiva/DEFAULT/[^/]+$", obj$Key)) {
-        return(obj)
-      } else {
-        return(NULL)
-      }
-    })
-  }
+  # Take only unprocessed objects and files
+  objects_list <- objects$Contents
+  filtered_data <- Filter(function(x) {
+    !grepl("processed", x$Key) && 
+    !grepl(paste0("^", pipeline_name, "/?$"), x$Key) && 
+    !grepl(paste0("^", pipeline_name, "/DEFAULT/?$"), x$Key)
+  }, objects_list)
 
-  filtered_objects <- Filter(Negate(is.null), filter_objects(objects$Contents))
+  # Take only objects from the pipelines specified by pipeline_name
+  nb_unprocessed_files <- Filter(function(x) {
+    grepl(paste0("^", pipeline_name, "/"), x$Key)
+  }, filtered_data)
 
-
-  if (!is_found) {
-    message <- "[tube::upload_to_landing_zone] the pipeline folder does not exist in the landing zone bucket.  \
-               Please ask your data platform administrator to create it for you and to ensure that the data pipeline\
-               components have been implemented to process the data to the datawarehouse"
-    logger::log_error(message)
-    return(NULL)
-  }
-
-  logger::log_info(paste("[tube::upload_to_landing_zone]", length(uploaded_files), "files uploaded to the landing zone bucket"))
+  logger::log_info(paste("[tube::check_landing_zone] There are currently", length(nb_unprocessed_files), "unprocessed files in the landing zone for pipeline", pipeline_name))
 
   logger::log_debug("[tube::upload_to_landing_zone] exiting function")
-  return(uploaded_files)
+  return(nb_unprocessed_files)
 }
