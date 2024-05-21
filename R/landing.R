@@ -167,5 +167,5 @@ check_landing_zone <- function(creds, pipeline_name) {
   logger::log_info(paste("[tube::check_landing_zone] There are currently", length(nb_unprocessed_files), "unprocessed files in the landing zone for pipeline", pipeline_name))
 
   logger::log_debug("[tube::upload_to_landing_zone] exiting function")
-  return(nb_unprocessed_files)
+  return(length(nb_unprocessed_files))
 }
