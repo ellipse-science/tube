@@ -107,6 +107,8 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
     tryCatch({
       s3_client$put_object(Bucket = landing_zone_bucket, Key = key, Body = file, Metadata=list(batch=batch))
       uploaded_files <- c(uploaded_files, key)
+      cat(".")
+      if (length(uploaded_files) == length(files)) cat("\n")
       logger::log_debug(paste("[tube::upload_to_landing_zone] file: ", file, " uploaded to key: ", key))
     }, error = function(e) {
       logger::log_error(paste("[tube::upload_to_landing_zone] an error occurred while uploading file: ", file, " to key: ", key))
