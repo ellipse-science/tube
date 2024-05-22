@@ -1,7 +1,7 @@
 Package: tube
 Type: Package
 Title: Access Ellipse Data Hub on AWS
-Version: 0.0.8
+Version: 0.0.9
 Authors@R:
   c(person(
       given = "Patrick",
