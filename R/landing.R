@@ -62,7 +62,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
   }
 
   nb_files_in_landing_zone <- check_landing_zone(creds, pipeline_name)
-  if (nb_files_in_landing_zone > 30) {
+  if (nb_files_in_landing_zone >= 30) {
     stop("Too many files currently remain in the landing zone.  \
           Please wait for those files to be processed by the data platform before uploading more.\
           The landing zone supports a maximum of 30 simultaneous files")
