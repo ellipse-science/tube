@@ -15,10 +15,27 @@ Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarr
 * macOS : `/Users/<votre utilisateur>/.Renviron`
 * Linux : `/home/<votre utilisateur>/.Renviron`
 
+Il existe deux environnement (deux copies non identiques) de la plateforme de données sur AWS.  
+
+* Une copie de développement (DEV) dans laquelle on développe les pipelines et où on conçoit les structure des données (tables, variables etc.).  Vous allez principalement vous connecter en DEV pour valider le travail des développeurs et la structure de données que leur pipelines va générer, en faisant des tests les plus réels possible selon vos projets de recherche, sur des petits échantillons de données.
+* Une copie de PROD: Lorsqu'on est satisfait avec la conception, on passe en production (PROD). Là les données sont officielles, de qualité en tout temps, dans leur structure approuvée (par vous en DEV).
+
+Pour se connecter à l'un ou l'autre des environnements, il faut le choisir au moment de la connection.  Pour cela, il faut configurer 2 paires "ID de clé"+"Secret de clé" comme suit: 
+
 ```R
 # .Renviron
-AWS_ACCESS_KEY_ID=<identifiant de clé>
-AWS_SECRET_ACCESS_KEY=<clé d'accès secrète>
+AWS_ACCESS_KEY_ID_DEV=<identifiant de clé en DEV>
+AWS_SECRET_ACCESS_KEY_DEV=<clé d''accès secrète en DEV>
+AWS_ACCESS_KEY_ID_PROD=<identifiant de clé en PROD>
+AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
+```
+
+C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
+
+```R
+# Choisissez votre environnement (ci-dessous dans l'exemple, on choisit PROD)
+Sys.setenv(AWS_ACCESS_KEY_ID = Sys.getenv("AWS_ACCESS_KEY_ID_PROD"))
+Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_PROD"))
 ```
 
 ## Interface de haut hiveau
