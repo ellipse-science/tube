@@ -32,6 +32,7 @@ list_landing_zone_bucket <- function(credentials) {
 #' }
 upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = NULL, timestamp_files = FALSE) {
   landing_zone_capacity <- 30
+  time_buffer <- 600
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
 
   if (is.null(batch)) {
@@ -108,7 +109,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
       logger::log_info("[tube::upload_to_landing_zone] Too many files currently remain in the landing zone.  \
             Please wait for those files to be processed by the data platform before uploading more.\
             The landing zone supports a maximum of 30 simultaneous files.  Waiting 6 minutes for landing zone to be free...")
-      Sys.sleep(360)  # sleep for 6 minutes
+      Sys.sleep(time_buffer)  # sleep for 10 minutes
     }
 
     landing_zone_bucket <- creds$landing_zone_bucket
@@ -159,7 +160,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
     if (i < num_batches) {
       logger::log_info(paste("[tube::upload_to_landing_zone] waiting 6 minute before uploading the next set"))
-      Sys.sleep(360)  # sleep for 6 minutes
+      Sys.sleep(time_buffer)  # sleep for 10 minutes
     }
   }
 
