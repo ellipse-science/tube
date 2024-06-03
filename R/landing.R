@@ -13,7 +13,7 @@ list_landing_zone_bucket <- function(credentials) {
 
 #' Uploads the files in the specified local folder to the landing zone bucket.  The landing zone takes a maximum of 30 files 
 #' at a time.  If your local_folder contains more than 30 files, the files will be segmented into sets of 30 files and uploaded
-#' one set at a time.  The function will wait 6 minutes between each set to ensure that the data platform has time to process the files.
+#' one set at a time.  The function will wait 10 minutes between each set to ensure that the data platform has time to process the files.
 #' Please ensure that your pipeline has been configured by your data platform administrator before uploading data to the landing zone, otherwise
 #' the function will return an error message.
 #'
@@ -108,7 +108,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
     if (length(batch_files) + nb_files_in_landing_zone > landing_zone_capacity) {
       logger::log_info("[tube::upload_to_landing_zone] Too many files currently remain in the landing zone.  \
             Please wait for those files to be processed by the data platform before uploading more.\
-            The landing zone supports a maximum of 30 simultaneous files.  Waiting 6 minutes for landing zone to be free...")
+            The landing zone supports a maximum of 30 simultaneous files.  Waiting 10 minutes for landing zone to be free...")
       Sys.sleep(time_buffer)  # sleep for 10 minutes
     }
 
@@ -159,7 +159,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
     logger::log_info(paste("[tube::upload_to_landing_zone] set", i, "of", num_batches, "uploaded to the landing zone bucket"))
 
     if (i < num_batches) {
-      logger::log_info(paste("[tube::upload_to_landing_zone] waiting 6 minute before uploading the next set"))
+      logger::log_info(paste("[tube::upload_to_landing_zone] waiting 10 minute before uploading the next set"))
       Sys.sleep(time_buffer)  # sleep for 10 minutes
     }
   }
