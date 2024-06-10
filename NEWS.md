@@ -1,3 +1,8 @@
+# tube 0.0.12
+
+* `ellipse_connect()` can now connect to DEV or PROD environments
+* `ellipse_connect()` now has a `database` parameter for Glue/Athena
+
 # tube 0.0.11
 
 # tube 0.0.10
