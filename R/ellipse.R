@@ -5,16 +5,21 @@ memoized_aws_session <- memoise::memoise(aws_session)
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
 #'
-#' @param env The environment to connect to on ellipse-science. Defaults to "PROD"
+#' @param env The environment to connect to on ellipse-science. Accepted values are "PROD" and "DEV".
 #' @param database The Glue/Athena database to connect to. Default to "datawarehouse"
 #'
 #' @returns Un object de connexion `DBI`.
 #' @export
 ellipse_connect <- function(
-  env = c("PROD", "DEV"),
+  env = NULL,
   database  = "datawarehouse"
 ) {
-  env <- match.arg(env)
+  if (is.null(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+                                sep = ""))
+    return(NULL)
+  }
   cli::cli_alert_info(paste("Environnement:", env))
 
   aws_access_key_id <-
