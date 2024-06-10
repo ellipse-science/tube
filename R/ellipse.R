@@ -5,27 +5,66 @@ memoized_aws_session <- memoise::memoise(aws_session)
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
 #'
+#' @param env The environment to connect to on ellipse-science. Accepted values are "PROD" and "DEV".
+#' @param database The Glue/Athena database to connect to. Default to "datawarehouse"
+#'
 #' @returns Un object de connexion `DBI`.
 #' @export
-ellipse_connect <- function() {
-  aws_access_key_id     <- Sys.getenv("AWS_ACCESS_KEY_ID")
-  aws_secret_access_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY")
+ellipse_connect <- function(
+  env = NULL,
+  database  = "datawarehouse"
+) {
+  if (is.null(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+                                sep = ""))
+    return(NULL)
+  }
+  cli::cli_alert_info(paste("Environnement:", env))
+
+  aws_access_key_id <-
+    switch(env,
+           "PROD" = "AWS_ACCESS_KEY_ID_PROD",
+           "DEV"  = "AWS_ACCESS_KEY_ID_DEV") |>
+    Sys.getenv()
+
+  aws_secret_access_key <-
+    switch(env,
+           "PROD" = "AWS_SECRET_ACCESS_KEY_PROD",
+           "DEV"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
+    Sys.getenv()
+
+  # https://github.com/ellipse-science/tube/issues/16
+  Sys.setenv("AWS_ACCESS_KEY_ID" = aws_access_key_id)
+  Sys.setenv("AWS_SECRET_ACCESS_KEY" = aws_secret_access_key)
+
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
       paste("On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
             "Dans le fichier ~/.Renviron, ajoutez les lignes:\n\n",
-            "AWS_ACCESS_KEY_ID=<votre access key id>\n",
-            "AWS_SECRET_ACCESS_KEY=<votre secret access key>\n\n",
+            "AWS_ACCESS_KEY_ID_PROD=<votre access key id de production>\n",
+            "AWS_SECRET_ACCESS_KEY_PROD=<votre secret access key de production>\n",
+            "AWS_ACCESS_KEY_ID_DEV=<votre access key id de développement>\n",
+            "AWS_SECRET_ACCESS_KEY_DEV=<votre secret access key de développement>\n\n",
             "Puis, redémarrez la session R.")
     cli::cli_alert_danger(usage)
     return(NULL)
   }
-  session <- memoized_aws_session()
+  database <- match.arg(database)
+  cli::cli_alert_info(paste("Database:", database))
+
+  session <- memoized_aws_session(id = aws_access_key_id,
+                                  key = aws_secret_access_key)
+  schema_name <- switch(database,
+                        "datawarehouse" = paste0(session$datawarehouse_database),
+                        database)
+
   cli::cli_alert_info("Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)")
   DBI::dbConnect(noctua::athena(),
                  aws_access_key_id = aws_access_key_id,
                  aws_secret_access_key = aws_secret_access_key,
-                 schema_name = session$datawarehouse_database,
+                 schema_name = schema_name,
+                 work_group = "ellipse-work-group",
                  s3_staging_dir = paste0("s3://",
                                          session$athena_staging_bucket))
 

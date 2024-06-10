@@ -4,7 +4,7 @@
 \alias{upload_to_landing_zone}
 \title{Uploads the files in the specified local folder to the landing zone bucket.  The landing zone takes a maximum of 30 files
 at a time.  If your local_folder contains more than 30 files, the files will be segmented into sets of 30 files and uploaded
-one set at a time.  The function will wait 6 minutes between each set to ensure that the data platform has time to process the files.
+one set at a time.  The function will wait 10 minutes between each set to ensure that the data platform has time to process the files.
 Please ensure that your pipeline has been configured by your data platform administrator before uploading data to the landing zone, otherwise
 the function will return an error message.}
 \usage{
@@ -34,7 +34,7 @@ the status of each file upload
 \description{
 Uploads the files in the specified local folder to the landing zone bucket.  The landing zone takes a maximum of 30 files
 at a time.  If your local_folder contains more than 30 files, the files will be segmented into sets of 30 files and uploaded
-one set at a time.  The function will wait 6 minutes between each set to ensure that the data platform has time to process the files.
+one set at a time.  The function will wait 10 minutes between each set to ensure that the data platform has time to process the files.
 Please ensure that your pipeline has been configured by your data platform administrator before uploading data to the landing zone, otherwise
 the function will return an error message.
 }

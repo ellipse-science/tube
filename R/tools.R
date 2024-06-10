@@ -98,7 +98,7 @@ list_glue_databases <- function(type, credentials) {
 }
 
 #' @export
-list_glue_tables <- function(type, datamart = NULL, credentials) {  
+list_glue_tables <- function(type, datamart = NULL, credentials) {
   logger::log_debug("[tube::list_glue_tables] entering function")
   table_list <- list()
 

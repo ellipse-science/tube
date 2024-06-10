@@ -4,7 +4,12 @@
 \alias{ellipse_connect}
 \title{Se connecter à la plateforme de données ellipse sur AWS}
 \usage{
-ellipse_connect()
+ellipse_connect(env = c("PROD", "DEV"), database = "datawarehouse")
+}
+\arguments{
+\item{env}{The environment to connect to on ellipse-science. Defaults to "PROD"}
+
+\item{database}{The Glue/Athena database to connect to. Default to "datawarehouse"}
 }
 \value{
 Un object de connexion \code{DBI}.
