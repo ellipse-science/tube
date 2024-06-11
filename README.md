@@ -76,7 +76,7 @@ La première étape de toute analyse est de rencenser les données à notre disp
    categorie    table
    <chr>        <chr>
  1 Agora+       a-humans
- 2 Agora+       a-parliament-debates
+ 2 Agora+       a-ca-parliament-debates
  3 Agora+       a-qc-press-releases
  4 Dictionnaire dict-issues
  5 Dictionnaire dict-political-parties-can
@@ -94,7 +94,7 @@ Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce
 Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit :
 
 ```r
-[ins] r$> ellipse_discover(con, "a-parliament-debates")
+[ins] r$> ellipse_discover(con, "a-ca-parliament-debates")
 INFO [2024-03-24 21:04:59] [tube::list_glue_tables] listing tables from the datawarehouse
 # A tibble: 22 × 4
    table_name           col_name                 col_type is_partition
@@ -198,8 +198,8 @@ N'est-il pas intéressant d'étudier les termes proscrits à l'assemblée nation
 
 ```r
 [nav] r$> df <-
-            ellipse_query(con, "a-parliament-debates") |>
-            dplyr::filter(institution_id == "QCASSNAT", event_date == "2024-02-22") |>
+            ellipse_query(con, "a-ca-parliament-debates") |>
+            dplyr::filter(institution_id == "CACOMMONS", event_date == "2024-02-22") |>
             dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 1.03 MB)
