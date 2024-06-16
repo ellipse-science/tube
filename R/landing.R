@@ -63,7 +63,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
   # remove last slach in folder path if any
   local_folder <- gsub("/$", "", local_folder)
-  
+
   # list files in local folder in try catch
   tryCatch({
     logger::log_debug("[tube::upload_to_landing_zone] listing files in the local folder")
@@ -142,7 +142,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
         batch_for_filename <- iconv(batch, "ASCII", "UTF-8", sub="")
         batch_for_filename <- gsub("[^[:alnum:]\\-_./]", "", batch_for_filename)
 
-        filename <- paste0(filename, batch_for_filename)
+        filename <- paste0(batch_for_filename, filename)
       } 
 
       if (timestamp_files) {
