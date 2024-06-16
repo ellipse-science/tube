@@ -13,6 +13,7 @@ upload_to_landing_zone(
   local_folder,
   pipeline_name,
   batch = NULL,
+  append_batch = TRUE,
   timestamp_files = FALSE
 )
 }
@@ -25,8 +26,11 @@ upload_to_landing_zone(
 
 \item{batch}{mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used}
 
+\item{append_batch}{If TRUE, the batch name will be appended to the filename.  This will help you retrieve your data in the datalake.
+This is one way to ensure that the files are unique in the landing zone bucket and that you can import file with the same name multiple times}
+
 \item{timestamp_files}{If TRUE, the files will be timestamped with the current date and time.
-This will ensure that the files are unique in the landing zone bucket}
+This is another way ensure that the files are unique in the landing zone bucket and that you can import file with the same name multiple times}
 }
 \value{
 the status of each file upload

@@ -21,8 +21,10 @@ list_landing_zone_bucket <- function(credentials) {
 #' @param local_folder The path to the local folder containing the files to upload
 #' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
 #' @param batch mandatory parameter to specify the batch name.  If not provided, the date and time batch will be used
+#' @param append_batch If TRUE, the batch name will be appended to the filename.  This will help you retrieve your data in the datalake.
+#'   This is one way to ensure that the files are unique in the landing zone bucket and that you can import file with the same name multiple times 
 #' @param timestamp_files If TRUE, the files will be timestamped with the current date and time.
-#'   This will ensure that the files are unique in the landing zone bucket
+#'   This is another way ensure that the files are unique in the landing zone bucket and that you can import file with the same name multiple times 
 #'
 #' @returns the status of each file upload
 #' @export
@@ -30,7 +32,7 @@ list_landing_zone_bucket <- function(credentials) {
 #'  r <- upload_to_landing_zone(aws_session(), "my_filder", "my_pipeline", NULL, TRUE)
 #' print(r)
 #' }
-upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = NULL, timestamp_files = FALSE) {
+upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = NULL, append_batch = TRUE, timestamp_files = FALSE) {
   landing_zone_capacity <- 30
   time_buffer <- 600
   logger::log_debug("[tube::upload_to_landing_zone] entering function")
@@ -131,6 +133,15 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
     # upload files to the landing zone bucket
     for (file in batch_files) {
+      if (append_batch) {
+        batch_for_filename <- iconv(batch, "ASCII", "UTF-8", sub="")
+        batch_for_filename <- gsub("[^[:alnum:]\\-_./]", "", batch_for_filename)
+
+        filename <- paste0(filename, batch_for_filename)
+      } else {
+        filename <- filename
+      }
+      
       if (timestamp_files) {
         # convert basename of file by appending the UTC date time in front of it
         # this will ensure that the file is unique in the landing zone bucket

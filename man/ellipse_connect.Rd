@@ -4,10 +4,10 @@
 \alias{ellipse_connect}
 \title{Se connecter à la plateforme de données ellipse sur AWS}
 \usage{
-ellipse_connect(env = c("PROD", "DEV"), database = "datawarehouse")
+ellipse_connect(env = NULL, database = "datawarehouse")
 }
 \arguments{
-\item{env}{The environment to connect to on ellipse-science. Defaults to "PROD"}
+\item{env}{The environment to connect to on ellipse-science. Accepted values are "PROD" and "DEV".}
 
 \item{database}{The Glue/Athena database to connect to. Default to "datawarehouse"}
 }
