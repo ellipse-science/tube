@@ -61,6 +61,9 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
       close_connection = TRUE)
   )
 
+  # remove last slach in folder path if any
+  local_folder <- gsub("/$", "", local_folder)
+  
   # list files in local folder in try catch
   tryCatch({
     logger::log_debug("[tube::upload_to_landing_zone] listing files in the local folder")
