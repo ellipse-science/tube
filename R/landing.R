@@ -133,24 +133,22 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
     # upload files to the landing zone bucket
     for (file in batch_files) {
+      filename <- basename(file)
+
       if (append_batch) {
         batch_for_filename <- iconv(batch, "ASCII", "UTF-8", sub="")
         batch_for_filename <- gsub("[^[:alnum:]\\-_./]", "", batch_for_filename)
 
         filename <- paste0(filename, batch_for_filename)
-      } else {
-        filename <- filename
-      }
-      
+      } 
+
       if (timestamp_files) {
         # convert basename of file by appending the UTC date time in front of it
         # this will ensure that the file is unique in the landing zone bucket
         # and that the file is not overwritten
-        filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", basename(file))
+        filename <- paste0(format(Sys.time(), tz = "UTC", usetz = TRUE), "-", filename)
         filename <- gsub("UTC", "Z", filename)
         filename <- gsub(" (\\d{2}:\\d{2}:\\d{2}) Z", "T\\1.000Z", filename)
-      } else {
-        filename <- basename(file)
       }
 
       key <- paste0(prefix, filename)
