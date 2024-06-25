@@ -241,8 +241,9 @@ INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 526.42 KB)
 
 [ins] r$> df |>
-            dplyr::mutate(date_heure = lubridate::as_datetime(extraction_datetime,
-                                                              tz = "America/New_York")) |>
+            dplyr::mutate(
+              date_heure = lubridate::as_datetime(extraction_datetime,
+              tz = "America/New_York")) |>
             dplyr::distinct(date_heure, title)
 Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 # A tibble: 143 × 2
