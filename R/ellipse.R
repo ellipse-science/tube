@@ -182,3 +182,36 @@ ellipse_query <- function(con, table) {
   }
   dplyr::tbl(con, table)
 }
+
+
+#' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#'
+#' @param env L'environnement dans lequel les données doivent être injectées
+#' @param folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
+#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données
+#' @param batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données
+#'
+#' @returns La liste des fichiers qui ont été injectés dans tube
+#' @export
+ellipse_ingest <- function(env, folder, pipeline, batch) {
+  creds <- memoized_get_aws_credentials()
+
+  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+}
+
+
+#' Injecter un dataframe dans un datamart
+#'
+#' @param env L'environnement dans lequel les données doivent être injectées
+#' @param dataframe Le chemin vers le répertoire qui contient les fichiers à charger dans tube
+#' @param datamart Le nom du pipeline qui doit être exécuté pour charger les données
+#' @param table Le nom de la table qui doit être créée dans le datamart
+#'
+#' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
+#' @export
+ellipse_put <- function(env, dataframe, datamart, table) {
+  creds <- memoized_get_aws_credentials()
+
+  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+
+}
