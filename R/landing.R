@@ -1,7 +1,5 @@
 # Returns the name of the landing zone bucket
-# Private function
 #
-#' @export
 list_landing_zone_bucket <- function(credentials) {
   logger::log_debug("[tube::list_landing_zone_bucket] entering function")
 
@@ -27,7 +25,6 @@ list_landing_zone_bucket <- function(credentials) {
 #'   This is another way ensure that the files are unique in the landing zone bucket and that you can import file with the same name multiple times 
 #'
 #' @returns the status of each file upload
-#' @export
 #' @examples \dontrun{
 #'  r <- upload_to_landing_zone(get_aws_credentials(), "my_folder", "my_pipeline", NULL, TRUE)
 #' print(r)
