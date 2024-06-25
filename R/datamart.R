@@ -9,7 +9,6 @@ list_datamarts_bucket <- function(credentials) {
   return(datalake_list)
 }
 
-#' @export
 put_datamart_table <- function(credentials, datamart_name, table_name, dataframe) {
   logger::log_debug("[tube::put_datamart_table] entering function")
 
