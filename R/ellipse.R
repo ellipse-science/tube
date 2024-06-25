@@ -151,7 +151,7 @@ ellipse_discover <- function(con, table = NULL) {
     }
     creds <- memoized_get_aws_credentials()
     df <-
-      list_datawarehouse_tables(session) %>%
+      list_datawarehouse_tables(creds) %>%
       dplyr::filter(table_name == table)
     return(df)
   }
