@@ -29,7 +29,7 @@ list_landing_zone_bucket <- function(credentials) {
 #' @returns the status of each file upload
 #' @export
 #' @examples \dontrun{
-#'  r <- upload_to_landing_zone(aws_session(), "my_filder", "my_pipeline", NULL, TRUE)
+#'  r <- upload_to_landing_zone(get_aws_credentials(), "my_folder", "my_pipeline", NULL, TRUE)
 #' print(r)
 #' }
 upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = NULL, append_batch = TRUE, timestamp_files = FALSE) {
@@ -191,7 +191,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 #' @returns the number of unprocessed files in the landing zone
 #' @export
 #' @examples \dontrun{
-#'  r <- check_landing_zone(aws_session(), "my_pipeline")
+#'  r <- check_landing_zone(get_aws_credentials(), "my_pipeline")
 #' print(r)
 #' }
 check_landing_zone <- function(creds, pipeline_name) {

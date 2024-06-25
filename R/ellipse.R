@@ -1,4 +1,4 @@
-memoized_aws_session <- memoise::memoise(aws_session)
+memoized_get_aws_credentials <- memoise::memoise(get_aws_credentials)
 
 #' Se connecter à la plateforme de données ellipse sur AWS
 #'
@@ -14,13 +14,16 @@ ellipse_connect <- function(
   env = NULL,
   database  = "datawarehouse"
 ) {
-  if (is.null(env)) {
+
+  if (is.null(env) || !env %in% c("DEV", "PROD", "dev", "prod")) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
                                 "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
                                 sep = ""))
     return(NULL)
   }
   cli::cli_alert_info(paste("Environnement:", env))
+
+  env <- toupper(env)
 
   aws_access_key_id <-
     switch(env,
@@ -50,24 +53,53 @@ ellipse_connect <- function(
     cli::cli_alert_danger(usage)
     return(NULL)
   }
+
   database <- match.arg(database)
   cli::cli_alert_info(paste("Database:", database))
 
-  session <- memoized_aws_session(id = aws_access_key_id,
-                                  key = aws_secret_access_key)
+  creds <- memoized_get_aws_credentials()
+
+  aws_access_key_id <- creds$credentials$creds$access_key_id
+  aws_secret_access_key <- creds$credentials$creds$secret_access_key
+
+  datawarehouse_database <- list_datawarehouse_database(creds)
+  athena_staging_bucket <- list_athena_staging_bucket(creds)
+
   schema_name <- switch(database,
-                        "datawarehouse" = paste0(session$datawarehouse_database),
+                        "datawarehouse" = paste0(datawarehouse_database),
                         database)
 
-  cli::cli_alert_info("Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)")
+  cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
   DBI::dbConnect(noctua::athena(),
                  aws_access_key_id = aws_access_key_id,
                  aws_secret_access_key = aws_secret_access_key,
                  schema_name = schema_name,
                  work_group = "ellipse-work-group",
-                 s3_staging_dir = paste0("s3://",
-                                         session$athena_staging_bucket))
+                 s3_staging_dir = paste0("s3://",athena_staging_bucket))
+}
 
+#' Se déconnecter de la plateforme de données ellipse
+#' @returns TRUE if the connexion was closed or FALSE if no connexion existed
+#' @export
+ellipse_disconnect <- function(con = NULL) {
+  if (is.null(con)) {
+    cli::cli_alert_danger("Oups! Il faut fournit un objet de connection! 😅")
+    return(invisible(FALSE))
+  }
+
+  tryCatch({
+    if (DBI::dbIsValid(con)) {
+      DBI::dbDisconnect(con)
+      cli::cli_alert_success("La connexion a été fermée avec succès! 👋")
+      return(invisible(TRUE))      
+    } else {
+      cli::cli_alert_warning("Il semble que la connexion n'existe pas ou soit déjà close! 😅")
+      return(invisible(FALSE))
+    }
+  }, error = function(e) {
+    cli::cli_alert_danger("Oups, il semble que la connexion n'a pas pu être fermée! 😅")
+    return(invisible(FALSE))
+  })
 }
 
 #' Obtenir le domaine de valeurs pour les dimensions d'une table
@@ -117,7 +149,7 @@ ellipse_discover <- function(con, table = NULL) {
       cli::cli_alert_danger("La table demandée est inconnue.")
       return(NULL)
     }
-    session <- memoized_aws_session()
+    creds <- memoized_get_aws_credentials()
     df <-
       list_datawarehouse_tables(session) %>%
       dplyr::filter(table_name == table)
