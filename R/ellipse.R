@@ -37,10 +37,6 @@ ellipse_connect <- function(
            "DEV"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
     Sys.getenv()
 
-  # https://github.com/ellipse-science/tube/issues/16
-  Sys.setenv("AWS_ACCESS_KEY_ID" = aws_access_key_id)
-  Sys.setenv("AWS_SECRET_ACCESS_KEY" = aws_secret_access_key)
-
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
       paste("On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
@@ -53,6 +49,10 @@ ellipse_connect <- function(
     cli::cli_alert_danger(usage)
     return(NULL)
   }
+
+  # https://github.com/ellipse-science/tube/issues/16
+  Sys.setenv("AWS_ACCESS_KEY_ID" = aws_access_key_id)
+  Sys.setenv("AWS_SECRET_ACCESS_KEY" = aws_secret_access_key)
 
   database <- match.arg(database)
   cli::cli_alert_info(paste("Database:", database))

@@ -9,13 +9,8 @@ get_aws_credentials <- function() {
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
-      paste("On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
-            "Dans le fichier ~/.Renviron, ajoutez les lignes:\n\n",
-            "AWS_ACCESS_KEY_ID_PROD=<votre access key id de production>\n",
-            "AWS_SECRET_ACCESS_KEY_PROD=<votre secret access key de production>\n",
-            "AWS_ACCESS_KEY_ID_DEV=<votre access key id de développement>\n",
-            "AWS_SECRET_ACCESS_KEY_DEV=<votre secret access key de développement>\n\n",
-            "Puis, redémarrez la session R.")
+      paste("Nous n'avons pas trouvé vos clés d'accès AWS\n\n",
+            "N'oubliez pas de vous connecter avec tube::ellipse_connect()\n\n")
     cli::cli_alert_danger(usage)
     logger::log_error("[get_aws_credentials] missing aws credentials in env variables")
     return(NULL)
