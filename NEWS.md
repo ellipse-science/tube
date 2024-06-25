@@ -1,3 +1,8 @@
+# tube 0.2.0
+
+* abstract all technical interface functions.  Only expose `ellipse_` functions
+* you must use the `tube::ellipse_`functions to interact with the data platforme
+
 # tube 0.1.1
 
 # tube 0.1.0
