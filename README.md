@@ -33,16 +33,12 @@ AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
 C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
 
 ```R
-# Choisissez votre environnement (ci-dessous dans l'exemple, on choisit PROD)
-Sys.setenv(AWS_ACCESS_KEY_ID = Sys.getenv("AWS_ACCESS_KEY_ID_PROD"))
-Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_PROD"))
+tube::ellipse_connect("DEV")
 ```
 
 ## Interface de haut hiveau
 
 `tube` comporte une interface de haut niveau qui permet d'interroger la plateforme à l'aide de fonctions d'analyse de données fournies par le `tidyverse`.
-
-Ces fonctions sont bâties à même une architecture technique décrite dans la section [Interface technique](#interface-technique).
 
 Pour faciliter la découverte des fonctionnalités, les noms de fonction commencent par `ellipse_`. Lorsque `tube` est chargé dans RStudio avec `library(tube)`, taper les lettres `ell` dans la console R ou l'éditeur permet de voir rapidement les fonctions disponibles.
 
@@ -60,7 +56,8 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 [ins] r$> con <- ellipse_connect(env = "PROD")
 ℹ Environnement: PROD
 ℹ Database: datawarehouse
-ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
+INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
 ```
 
 ### Découvrir les données
@@ -68,8 +65,11 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 La première étape de toute analyse est de rencenser les données à notre disposition. C'est le rôle de la fonction `ellipse_discover()`. Elle prend minimalement en paramètre l'objet de connexion obtenu à l'étape précédente :
 
 ```r
-[ins] r$> con <- ellipse_connect()
-ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
+[ins] r$> con <- ellipse_connect("PROD")
+ℹ Environnement: PROD
+ℹ Database: datawarehouse
+INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
 
 [ins] r$> ellipse_discover(con)
 # A tibble: 13 × 2
@@ -94,22 +94,22 @@ Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce
 Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit :
 
 ```r
-[ins] r$> ellipse_discover(con, "a-ca-parliament-debates")
-INFO [2024-03-24 21:04:59] [tube::list_glue_tables] listing tables from the datawarehouse
-# A tibble: 22 × 4
-   table_name           col_name                 col_type is_partition
-   <chr>                <chr>                    <chr>    <lgl>
- 1 a-parliament-debates institution_id           string   TRUE
- 2 a-parliament-debates event_date               date     TRUE
- 3 a-parliament-debates id                       string   FALSE
- 4 a-parliament-debates event_number             string   FALSE
- 5 a-parliament-debates event_title              string   FALSE
- 6 a-parliament-debates event_start_time         string   FALSE
- 7 a-parliament-debates event_end_time           string   FALSE
- 8 a-parliament-debates timestamp                string   FALSE
- 9 a-parliament-debates order_of_business_number string   FALSE
-10 a-parliament-debates order_of_business_title  string   FALSE
-# ℹ 12 more rows
+[ins] tube::ellipse_discover(con, "a-qc-parliament-debates")
+INFO [2024-06-25 18:15:35] [tube::list_glue_tables] listing tables from the datawarehouse
+# A tibble: 21 × 4
+   table_name              col_name                 col_type is_partition
+   <chr>                   <chr>                    <chr>    <lgl>       
+ 1 a-qc-parliament-debates event_date               date     TRUE        
+ 2 a-qc-parliament-debates id                       string   FALSE       
+ 3 a-qc-parliament-debates institution_id           string   FALSE       
+ 4 a-qc-parliament-debates event_number             string   FALSE       
+ 5 a-qc-parliament-debates event_title              string   FALSE       
+ 6 a-qc-parliament-debates event_start_time         string   FALSE       
+ 7 a-qc-parliament-debates event_end_time           string   FALSE       
+ 8 a-qc-parliament-debates timestamp                string   FALSE       
+ 9 a-qc-parliament-debates order_of_business_number string   FALSE       
+10 a-qc-parliament-debates order_of_business_title  string   FALSE       
+# ℹ 11 more rows
 # ℹ Use `print(n = ...)` to see more rows
 ```
 
@@ -117,30 +117,31 @@ Le concept de _partition_ est important. Le scan d'une table complète peut êtr
 
 Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_, c'est-à-dire que les données d'une table sont regroupées selon les valeurs de certaines variables. Regrouper les données de cette façon permet une efficacité accrue lorsqu'on fait une requête pour utiliser les données. Ainsi, il est recommandé d'utiliser ces variables lorsqu'on veut cibler un sous-ensemble de données. Pour ce faire, il faut connaître les valeurs que peuvent prendre ces variables partitionnées.
 
-Dans l'exemple ci-haut, on voit que `institution_id` et `event_date` sont des variables partitionnées. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
+Dans l'exemple ci-haut, on voit que `event_date` est une variable partitionnée. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
 
 ```r
-[ins] r$> parts <- ellipse_partitions(con, "a-parliament-debates")
-INFO [2024-03-30 09:53:16] [tube::list_glue_tables] listing tables from the datawarehouse
+[ins] r$> parts <- tube::ellipse_partitions(con, "a-qc-parliament-debates")
+INFO [2024-06-25 18:06:16] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
 
 [ins] r$> parts
-# A tibble: 78 × 3
-   institution_id event_date       n
-   <chr>          <date>     <int64>
- 1 CACOMMONS      2007-01-29     245
- 2 CACOMMONS      2023-12-12    1764
- 3 CACOMMONS      2023-12-13    1872
- 4 CACOMMONS      2023-12-14    3392
- 5 CACOMMONS      2023-12-15    2384
- 6 CACOMMONS      2024-01-29     957
- 7 CACOMMONS      2024-01-30    2984
- 8 CACOMMONS      2024-01-31    2016
- 9 CACOMMONS      2024-02-01    2625
-10 CACOMMONS      2024-02-02     805
-# ℹ 68 more rows
-# ℹ Use `print(n = ...)` to see more rows
+# A tibble: 13 × 2
+   event_date       n
+   <date>     <int64>
+ 1 2021-10-21     367
+ 2 2021-11-30     287
+ 3 2024-05-21     262
+ 4 2024-05-22     309
+ 5 2024-05-23     262
+ 6 2024-05-28     263
+ 7 2024-05-29     640
+ 8 2024-05-30     518
+ 9 2024-05-31     223
+10 2024-06-04     305
+11 2024-06-05     293
+12 2024-06-06     315
+13 2024-06-07     290
 ```
 
 Un `tibble` est retourné. Chacune des lignes représente une combinaison de valeurs des variables partitionnées de la table, ainsi que le nombre d'observations associées.
@@ -149,71 +150,47 @@ Ces valeurs peuvent nous guider dans nos requêtes subséquentes. À l'usage, po
 
 Comme il s'agit d'un `tibble` ordinaire, on peut l'explorer avec les fonctions habituelles de `dplyr`:
 
-```r
-[ins] r$> dplyr::distinct(parts, institution_id)
-# A tibble: 3 × 1
-  institution_id
-  <chr>
-1 CACOMMONS
-2 EUPARL
-3 QCASSNAT
-
-[ins] r$> dplyr::filter(parts, institution_id == "EUPARL") |> print(n = 30)
-# A tibble: 22 × 3
-   institution_id event_date       n
-   <chr>          <date>     <int64>
- 1 EUPARL         2023-10-04     447
- 2 EUPARL         2023-12-11     174
- 3 EUPARL         2023-12-12     479
- 4 EUPARL         2023-12-13     416
- 5 EUPARL         2023-12-14     127
- 6 EUPARL         2024-01-15     180
- 7 EUPARL         2024-01-16     428
- 8 EUPARL         2024-01-17     507
- 9 EUPARL         2024-01-18     165
-10 EUPARL         2024-01-25       5
-11 EUPARL         2024-02-05     182
-12 EUPARL         2024-02-06     470
-13 EUPARL         2024-02-07     479
-14 EUPARL         2024-02-08     113
-15 EUPARL         2024-02-26     215
-16 EUPARL         2024-02-27     468
-17 EUPARL         2024-02-28     421
-18 EUPARL         2024-02-29     138
-19 EUPARL         2024-03-11     196
-20 EUPARL         2024-03-12     430
-21 EUPARL         2024-03-13     417
-22 EUPARL         2024-03-14     170
-```
-
 ### Interroger les données
+
+#### Pipeline des débats parlementaires
 
 Maintenant qu'on a une idée des données qui nous intéressent et de la façon dont elles sont partitionnées, on peut les interroger.
 
 La fonction `ellipse_query()` nous retourne un objet qui est exploitable avec `dplyr`.
 
-#### Pipeline des débats parlementaires
-
-N'est-il pas intéressant d'étudier les termes proscrits à l'assemblée nationale?
+N'est-il pas intéressant d'étudier les interventions du premier ministre à l'assemblée nationale?
 
 ```r
-[nav] r$> df <-
-            ellipse_query(con, "a-ca-parliament-debates") |>
-            dplyr::filter(institution_id == "CACOMMONS", event_date == "2024-02-22") |>
-            dplyr::collect()
+[nav] df <-
+        tube::ellipse_query(con, "a-qc-parliament-debates") |>
+        dplyr::filter(event_date == "2024-05-23") |>
+        dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
-INFO: (Data scanned: 1.03 MB)
+INFO: (Data scanned: 100.45 KB)
 
 [ins] r$> df |>
-            dplyr::filter(stringr::str_detect(intervention_text, "fligne")) |>
-            dplyr::distinct(intervention_number, speaker_full_name, intervention_text)
-# A tibble: 4 × 3
-  intervention_number speaker_full_name intervention_text
-  <chr>               <chr>             <chr>
-1 371267-67           Marc Tanguay      Bien, Mme la Présidente, c'est une chose d'avoir les normes les plus sévères, puis c'en est une autre de décider de ne pas les app…
-2 371267-70           La Présidente     Je vous demande de faire très attention. Il y a un «fligne-flagne» pour d'autres sujets, dans le lexique, et vous le savez. Demeur…
-3 371267-71           M. Jolin-Barrette Mme la Présidente, «le fligne-flagne dans les garderies libérales» est à l'index. Alors, je pense, Mme la Présidente...
-4 371267-73           M. Jolin-Barrette ...je ne pense pas qu'on n'a pas le droit de dire «garderie» ici, mais le terme «fligne-flagne» est proscrit.
+            dplyr::filter(stringr::str_detect(speaker, "Legault")) |>
+            dplyr::distinct(intervention_number, speaker, intervention_text)
+# A tibble: 17 × 3
+   intervention_number speaker          intervention_text                                                                                                 
+   <chr>               <chr>            <chr>                                                                                                             
+ 1 380411-36           François Legault "Oui, Mme la Présidente. Bon, d'abord, c'est une de mes grandes fiertés, avec le ministre de l'Économie, d'avoir …
+ 2 380411-40           François Legault "Mme la Présidente, d'abord, je veux rassurer tout le monde, le ministre de l'Économie, il n'est pas sortant, là,…
+ 3 380411-42           M. Legault       "...les salaires les plus élevés."                                                                                
+ 4 380411-51           François Legault "Oui, Mme la Présidente, le chef de l'opposition officielle n'a pas été gentil avec moi en fin de semaine. Là, il…
+ 5 380411-56           François Legault "Mme la Présidente, quand le gouvernement libéral était au pouvoir, il y avait des tarifs privilégiés pour les en…
+ 6 380411-90           François Legault "Oui, Mme la Présidente, le Parti libéral est un parti très courageux. Quand il rencontre les gens de Rivière-du-…
+ 7 380411-99           M. Legault       "Donc, aujourd'hui, le Parti libéral, étant donné qu'il y a des gens de Rivière-du-Loup, bien, propose que la tra…
+ 8 380411-121          François Legault "Mme la Présidente, d'abord, c'est important de le répéter, puis, avec raison, la vice-première ministre le répèt…
+ 9 380411-125          François Legault "Oui. Mme la Présidente, je sais que ça n'intéresse pas beaucoup Québec solidaire, l'économie, mais, quand on reg…
+10 380411-129          François Legault "Oui. Je note deux choses, Mme la Présidente. D'abord, Québec solidaire préférerait qu'on électrifie les boeufs a…
+11 380411-151          François Legault "Oui, Mme la Présidente, c'est vrai depuis tous les rapports qui ont été déposés, entre autres le rapport de Mich…
+12 380411-155          François Legault "Oui, Mme la Présidente, ce qui est important, puis l'objectif, c'est qu'il y ait plus de Québécois qui soient pr…
+13 380411-157          M. Legault       "...par une infirmière. C'est ce qu'on fait."                                                                     
+14 380411-161          François Legault "Oui, Mme la Présidente. Bien, d'abord, on a déjà revu le mode de rémunération, c'était dans une entente qui se t…
+15 380411-208          M. Legault       "M. le Président, je propose, après consultation auprès des partis d'opposition et des députés indépendants :\n«Q…
+16 380411-213          M. Legault       "Oui. M. le Président, je propose, après consultation auprès des partis de l'opposition et des députés indépendan…
+17 380411-36           François Legault "Oui, Mme la Présidente. Bon, d'abord, c'est une de mes grandes fiertés, avec le ministre de l'Économie, d'avoir …
 ```
 
 #### Pipeline des unes des médias
@@ -264,8 +241,9 @@ INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 526.42 KB)
 
 [ins] r$> df |>
-            dplyr::mutate(date_heure = lubridate::as_datetime(extraction_datetime,
-                                                              tz = "America/New_York")) |>
+            dplyr::mutate(
+              date_heure = lubridate::as_datetime(extraction_datetime,
+              tz = "America/New_York")) |>
             dplyr::distinct(date_heure, title)
 Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 # A tibble: 143 × 2
@@ -287,20 +265,4 @@ Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 
-## Interface technique
-
-L'interface technique de `tube` reflète l'architecture ETL de la plateforme de données d'_Ellipse_.
-
-Les fonctions exportées commencent par :
-
-* `get_`
-* `list_`
-* `put_`
-* `update_`
-
-Elles requièrent en général les informations d'identification obtenues via la fonction `aws_session()`.
-
-Cette interface est toute indiquée pour l'écriture de raffineurs. Plusieurs exemples de son utilisation sont disponibles dans le dépôt [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners), plus particulierèment sous [refiners/examples](https://github.com/ellipse-science/aws-refiners/blob/main/refiners/examples/examples.R).
-
-
-Pour la documentation conceptuelle de la plateforme de données du CAP, voir le répertoire [doc](https://github.com/ellipse-science/tube/tree/main/doc)
+Pour la documentation conceptuelle de la plateforme de données du CAPP, voir le répertoire [doc](https://github.com/ellipse-science/tube-doc/tree/main)

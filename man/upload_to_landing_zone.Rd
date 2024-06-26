@@ -44,7 +44,7 @@ the function will return an error message.
 }
 \examples{
 \dontrun{
- r <- upload_to_landing_zone(aws_session(), "my_filder", "my_pipeline", NULL, TRUE)
+ r <- upload_to_landing_zone(get_aws_credentials(), "my_folder", "my_pipeline", NULL, TRUE)
 print(r)
 }
 }
