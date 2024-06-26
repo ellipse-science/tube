@@ -7,14 +7,19 @@ Interface R d'accès à la plateforme de données _Ellipse_.
 
 ## Pré-requis
 
+### Installation
+Pour installer ce package, utilisez la commande `remotes::install_github("ellipse-science/tube")`  ou `remotes::install_github("ellipse-science/tube")`.  Si les packages dépendants ne sont pas à jour, SVP assurez-vous de chois l'option 1 pour tous les mettre à jour.
+
+### Clé d'accès
 Pour accéder aux données de la plateforme, il faut configurer les clés d'accès AWS. Pour obtenir ces informations, contacter Patrick Poncet (@patoscope) sur Slack.
 
-Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarrage de la session R. Ce fichier réside à la racine de votre répertoire d'utilisateur. S'il n'existe pas, il faut le créer. L'emplacement est donc :
+Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarrage de la session R. Ce fichier réside à la racine de votre répertoire d'utilisateur. S'il n'existe pas, il faut le créer ou le modifier avec la commande `usethis::edit_r_environ()`. Selon votre plateforme, l'emplacement du fichier est :
 
 * Windows : `C:\Users\<votre utilisateur>\.Renviron`
 * macOS : `/Users/<votre utilisateur>/.Renviron`
 * Linux : `/home/<votre utilisateur>/.Renviron`
 
+### Environnements
 Il existe deux environnement (deux copies non identiques) de la plateforme de données sur AWS.
 
 * Une copie de développement (DEV) dans laquelle on développe les pipelines et où on conçoit les structure des données (tables, variables etc.).  Vous allez principalement vous connecter en DEV pour valider le travail des développeurs et la structure de données que leur pipelines va générer, en faisant des tests les plus réels possible selon vos projets de recherche, sur des petits échantillons de données.
