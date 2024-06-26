@@ -70,9 +70,9 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
       logger::log_error("[tube::upload_to_landing_zone] no file in folder.")
       stop()
     } else {
-      logger::log_info(paste("[tube::upload_to_landing_zone] There are", length(files), "files in the local folder:", local_folder))
+      logger::log_debug(paste("[tube::upload_to_landing_zone] There are", length(files), "files in the local folder:", local_folder))
       if (length(files) > landing_zone_capacity) {
-        logger::log_info(paste0("[tube::upload_to_landing_zone] Segmenting files into sets of", landing_zone_capacity, "files"))
+        logger::log_debug(paste0("[tube::upload_to_landing_zone] Segmenting files into sets of", landing_zone_capacity, "files"))
       }
     }
   }, error = function(e) {
@@ -92,7 +92,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
   for (i in 1:num_batches) {
 
-    logger::log_info(paste("[tube::upload_to_landing_zone] uploading set", i, "of", num_batches))
+    logger::log_debug(paste("[tube::upload_to_landing_zone] uploading set", i, "of", num_batches))
 
     batch_start <- (i - 1) * landing_zone_capacity + 1
     batch_end <- min(i * landing_zone_capacity, num_files)
@@ -108,7 +108,7 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
 
     # check that the batch size + the nb files in landing zone are not > landing_zone_capacity
     if (length(batch_files) + nb_files_in_landing_zone > landing_zone_capacity) {
-      logger::log_info("[tube::upload_to_landing_zone] Too many files currently remain in the landing zone.  \
+      logger::log_debug("[tube::upload_to_landing_zone] Too many files currently remain in the landing zone.  \
             Please wait for those files to be processed by the data platform before uploading more.\
             The landing zone supports a maximum of 30 simultaneous files.  Waiting 10 minutes for landing zone to be free...")
       Sys.sleep(time_buffer)  # sleep for 10 minutes
@@ -165,15 +165,15 @@ upload_to_landing_zone <- function(creds, local_folder, pipeline_name, batch = N
       })
     }
     cat("\n")
-    logger::log_info(paste("[tube::upload_to_landing_zone] set", i, "of", num_batches, "uploaded to the landing zone bucket"))
+    logger::log_debug(paste("[tube::upload_to_landing_zone] set", i, "of", num_batches, "uploaded to the landing zone bucket"))
 
     if (i < num_batches) {
-      logger::log_info(paste("[tube::upload_to_landing_zone] waiting 10 minute before uploading the next set"))
+      logger::log_debug(paste("[tube::upload_to_landing_zone] waiting 10 minute before uploading the next set"))
       Sys.sleep(time_buffer)  # sleep for 10 minutes
     }
   }
 
-  logger::log_info(paste("[tube::upload_to_landing_zone]", length(uploaded_files), "files uploaded to the landing zone bucket"))
+  logger::log_debug(paste("[tube::upload_to_landing_zone]", length(uploaded_files), "files uploaded to the landing zone bucket"))
 
   logger::log_debug("[tube::upload_to_landing_zone] exiting function")
 }
@@ -223,7 +223,7 @@ check_landing_zone <- function(creds, pipeline_name) {
     grepl(paste0("^", pipeline_name, "/"), x$Key)
   }, filtered_data)
 
-  logger::log_info(
+  logger::log_debug(
     paste("[tube::check_landing_zone] There are currently",
       length(nb_unprocessed_files),
       "unprocessed files in the landing zone for pipeline",

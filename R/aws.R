@@ -38,7 +38,7 @@ get_aws_credentials <- function() {
     return(NULL)
   })
 
-  logger::log_info("[get_aws_credentials] successful connection to aws")
+  logger::log_debug("[get_aws_credentials] successful connection to aws")
   return(creds)
 }
 

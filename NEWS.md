@@ -1,11 +1,8 @@
-# tube 0.2.1
-
-* Add 2 placeholders for the functions to ingest data into the data platform
-
 # tube 0.2.0
 
 * abstract all technical interface functions.  Only expose `ellipse_` functions
 * you must use the `tube::ellipse_`functions to interact with the data platforme
+* Add 2 placeholders for the functions to ingest data into the data platform
 
 # tube 0.1.1
 
