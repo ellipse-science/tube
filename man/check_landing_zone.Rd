@@ -21,7 +21,7 @@ upload more
 }
 \examples{
 \dontrun{
- r <- check_landing_zone(aws_session(), "my_pipeline")
+ r <- check_landing_zone(get_aws_credentials(), "my_pipeline")
 print(r)
 }
 }

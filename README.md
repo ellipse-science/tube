@@ -33,16 +33,12 @@ AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
 C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
 
 ```R
-# Choisissez votre environnement (ci-dessous dans l'exemple, on choisit PROD)
-Sys.setenv(AWS_ACCESS_KEY_ID = Sys.getenv("AWS_ACCESS_KEY_ID_PROD"))
-Sys.setenv(AWS_SECRET_ACCESS_KEY = Sys.getenv("AWS_SECRET_ACCESS_KEY_PROD"))
+tube::ellipse_connect("DEV")
 ```
 
 ## Interface de haut hiveau
 
 `tube` comporte une interface de haut niveau qui permet d'interroger la plateforme à l'aide de fonctions d'analyse de données fournies par le `tidyverse`.
-
-Ces fonctions sont bâties à même une architecture technique décrite dans la section [Interface technique](#interface-technique).
 
 Pour faciliter la découverte des fonctionnalités, les noms de fonction commencent par `ellipse_`. Lorsque `tube` est chargé dans RStudio avec `library(tube)`, taper les lettres `ell` dans la console R ou l'éditeur permet de voir rapidement les fonctions disponibles.
 
@@ -60,7 +56,8 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 [ins] r$> con <- ellipse_connect(env = "PROD")
 ℹ Environnement: PROD
 ℹ Database: datawarehouse
-ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
+INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
 ```
 
 ### Découvrir les données
@@ -170,32 +167,45 @@ Comme il s'agit d'un `tibble` ordinaire, on peut l'explorer avec les fonctions h
 
 ### Interroger les données
 
+#### Pipeline des débats parlementaires
+
 Maintenant qu'on a une idée des données qui nous intéressent et de la façon dont elles sont partitionnées, on peut les interroger.
 
 La fonction `ellipse_query()` nous retourne un objet qui est exploitable avec `dplyr`.
 
-#### Pipeline des débats parlementaires
-
-N'est-il pas intéressant d'étudier les termes proscrits à l'assemblée nationale?
+N'est-il pas intéressant d'étudier les interventions du premier ministre à l'assemblée nationale?
 
 ```r
-[nav] r$> df <-
-            ellipse_query(con, "a-ca-parliament-debates") |>
-            dplyr::filter(institution_id == "CACOMMONS", event_date == "2024-02-22") |>
-            dplyr::collect()
+[nav] df <-
+        tube::ellipse_query(con, "a-qc-parliament-debates") |>
+        dplyr::filter(event_date == "2024-05-23") |>
+        dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
-INFO: (Data scanned: 1.03 MB)
+INFO: (Data scanned: 100.45 KB)
 
 [ins] r$> df |>
-            dplyr::filter(stringr::str_detect(intervention_text, "fligne")) |>
-            dplyr::distinct(intervention_number, speaker_full_name, intervention_text)
-# A tibble: 4 × 3
-  intervention_number speaker_full_name intervention_text
-  <chr>               <chr>             <chr>
-1 371267-67           Marc Tanguay      Bien, Mme la Présidente, c'est une chose d'avoir les normes les plus sévères, puis c'en est une autre de décider de ne pas les app…
-2 371267-70           La Présidente     Je vous demande de faire très attention. Il y a un «fligne-flagne» pour d'autres sujets, dans le lexique, et vous le savez. Demeur…
-3 371267-71           M. Jolin-Barrette Mme la Présidente, «le fligne-flagne dans les garderies libérales» est à l'index. Alors, je pense, Mme la Présidente...
-4 371267-73           M. Jolin-Barrette ...je ne pense pas qu'on n'a pas le droit de dire «garderie» ici, mais le terme «fligne-flagne» est proscrit.
+            dplyr::filter(stringr::str_detect(speaker, "Legault")) |>
+            dplyr::distinct(intervention_number, speaker, intervention_text)
+# A tibble: 17 × 3
+   intervention_number speaker          intervention_text                                                                                                 
+   <chr>               <chr>            <chr>                                                                                                             
+ 1 380411-36           François Legault "Oui, Mme la Présidente. Bon, d'abord, c'est une de mes grandes fiertés, avec le ministre de l'Économie, d'avoir …
+ 2 380411-40           François Legault "Mme la Présidente, d'abord, je veux rassurer tout le monde, le ministre de l'Économie, il n'est pas sortant, là,…
+ 3 380411-42           M. Legault       "...les salaires les plus élevés."                                                                                
+ 4 380411-51           François Legault "Oui, Mme la Présidente, le chef de l'opposition officielle n'a pas été gentil avec moi en fin de semaine. Là, il…
+ 5 380411-56           François Legault "Mme la Présidente, quand le gouvernement libéral était au pouvoir, il y avait des tarifs privilégiés pour les en…
+ 6 380411-90           François Legault "Oui, Mme la Présidente, le Parti libéral est un parti très courageux. Quand il rencontre les gens de Rivière-du-…
+ 7 380411-99           M. Legault       "Donc, aujourd'hui, le Parti libéral, étant donné qu'il y a des gens de Rivière-du-Loup, bien, propose que la tra…
+ 8 380411-121          François Legault "Mme la Présidente, d'abord, c'est important de le répéter, puis, avec raison, la vice-première ministre le répèt…
+ 9 380411-125          François Legault "Oui. Mme la Présidente, je sais que ça n'intéresse pas beaucoup Québec solidaire, l'économie, mais, quand on reg…
+10 380411-129          François Legault "Oui. Je note deux choses, Mme la Présidente. D'abord, Québec solidaire préférerait qu'on électrifie les boeufs a…
+11 380411-151          François Legault "Oui, Mme la Présidente, c'est vrai depuis tous les rapports qui ont été déposés, entre autres le rapport de Mich…
+12 380411-155          François Legault "Oui, Mme la Présidente, ce qui est important, puis l'objectif, c'est qu'il y ait plus de Québécois qui soient pr…
+13 380411-157          M. Legault       "...par une infirmière. C'est ce qu'on fait."                                                                     
+14 380411-161          François Legault "Oui, Mme la Présidente. Bien, d'abord, on a déjà revu le mode de rémunération, c'était dans une entente qui se t…
+15 380411-208          M. Legault       "M. le Président, je propose, après consultation auprès des partis d'opposition et des députés indépendants :\n«Q…
+16 380411-213          M. Legault       "Oui. M. le Président, je propose, après consultation auprès des partis de l'opposition et des députés indépendan…
+17 380411-36           François Legault "Oui, Mme la Présidente. Bon, d'abord, c'est une de mes grandes fiertés, avec le ministre de l'Économie, d'avoir …
 ```
 
 #### Pipeline des unes des médias
@@ -246,8 +256,9 @@ INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 526.42 KB)
 
 [ins] r$> df |>
-            dplyr::mutate(date_heure = lubridate::as_datetime(extraction_datetime,
-                                                              tz = "America/New_York")) |>
+            dplyr::mutate(
+              date_heure = lubridate::as_datetime(extraction_datetime,
+              tz = "America/New_York")) |>
             dplyr::distinct(date_heure, title)
 Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 # A tibble: 143 × 2
@@ -269,20 +280,4 @@ Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 
-## Interface technique
-
-L'interface technique de `tube` reflète l'architecture ETL de la plateforme de données d'_Ellipse_.
-
-Les fonctions exportées commencent par :
-
-* `get_`
-* `list_`
-* `put_`
-* `update_`
-
-Elles requièrent en général les informations d'identification obtenues via la fonction `aws_session()`.
-
-Cette interface est toute indiquée pour l'écriture de raffineurs. Plusieurs exemples de son utilisation sont disponibles dans le dépôt [ellipse-science/aws-refiners](https://github.com/ellipse-science/aws-refiners), plus particulierèment sous [refiners/examples](https://github.com/ellipse-science/aws-refiners/blob/main/refiners/examples/examples.R).
-
-
-Pour la documentation conceptuelle de la plateforme de données du CAP, voir le répertoire [doc](https://github.com/ellipse-science/tube/tree/main/doc)
+Pour la documentation conceptuelle de la plateforme de données du CAPP, voir le répertoire [doc](https://github.com/ellipse-science/tube-doc/tree/main)
