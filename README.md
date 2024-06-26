@@ -68,25 +68,35 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 La première étape de toute analyse est de rencenser les données à notre disposition. C'est le rôle de la fonction `ellipse_discover()`. Elle prend minimalement en paramètre l'objet de connexion obtenu à l'étape précédente :
 
 ```r
-[ins] r$> con <- ellipse_connect()
+[ins] r$> con <- ellipse_connect(env = "DEV")
+ℹ Environnement: DEV
+ℹ Database: datawarehouse
 ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
 
 [ins] r$> ellipse_discover(con)
-# A tibble: 13 × 2
+# A tibble: 20 × 2
    categorie    table
    <chr>        <chr>
- 1 Agora+       a-humans
- 2 Agora+       a-ca-parliament-debates
- 3 Agora+       a-qc-press-releases
- 4 Dictionnaire dict-issues
- 5 Dictionnaire dict-political-parties-can
- 6 Dictionnaire dict-political-parties-qc
- 7 Dictionnaire dict-sentiments
- 8 Dimension    dim-institutions
- 9 Dimension    dim-parliament-members
-10 Dimension    dim-parties
-11 Radar+       r-media-frontpages
-12 Radar+       r-media-headlines
+ 1 Agora+       a-ca-parliament-debates
+ 2 Agora+       a-ca-press-releases
+ 3 Agora+       a-eu-parliament-debates
+ 4 Agora+       a-humans
+ 5 Agora+       a-qc-parliament-debates
+ 6 Agora+       a-qc-press-releases
+ 7 Dictionnaire dict-issues
+ 8 Dictionnaire dict-political-parties-can
+ 9 Dictionnaire dict-political-parties-qc
+10 Dictionnaire dict-sentiments
+11 Dimension    dim-institutions
+12 Dimension    dim-medias
+13 Dimension    dim-parliament-members
+14 Dimension    dim-parties
+15 Radar+       r-factiva
+16 Radar+       r-media-frontpages
+17 Radar+       r-media-headlines
+18 Autre        test-datamart-csv_unprocessed
+19 Autre        test2-datamart_partition1_unprocessed
+20 Autre        test2-datamart_partition2_unprocessed
 ```
 
 Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce moment, les tables retournées sont celles contenues dans l'entrepôt de données (_data warehouse_).
@@ -94,22 +104,22 @@ Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce
 Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit :
 
 ```r
-[ins] r$> ellipse_discover(con, "a-ca-parliament-debates")
-INFO [2024-03-24 21:04:59] [tube::list_glue_tables] listing tables from the datawarehouse
-# A tibble: 22 × 4
-   table_name           col_name                 col_type is_partition
-   <chr>                <chr>                    <chr>    <lgl>
- 1 a-parliament-debates institution_id           string   TRUE
- 2 a-parliament-debates event_date               date     TRUE
- 3 a-parliament-debates id                       string   FALSE
- 4 a-parliament-debates event_number             string   FALSE
- 5 a-parliament-debates event_title              string   FALSE
- 6 a-parliament-debates event_start_time         string   FALSE
- 7 a-parliament-debates event_end_time           string   FALSE
- 8 a-parliament-debates timestamp                string   FALSE
- 9 a-parliament-debates order_of_business_number string   FALSE
-10 a-parliament-debates order_of_business_title  string   FALSE
-# ℹ 12 more rows
+[ins] r$> ellipse_discover(con, "a-qc-parliament-debates")
+INFO [2024-06-11 21:15:34] [tube::list_glue_tables] listing tables from the datawarehouse
+# A tibble: 21 × 4
+   table_name              col_name                 col_type is_partition
+   <chr>                   <chr>                    <chr>    <lgl>
+ 1 a-qc-parliament-debates event_date               date     TRUE
+ 2 a-qc-parliament-debates id                       string   FALSE
+ 3 a-qc-parliament-debates institution_id           string   FALSE
+ 4 a-qc-parliament-debates event_number             string   FALSE
+ 5 a-qc-parliament-debates event_title              string   FALSE
+ 6 a-qc-parliament-debates event_start_time         string   FALSE
+ 7 a-qc-parliament-debates event_end_time           string   FALSE
+ 8 a-qc-parliament-debates timestamp                string   FALSE
+ 9 a-qc-parliament-debates order_of_business_number string   FALSE
+10 a-qc-parliament-debates order_of_business_title  string   FALSE
+# ℹ 11 more rows
 # ℹ Use `print(n = ...)` to see more rows
 ```
 
@@ -117,30 +127,28 @@ Le concept de _partition_ est important. Le scan d'une table complète peut êtr
 
 Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_, c'est-à-dire que les données d'une table sont regroupées selon les valeurs de certaines variables. Regrouper les données de cette façon permet une efficacité accrue lorsqu'on fait une requête pour utiliser les données. Ainsi, il est recommandé d'utiliser ces variables lorsqu'on veut cibler un sous-ensemble de données. Pour ce faire, il faut connaître les valeurs que peuvent prendre ces variables partitionnées.
 
-Dans l'exemple ci-haut, on voit que `institution_id` et `event_date` sont des variables partitionnées. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
+Dans l'exemple ci-haut, on voit que `event_date` est une variable partitionnée. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
 
 ```r
-[ins] r$> parts <- ellipse_partitions(con, "a-parliament-debates")
-INFO [2024-03-30 09:53:16] [tube::list_glue_tables] listing tables from the datawarehouse
+[ins] r$> parts <- ellipse_partitions(con, "a-qc-parliament-debates")
+INFO [2024-06-11 21:18:12] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
 
-[ins] r$> parts
-# A tibble: 78 × 3
-   institution_id event_date       n
-   <chr>          <date>     <int64>
- 1 CACOMMONS      2007-01-29     245
- 2 CACOMMONS      2023-12-12    1764
- 3 CACOMMONS      2023-12-13    1872
- 4 CACOMMONS      2023-12-14    3392
- 5 CACOMMONS      2023-12-15    2384
- 6 CACOMMONS      2024-01-29     957
- 7 CACOMMONS      2024-01-30    2984
- 8 CACOMMONS      2024-01-31    2016
- 9 CACOMMONS      2024-02-01    2625
-10 CACOMMONS      2024-02-02     805
-# ℹ 68 more rows
-# ℹ Use `print(n = ...)` to see more rows
+[ins] r$> print(parts)
+# A tibble: 10 × 2
+   event_date       n
+   <date>     <int64>
+ 1 2024-05-21     262
+ 2 2024-05-22     309
+ 3 2024-05-23     262
+ 4 2024-05-28     263
+ 5 2024-05-29     320
+ 6 2024-05-30     259
+ 7 2024-05-31     223
+ 8 2024-06-04     305
+ 9 2024-06-05     293
+10 2024-06-06     315
 ```
 
 Un `tibble` est retourné. Chacune des lignes représente une combinaison de valeurs des variables partitionnées de la table, ainsi que le nombre d'observations associées.
@@ -150,40 +158,14 @@ Ces valeurs peuvent nous guider dans nos requêtes subséquentes. À l'usage, po
 Comme il s'agit d'un `tibble` ordinaire, on peut l'explorer avec les fonctions habituelles de `dplyr`:
 
 ```r
-[ins] r$> dplyr::distinct(parts, institution_id)
-# A tibble: 3 × 1
-  institution_id
-  <chr>
-1 CACOMMONS
-2 EUPARL
-3 QCASSNAT
-
-[ins] r$> dplyr::filter(parts, institution_id == "EUPARL") |> print(n = 30)
-# A tibble: 22 × 3
-   institution_id event_date       n
-   <chr>          <date>     <int64>
- 1 EUPARL         2023-10-04     447
- 2 EUPARL         2023-12-11     174
- 3 EUPARL         2023-12-12     479
- 4 EUPARL         2023-12-13     416
- 5 EUPARL         2023-12-14     127
- 6 EUPARL         2024-01-15     180
- 7 EUPARL         2024-01-16     428
- 8 EUPARL         2024-01-17     507
- 9 EUPARL         2024-01-18     165
-10 EUPARL         2024-01-25       5
-11 EUPARL         2024-02-05     182
-12 EUPARL         2024-02-06     470
-13 EUPARL         2024-02-07     479
-14 EUPARL         2024-02-08     113
-15 EUPARL         2024-02-26     215
-16 EUPARL         2024-02-27     468
-17 EUPARL         2024-02-28     421
-18 EUPARL         2024-02-29     138
-19 EUPARL         2024-03-11     196
-20 EUPARL         2024-03-12     430
-21 EUPARL         2024-03-13     417
-22 EUPARL         2024-03-14     170
+[ins] r$> dplyr::filter(parts, n > 300)
+# A tibble: 4 × 2
+  event_date       n
+  <date>     <int64>
+1 2024-05-22     309
+2 2024-05-29     320
+3 2024-06-04     305
+4 2024-06-06     315
 ```
 
 ### Interroger les données
