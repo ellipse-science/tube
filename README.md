@@ -30,6 +30,8 @@ AWS_ACCESS_KEY_ID_PROD=<identifiant de clé en PROD>
 AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
 ```
 
+Pour éditer le fichier .Renviron tel qu'illustré ci-dessus, simplement lancer la commande `use_this::edit_r_environ()` dans votre console R.  Modifiez le fichier, enregistrez-le et redémarrez votre session R
+
 C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
 
 ```R
