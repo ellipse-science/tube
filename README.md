@@ -65,28 +65,35 @@ INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
 La première étape de toute analyse est de rencenser les données à notre disposition. C'est le rôle de la fonction `ellipse_discover()`. Elle prend minimalement en paramètre l'objet de connexion obtenu à l'étape précédente :
 
 ```r
-[ins] r$> con <- ellipse_connect("PROD")
-ℹ Environnement: PROD
+[ins] r$> con <- ellipse_connect(env = "DEV")
+ℹ Environnement: DEV
 ℹ Database: datawarehouse
-INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
-ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
 
 [ins] r$> ellipse_discover(con)
-# A tibble: 13 × 2
+# A tibble: 20 × 2
    categorie    table
    <chr>        <chr>
- 1 Agora+       a-humans
- 2 Agora+       a-ca-parliament-debates
- 3 Agora+       a-qc-press-releases
- 4 Dictionnaire dict-issues
- 5 Dictionnaire dict-political-parties-can
- 6 Dictionnaire dict-political-parties-qc
- 7 Dictionnaire dict-sentiments
- 8 Dimension    dim-institutions
- 9 Dimension    dim-parliament-members
-10 Dimension    dim-parties
-11 Radar+       r-media-frontpages
-12 Radar+       r-media-headlines
+ 1 Agora+       a-ca-parliament-debates
+ 2 Agora+       a-ca-press-releases
+ 3 Agora+       a-eu-parliament-debates
+ 4 Agora+       a-humans
+ 5 Agora+       a-qc-parliament-debates
+ 6 Agora+       a-qc-press-releases
+ 7 Dictionnaire dict-issues
+ 8 Dictionnaire dict-political-parties-can
+ 9 Dictionnaire dict-political-parties-qc
+10 Dictionnaire dict-sentiments
+11 Dimension    dim-institutions
+12 Dimension    dim-medias
+13 Dimension    dim-parliament-members
+14 Dimension    dim-parties
+15 Radar+       r-factiva
+16 Radar+       r-media-frontpages
+17 Radar+       r-media-headlines
+18 Autre        test-datamart-csv_unprocessed
+19 Autre        test2-datamart_partition1_unprocessed
+20 Autre        test2-datamart_partition2_unprocessed
 ```
 
 Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce moment, les tables retournées sont celles contenues dans l'entrepôt de données (_data warehouse_).
@@ -94,21 +101,21 @@ Un `tibble` est retourné. On peut y voir les tables qui sont disponibles. En ce
 Pour en savoir plus sur une table, on peut simplement la fournir en paramètre comme suit :
 
 ```r
-[ins] tube::ellipse_discover(con, "a-qc-parliament-debates")
-INFO [2024-06-25 18:15:35] [tube::list_glue_tables] listing tables from the datawarehouse
+[ins] r$> ellipse_discover(con, "a-qc-parliament-debates")
+INFO [2024-06-11 21:15:34] [tube::list_glue_tables] listing tables from the datawarehouse
 # A tibble: 21 × 4
    table_name              col_name                 col_type is_partition
-   <chr>                   <chr>                    <chr>    <lgl>       
- 1 a-qc-parliament-debates event_date               date     TRUE        
- 2 a-qc-parliament-debates id                       string   FALSE       
- 3 a-qc-parliament-debates institution_id           string   FALSE       
- 4 a-qc-parliament-debates event_number             string   FALSE       
- 5 a-qc-parliament-debates event_title              string   FALSE       
- 6 a-qc-parliament-debates event_start_time         string   FALSE       
- 7 a-qc-parliament-debates event_end_time           string   FALSE       
- 8 a-qc-parliament-debates timestamp                string   FALSE       
- 9 a-qc-parliament-debates order_of_business_number string   FALSE       
-10 a-qc-parliament-debates order_of_business_title  string   FALSE       
+   <chr>                   <chr>                    <chr>    <lgl>
+ 1 a-qc-parliament-debates event_date               date     TRUE
+ 2 a-qc-parliament-debates id                       string   FALSE
+ 3 a-qc-parliament-debates institution_id           string   FALSE
+ 4 a-qc-parliament-debates event_number             string   FALSE
+ 5 a-qc-parliament-debates event_title              string   FALSE
+ 6 a-qc-parliament-debates event_start_time         string   FALSE
+ 7 a-qc-parliament-debates event_end_time           string   FALSE
+ 8 a-qc-parliament-debates timestamp                string   FALSE
+ 9 a-qc-parliament-debates order_of_business_number string   FALSE
+10 a-qc-parliament-debates order_of_business_title  string   FALSE
 # ℹ 11 more rows
 # ℹ Use `print(n = ...)` to see more rows
 ```
@@ -120,28 +127,25 @@ Les jeux de données de la plateforme _Ellipse_ sont partitionnés sur _AWS_, c'
 Dans l'exemple ci-haut, on voit que `event_date` est une variable partitionnée. Pour connaître les valeurs que peuvent prendre ces variables, on peut utiliser la fonction `ellipse_partitions()` :
 
 ```r
-[ins] r$> parts <- tube::ellipse_partitions(con, "a-qc-parliament-debates")
-INFO [2024-06-25 18:06:16] [tube::list_glue_tables] listing tables from the datawarehouse
+[ins] r$> parts <- ellipse_partitions(con, "a-qc-parliament-debates")
+INFO [2024-06-11 21:18:12] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
 
-[ins] r$> parts
-# A tibble: 13 × 2
+[ins] r$> print(parts)
+# A tibble: 10 × 2
    event_date       n
    <date>     <int64>
- 1 2021-10-21     367
- 2 2021-11-30     287
- 3 2024-05-21     262
- 4 2024-05-22     309
- 5 2024-05-23     262
- 6 2024-05-28     263
- 7 2024-05-29     640
- 8 2024-05-30     518
- 9 2024-05-31     223
-10 2024-06-04     305
-11 2024-06-05     293
-12 2024-06-06     315
-13 2024-06-07     290
+ 1 2024-05-21     262
+ 2 2024-05-22     309
+ 3 2024-05-23     262
+ 4 2024-05-28     263
+ 5 2024-05-29     320
+ 6 2024-05-30     259
+ 7 2024-05-31     223
+ 8 2024-06-04     305
+ 9 2024-06-05     293
+10 2024-06-06     315
 ```
 
 Un `tibble` est retourné. Chacune des lignes représente une combinaison de valeurs des variables partitionnées de la table, ainsi que le nombre d'observations associées.
@@ -149,6 +153,17 @@ Un `tibble` est retourné. Chacune des lignes représente une combinaison de val
 Ces valeurs peuvent nous guider dans nos requêtes subséquentes. À l'usage, pour obtenir une partie des données, on remarquera que l'utilisation d'un filtre sur des variables partionnées sera beaucoup plus rapide que sur des variables non-partitionnées. Il est donc recommandé d'utiliser les filtres de variables partitionnées en premier puis ceux sur les variables non-partionnées pour raffiner.
 
 Comme il s'agit d'un `tibble` ordinaire, on peut l'explorer avec les fonctions habituelles de `dplyr`:
+
+```r
+[ins] r$> dplyr::filter(parts, n > 300)
+# A tibble: 4 × 2
+  event_date       n
+  <date>     <int64>
+1 2024-05-22     309
+2 2024-05-29     320
+3 2024-06-04     305
+4 2024-06-06     315
+```
 
 ### Interroger les données
 
