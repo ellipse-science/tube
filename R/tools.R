@@ -15,3 +15,14 @@ convert_url_to_key <- function(url) {
   r <- gsub("_$", "", r)
   return(r)
 }
+
+
+is_csv_file <- function(filename) {
+  # check the content of the file to ensure it is a valid CSV
+  tryCatch({
+    invisible(read.csv(filename))
+    return(TRUE)
+  }, error = function(e) {
+    return(FALSE)
+  })
+}
