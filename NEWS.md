@@ -1,3 +1,5 @@
+# tube 0.3.0
+
 # tube 0.2.0
 
 * abstract all technical interface functions.  Only expose `ellipse_` functions
