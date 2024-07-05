@@ -5,10 +5,10 @@
 \title{Checks is the files in the landing zone have been processed and tells the user if he can
 upload more}
 \usage{
-check_landing_zone(creds, pipeline_name)
+check_landing_zone(credentials, pipeline_name)
 }
 \arguments{
-\item{creds}{An AWS session object with your credentials and the aws ressources required}
+\item{credentials}{An AWS session object with your credentials and the aws ressources required}
 
 \item{pipeline_name}{The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)}
 }

@@ -4,16 +4,24 @@
 \alias{ellipse_ingest}
 \title{Injecter de nouvelles données brutes manuellement dans tube via la landing zone}
 \usage{
-ellipse_ingest(env, folder, pipeline, batch)
+ellipse_ingest(
+  env,
+  file_or_folder,
+  pipeline,
+  file_batch = NULL,
+  file_version = NULL
+)
 }
 \arguments{
 \item{env}{L'environnement dans lequel les données doivent être injectées}
 
-\item{folder}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
-
 \item{pipeline}{Le nom du pipeline qui doit être exécuté pour charger les données}
 
-\item{batch}{Le nom du batch qui doit être accollé aux données dans l'entrepôt de données}
+\item{file_batch}{Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.}
+
+\item{file_version}{La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.}
+
+\item{folder}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
 }
 \value{
 La liste des fichiers qui ont été injectés dans tube
