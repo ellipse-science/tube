@@ -32,7 +32,9 @@ Imports:
     paws.analytics,
     paws.storage,
     purrr,
-    tibble
+    tibble,
+    pbapply,
+    progress
 Suggests:
     covr,
     knitr,
