@@ -193,6 +193,7 @@ ellipse_query <- function(con, table) {
 #' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
+#' @export 
 ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   creds <- memoized_get_aws_credentials()
 
