@@ -189,13 +189,158 @@ ellipse_query <- function(con, table) {
 #' @param env L'environnement dans lequel les données doivent être injectées
 #' @param folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
 #' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données
-#' @param batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données
+#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.
+#' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
-ellipse_ingest <- function(env, folder, pipeline, batch) {
+ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   creds <- memoized_get_aws_credentials()
 
-  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+  landing_zone_bucket <- list_landing_zone_bucket(creds)
+
+  if (is.null(landing_zone_bucket)) {
+    cli::cli_alert_danger("Oups, il semble que le bucket de la landing zone n'a pas été trouvé! 😅")
+    return(NULL)
+  }
+
+  if (is.null(file_or_folder)) {
+    cli::cli_alert_danger("Oups, il faut fournir un fichier ou un répertoire à injecter! 😅")
+    return(NULL)
+  }
+
+  if (is.null(pipeline)) {
+    cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
+    return(NULL)
+  }
+
+  # check that the pipeline exists by checking that the partition exists in the landing zone bucket
+  if (! paste0(pipeline,"/") %in% list_landing_zone_partitions(creds)) {
+    cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅")
+    return(NULL)
+  }
+
+  # check that pipeline name start with a, r, c, dict or dim
+  if (!grepl("^(a-|r-|c-|dict-|dim-)", pipeline)) {
+    cli::cli_alert_danger("Oups, le nom du pipeline doit commencer par a-, r-, c-, dict- ou dim-! 😅")
+    return(NULL)
+  }
+
+  if (is.null(file_batch) && is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir un batch ou une version pour injecter les données! 😅\
+    Si vous ne fournissez pas de batch, vous devez fournir une version.\
+    Si vous ne fournissez pas de version, vous devez fournir un batch.\
+    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
+    return(NULL)
+  }
+
+  # check that we have a version for dim, or dict and that we have a batch for a, r, c pipelines
+  if (grepl("^(a-|r-|c-)", pipeline) && is.null(file_batch)) {
+    cli::cli_alert_danger("Oups, il faut fournir un batch pour les données factuelles (pipelines a-, r- ou c-)! 😅")
+    return(NULL)
+  }
+
+  if (grepl("^(dict-|dim-)", pipeline) && is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir une version pour les données dimensionnelles ou les dictionnaires (pipelines dict- ou dim-)! 😅")
+    return(NULL)
+  }
+
+  # check whether the file_or_folder is a file or a folder
+  cli::cli_alert_info("Vérification des données à injecter dans tube...")
+
+  if (file.exists(file_or_folder)) {
+    if (file.info(file_or_folder)$isdir) {
+      cli::cli_alert_info("Le chemin fourni est un répertoire.")
+
+      folder_content <- list.files(file_or_folder, full.names = TRUE)
+
+      # remove folders from this list
+      folder_content <- folder_content[!file.info(folder_content)$isdir]
+
+      # check that it's not empty
+      if (length(folder_content) == 0) {
+        cli::cli_alert_danger("Oups, le répertoire fourni est vide! 😅")
+        return(NULL)
+      }
+      
+      # check that the folder contains only one file type
+      if (length(unique(file_ext(folder_content))) > 1) {
+        cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers de types différents! 😅")
+        return(NULL)
+      }
+
+      # check that the folder contains only csv or rtf files
+      if (!all(file_ext(folder_content) %in% c("csv", "rtf"))) {
+        cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers qui ne sont ni des fichiers CSV ni des fichiers RTF! 😅")
+        return(NULL)
+      }
+
+      cli::cli_alert_info(paste("Validation de l'intégrité des données"))
+      # check that the csv files are valid
+      if (any(file_ext(folder_content) == "csv")) {
+        csv_files <- folder_content[file_ext(folder_content) == "csv"]
+        # Use pblapply instead of sapply to apply is_csv_file with a progress bar
+        valid_csv_files <- unlist(pbapply::pblapply(csv_files, is_csv_file))
+        if (!all(valid_csv_files)) {
+          cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers CSV qui ne sont pas valides! 😅")
+          return(NULL)
+        }
+      }
+
+      # check that the rtf files are valid
+      if (any(file_ext(folder_content) == "rtf")) {
+        rtf_files <- folder_content[file_ext(folder_content) == "rtf"]
+        # Use pblapply instead of sapply to apply is_rtf_file with a progress bar
+        valid_rtf_files <- unlist(pbapply::pblapply(rtf_files, is_rtf_file))
+        if (!all(valid_rtf_files)) {
+          cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers RTF qui ne sont pas valides! 😅")
+          return(NULL)
+        }
+      }
+
+      cli::cli_alert_info(paste("Il y a", length(folder_content), "fichiers CSV ou RTF dans le répertoire fourni."))
+
+    } else {
+      cli::cli_alert_info("Le chemin fourni est un fichier.")
+      folder_content <- list(file_or_folder)
+      switch(file_ext(file_or_folder),
+              "csv" = {
+                if (!is_csv_file(file_or_folder)) {
+                  cli::cli_alert_danger("Oups, le fichier fourni est un fichier CSV qui n'est pas valide! 😅")
+                  return(NULL)
+                }
+              },
+              "rtf" = {
+                if (!is_rtf_file(file_or_folder)) {
+                  cli::cli_alert_danger("Oups, le fichier fourni est un fichier RTF qui n'est pas valide! 😅")
+                  return(NULL)
+                }
+              },
+              {
+                cli::cli_alert_warning("Oups!  Seuls les fichiers CSV et RTF sont supportés par tube! 😅")
+                return(NULL)
+              })
+    }
+  } else {
+    cli::cli_alert_danger("Oups, le chemin fourni n'existe pas! 😅")
+    return(NULL)
+  }
+
+
+  cli::cli_alert_info("Les données sont en cours d'ingestion dans la landing zone...")
+  # Create a progress bar object
+  pb <- progress::progress_bar$new(
+    format = "  uploading files [:bar] :percent eta: :eta",
+    total = length(folder_content), # total number of iterations
+    clear = FALSE,
+    width = 60
+  )
+
+  # Loop with progress bar
+  for (file in folder_content) {
+    upload_file_to_landing_zone(creds, file, pipeline, file_batch, file_version)
+    pb$tick() # Update the progress bar
+  }
+
 }
 
 
