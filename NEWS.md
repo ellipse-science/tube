@@ -1,3 +1,7 @@
+# tube 0.2.1
+
+* Fix: Allow multiple connections in a given R session
+
 # tube 0.2.0
 
 * abstract all technical interface functions.  Only expose `ellipse_` functions
