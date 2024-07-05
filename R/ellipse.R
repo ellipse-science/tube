@@ -215,7 +215,9 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
 
   # check that the pipeline exists by checking that the partition exists in the landing zone bucket
   if (! paste0(pipeline,"/") %in% list_landing_zone_partitions(creds)) {
-    cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅")
+    cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅\
+      demandez à votre ingénieur de données de créer le pipeline dans la plateforme de données\
+      pour que vous puissiez y injecter des données.")
     return(NULL)
   }
 
