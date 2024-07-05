@@ -1,4 +1,11 @@
 # tube 0.3.0
+* Implementation of the `ellipse_ingest` function to inject factual and dimensional data or dictionaries into the data platform.
+
+In the background, the files are renamed and loaded into the landing zone in an S3 prefix named after the pipeline under the DEFAULT partition.
+
+During this process, a metadata tag is added to the file: either `version` for dimensional data or `batch` for factual data. This facilitates the subsequent loading of these data into R using a filter to retrieve them. It also allows for their specific identification. This metadata is found in a column of the data schema in the data warehouse.
+
+Then, an extractor retrieves them from there to inject them into the data lake. This triggers an event that will run the loader, which will place the structured data into the data warehouse.
 
 # tube 0.2.0
 
