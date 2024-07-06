@@ -57,7 +57,7 @@ ellipse_connect <- function(
   database <- match.arg(database)
   cli::cli_alert_info(paste("Database:", database))
 
-  creds <- memoized_get_aws_credentials()
+  creds <- get_aws_credentials()
 
   aws_access_key_id <- creds$credentials$creds$access_key_id
   aws_secret_access_key <- creds$credentials$creds$secret_access_key
@@ -91,7 +91,7 @@ ellipse_disconnect <- function(con = NULL) {
     if (DBI::dbIsValid(con)) {
       DBI::dbDisconnect(con)
       cli::cli_alert_success("La connexion a été fermée avec succès! 👋")
-      return(invisible(TRUE))      
+      return(invisible(TRUE))
     } else {
       cli::cli_alert_warning("Il semble que la connexion n'existe pas ou soit déjà close! 😅")
       return(invisible(FALSE))

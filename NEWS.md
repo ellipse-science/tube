@@ -7,6 +7,10 @@ During this process, a metadata tag is added to the file: either `version` for d
 
 Then, an extractor retrieves them from there to inject them into the data lake. This triggers an event that will run the loader, which will place the structured data into the data warehouse.
 
+# tube 0.2.1
+
+* Fix: Allow multiple connections in a given R session
+
 # tube 0.2.0
 
 * abstract all technical interface functions.  Only expose `ellipse_` functions
