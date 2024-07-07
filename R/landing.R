@@ -9,7 +9,7 @@ list_landing_zone_bucket <- function(credentials) {
   return(datalake_list)
 }
 
-# Returns the firte level partition names of the landing zone bucket
+# Returns the first level partition names of the landing zone bucket
 #
 list_landing_zone_partitions <- function(credentials) {
   logger::log_debug("[tube::list_landing_zone_partitions] entering function")
@@ -24,7 +24,7 @@ list_landing_zone_partitions <- function(credentials) {
 #' Uploads the file specified to the landing zone bucket.
 #'
 #' @param credentials An AWS session object with your credentials and the aws ressources required
-#' @param file The path to the file to upload
+#' @param filepath The path to the file to upload
 #' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
 #' @param file_batch mandatory parameter to specify the batch name.  if batch is specified, then version must be NULL.  Batch is used ONLY for factual data to help you retrieve your data in the datawarehouse
 #' @param file_version mandatory parameter to specify the version of the file. if version is specified, then batch must be NULL. Version is used ONLY for reference data (dimensions, dictionaries) to help you retrieve your data in the datawarehouse

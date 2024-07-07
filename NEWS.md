@@ -1,7 +1,9 @@
 # tube 0.3.0
 * Implementation of the `ellipse_ingest` function to inject factual and dimensional data or dictionaries into the data platform.
 
-In the background, the files are renamed and loaded into the landing zone in an S3 prefix named after the pipeline under the DEFAULT partition.
+Essentially, the ingestion consists in uploading local files into the data platform for them to be processed and transformed into structured data tables in the data warehouse.  The process consists in providing either a local file name or a local folder name containing files to upload to the landing zone of the data platform.
+
+In the background, the files are uploaded in an S3 bucket, inside a prefix named after the pipeline, under the DEFAULT partition.
 
 During this process, a metadata tag is added to the file: either `version` for dimensional data or `batch` for factual data. This facilitates the subsequent loading of these data into R using a filter to retrieve them. It also allows for their specific identification. This metadata is found in a column of the data schema in the data warehouse.
 

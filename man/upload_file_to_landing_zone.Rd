@@ -15,13 +15,13 @@ upload_file_to_landing_zone(
 \arguments{
 \item{credentials}{An AWS session object with your credentials and the aws ressources required}
 
+\item{filepath}{The path to the file to upload}
+
 \item{pipeline_name}{The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)}
 
 \item{file_batch}{mandatory parameter to specify the batch name.  if batch is specified, then version must be NULL.  Batch is used ONLY for factual data to help you retrieve your data in the datawarehouse}
 
 \item{file_version}{mandatory parameter to specify the version of the file. if version is specified, then batch must be NULL. Version is used ONLY for reference data (dimensions, dictionaries) to help you retrieve your data in the datawarehouse}
-
-\item{file}{The path to the file to upload}
 }
 \value{
 the status of each file upload

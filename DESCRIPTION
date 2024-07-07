@@ -33,6 +33,7 @@ Imports:
     paws.storage,
     purrr,
     tibble,
+    tools,
     pbapply,
     progress
 Suggests:

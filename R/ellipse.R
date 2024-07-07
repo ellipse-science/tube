@@ -185,17 +185,20 @@ ellipse_query <- function(con, table) {
 
 
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#' Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
+#' vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
+#' dans une table de la datawarehouse.
 #'
 #' @param env L'environnement dans lequel les données doivent être injectées
-#' @param folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
-#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données
+#' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
+#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.  Cela va va déterminer dans quelle table de données les données vont être injectées.
 #' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.
 #' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export 
 ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
-  creds <- memoized_get_aws_credentials()
+  creds <- get_aws_credentials()
 
   landing_zone_bucket <- list_landing_zone_bucket(creds)
 
@@ -236,6 +239,12 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
     return(NULL)
   }
 
+  if (!is.null(file_batch) && !is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir soit un batch, soit une version, mais pas les deux pour injecter les données! 😅\
+    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
+    return(NULL)
+  }
+
   # check that we have a version for dim, or dict and that we have a batch for a, r, c pipelines
   if (grepl("^(a-|r-|c-)", pipeline) && is.null(file_batch)) {
     cli::cli_alert_danger("Oups, il faut fournir un batch pour les données factuelles (pipelines a-, r- ou c-)! 😅")
@@ -249,85 +258,7 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
 
   # check whether the file_or_folder is a file or a folder
   cli::cli_alert_info("Vérification des données à injecter dans tube...")
-
-  if (file.exists(file_or_folder)) {
-    if (file.info(file_or_folder)$isdir) {
-      cli::cli_alert_info("Le chemin fourni est un répertoire.")
-
-      folder_content <- list.files(file_or_folder, full.names = TRUE)
-
-      # remove folders from this list
-      folder_content <- folder_content[!file.info(folder_content)$isdir]
-
-      # check that it's not empty
-      if (length(folder_content) == 0) {
-        cli::cli_alert_danger("Oups, le répertoire fourni est vide! 😅")
-        return(NULL)
-      }
-      
-      # check that the folder contains only one file type
-      if (length(unique(file_ext(folder_content))) > 1) {
-        cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers de types différents! 😅")
-        return(NULL)
-      }
-
-      # check that the folder contains only csv or rtf files
-      if (!all(file_ext(folder_content) %in% c("csv", "rtf"))) {
-        cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers qui ne sont ni des fichiers CSV ni des fichiers RTF! 😅")
-        return(NULL)
-      }
-
-      cli::cli_alert_info(paste("Validation de l'intégrité des données"))
-      # check that the csv files are valid
-      if (any(file_ext(folder_content) == "csv")) {
-        csv_files <- folder_content[file_ext(folder_content) == "csv"]
-        # Use pblapply instead of sapply to apply is_csv_file with a progress bar
-        valid_csv_files <- unlist(pbapply::pblapply(csv_files, is_csv_file))
-        if (!all(valid_csv_files)) {
-          cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers CSV qui ne sont pas valides! 😅")
-          return(NULL)
-        }
-      }
-
-      # check that the rtf files are valid
-      if (any(file_ext(folder_content) == "rtf")) {
-        rtf_files <- folder_content[file_ext(folder_content) == "rtf"]
-        # Use pblapply instead of sapply to apply is_rtf_file with a progress bar
-        valid_rtf_files <- unlist(pbapply::pblapply(rtf_files, is_rtf_file))
-        if (!all(valid_rtf_files)) {
-          cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers RTF qui ne sont pas valides! 😅")
-          return(NULL)
-        }
-      }
-
-      cli::cli_alert_info(paste("Il y a", length(folder_content), "fichiers CSV ou RTF dans le répertoire fourni."))
-
-    } else {
-      cli::cli_alert_info("Le chemin fourni est un fichier.")
-      folder_content <- list(file_or_folder)
-      switch(file_ext(file_or_folder),
-              "csv" = {
-                if (!is_csv_file(file_or_folder)) {
-                  cli::cli_alert_danger("Oups, le fichier fourni est un fichier CSV qui n'est pas valide! 😅")
-                  return(NULL)
-                }
-              },
-              "rtf" = {
-                if (!is_rtf_file(file_or_folder)) {
-                  cli::cli_alert_danger("Oups, le fichier fourni est un fichier RTF qui n'est pas valide! 😅")
-                  return(NULL)
-                }
-              },
-              {
-                cli::cli_alert_warning("Oups!  Seuls les fichiers CSV et RTF sont supportés par tube! 😅")
-                return(NULL)
-              })
-    }
-  } else {
-    cli::cli_alert_danger("Oups, le chemin fourni n'existe pas! 😅")
-    return(NULL)
-  }
-
+  folder_content <- parse_landing_zone_input(file_or_folder)
 
   cli::cli_alert_info("Les données sont en cours d'ingestion dans la landing zone...")
   # Create a progress bar object
@@ -345,6 +276,7 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
   }
 
   # TODO: do something better than the progress bar for 1 file : length(folder_content)
+  cli::cli_alert_info("Les données ont été injectées dans la landing zone.  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect()` 👋.")
 
 }
 
