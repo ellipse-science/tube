@@ -344,7 +344,7 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
     pb$tick() # Update the progress bar
   }
 
-  Sys.sleep(2)
+  # TODO: do something better than the progress bar for 1 file : length(folder_content)
 
 }
 
