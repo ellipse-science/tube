@@ -276,7 +276,8 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
   }
 
   # TODO: do something better than the progress bar for 1 file : length(folder_content)
-  cli::cli_alert_info("Les données ont été injectées dans la landing zone.  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect()` 👋.")
+  cli::cli_alert_info("Les données ont été injectées dans la landing zone.\
+  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect()` 👋.")
 
 }
 
