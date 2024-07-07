@@ -185,17 +185,99 @@ ellipse_query <- function(con, table) {
 
 
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#' Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
+#' vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
+#' dans une table de la datawarehouse.
 #'
 #' @param env L'environnement dans lequel les données doivent être injectées
-#' @param folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
-#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données
-#' @param batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données
+#' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
+#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.  Cela va va déterminer dans quelle table de données les données vont être injectées.
+#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.
+#' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
-ellipse_ingest <- function(env, folder, pipeline, batch) {
-  creds <- memoized_get_aws_credentials()
+#' @export 
+ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
+  creds <- get_aws_credentials()
 
-  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+  landing_zone_bucket <- list_landing_zone_bucket(creds)
+
+  if (is.null(landing_zone_bucket)) {
+    cli::cli_alert_danger("Oups, il semble que le bucket de la landing zone n'a pas été trouvé! 😅")
+    return(NULL)
+  }
+
+  if (is.null(file_or_folder)) {
+    cli::cli_alert_danger("Oups, il faut fournir un fichier ou un répertoire à injecter! 😅")
+    return(NULL)
+  }
+
+  if (is.null(pipeline)) {
+    cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
+    return(NULL)
+  }
+
+  # check that the pipeline exists by checking that the partition exists in the landing zone bucket
+  if (! paste0(pipeline,"/") %in% list_landing_zone_partitions(creds)) {
+    cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅\
+      demandez à votre ingénieur de données de créer le pipeline dans la plateforme de données\
+      pour que vous puissiez y injecter des données.")
+    return(NULL)
+  }
+
+  # check that pipeline name start with a, r, c, dict or dim
+  if (!grepl("^(a-|r-|c-|dict-|dim-)", pipeline)) {
+    cli::cli_alert_danger("Oups, le nom du pipeline doit commencer par a-, r-, c-, dict- ou dim-! 😅")
+    return(NULL)
+  }
+
+  if (is.null(file_batch) && is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir un batch ou une version pour injecter les données! 😅\
+    Si vous ne fournissez pas de batch, vous devez fournir une version.\
+    Si vous ne fournissez pas de version, vous devez fournir un batch.\
+    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
+    return(NULL)
+  }
+
+  if (!is.null(file_batch) && !is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir soit un batch, soit une version, mais pas les deux pour injecter les données! 😅\
+    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
+    return(NULL)
+  }
+
+  # check that we have a version for dim, or dict and that we have a batch for a, r, c pipelines
+  if (grepl("^(a-|r-|c-)", pipeline) && is.null(file_batch)) {
+    cli::cli_alert_danger("Oups, il faut fournir un batch pour les données factuelles (pipelines a-, r- ou c-)! 😅")
+    return(NULL)
+  }
+
+  if (grepl("^(dict-|dim-)", pipeline) && is.null(file_version)) {
+    cli::cli_alert_danger("Oups, il faut fournir une version pour les données dimensionnelles ou les dictionnaires (pipelines dict- ou dim-)! 😅")
+    return(NULL)
+  }
+
+  # check whether the file_or_folder is a file or a folder
+  cli::cli_alert_info("Vérification des données à injecter dans tube...")
+  folder_content <- parse_landing_zone_input(file_or_folder)
+
+  cli::cli_alert_info("Les données sont en cours d'ingestion dans la landing zone...")
+  # Create a progress bar object
+  pb <- progress::progress_bar$new(
+    format = "  uploading files [:bar] :percent eta: :eta",
+    total = length(folder_content), # total number of iterations
+    clear = FALSE,
+    width = 60
+  )
+
+  # Loop with progress bar
+  for (file in folder_content) {
+    upload_file_to_landing_zone(creds, file, pipeline, file_batch, file_version)
+    pb$tick() # Update the progress bar
+  }
+
+  # TODO: do something better than the progress bar for 1 file : length(folder_content)
+  cli::cli_alert_info("Les données ont été injectées dans la landing zone.  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect()` 👋.")
+
 }
 
 

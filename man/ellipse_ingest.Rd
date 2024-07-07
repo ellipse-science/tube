@@ -2,22 +2,36 @@
 % Please edit documentation in R/ellipse.R
 \name{ellipse_ingest}
 \alias{ellipse_ingest}
-\title{Injecter de nouvelles données brutes manuellement dans tube via la landing zone}
+\title{Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
+vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
+dans une table de la datawarehouse.}
 \usage{
-ellipse_ingest(env, folder, pipeline, batch)
+ellipse_ingest(
+  env,
+  file_or_folder,
+  pipeline,
+  file_batch = NULL,
+  file_version = NULL
+)
 }
 \arguments{
 \item{env}{L'environnement dans lequel les données doivent être injectées}
 
-\item{folder}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
+\item{file_or_folder}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
 
-\item{pipeline}{Le nom du pipeline qui doit être exécuté pour charger les données}
+\item{pipeline}{Le nom du pipeline qui doit être exécuté pour charger les données.  Cela va va déterminer dans quelle table de données les données vont être injectées.}
 
-\item{batch}{Le nom du batch qui doit être accollé aux données dans l'entrepôt de données}
+\item{file_batch}{Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.}
+
+\item{file_version}{La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.}
 }
 \value{
 La liste des fichiers qui ont été injectés dans tube
 }
 \description{
 Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
+vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
+dans une table de la datawarehouse.
 }

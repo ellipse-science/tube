@@ -15,3 +15,4 @@ convert_url_to_key <- function(url) {
   r <- gsub("_$", "", r)
   return(r)
 }
+
