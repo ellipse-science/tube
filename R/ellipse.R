@@ -291,8 +291,65 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 ellipse_publish <- function(env, dataframe, datamart, table) {
-  creds <- memoized_get_aws_credentials()
+  creds <- get_aws_credentials()
 
-  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+  if (is.null(datamart)) {
+    cli::cli_alert_danger("Oups, il faut fournir un datamart pour publier les données! 😅")
+    return(invisible(FALSE))
+  }
+  
+  if (is.null(table)) {
+    cli::cli_alert_danger("Oups, il faut fournir une table pour publier les données! 😅")
+    return(invisible(FALSE))
+  }
+
+  if (!datamart %in% c("PROD", "DEV")) {
+    cli::cli_alert_danger("Oups, il faut choisir un environnement! 😅\n\n",
+                          "Le paramètre `env` peut être \"PROD\" ou \"DEV\"")
+    return(invisible(FALSE))
+  }
+
+  # check that the dataframe is a good dataframe and that it complies with the 
+  # reruirements of a datamart table
+  if (!is.data.frame(dataframe)) {
+    cli::cli_alert_danger("Oups, il faut fournir un dataframe pour publier les données! 😅")
+    return(invisible(FALSE))
+  }
+
+  if (nrow(dataframe) == 0) {
+    cli::cli_alert_danger("Oups, le dataframe est vide! 😅")
+    return(invisible(FALSE))
+  }
+
+  if (ncol(dataframe) == 0) {
+    cli::cli_alert_danger("Oups, le dataframe n'a pas de colonnes! 😅")
+    return(invisible(FALSE))
+  }
+
+  if (any(duplicated(names(dataframe)))) {
+    cli::cli_alert_danger("Oups, le dataframe a des colonnes en double! 😅")
+    return(invisible(FALSE))
+  }
+
+  if (any(names(dataframe) %in% c("file_batch", "file_version"))) {
+    cli::cli_alert_danger("Oups, le dataframe ne peut pas contenir de colonnes nommées `file_batch` ou `file_version`! 😅")
+    return(invisible(FALSE))
+  }
+
+  # check that the datamart exists by checking that the partition exists in the datamart bucket
+  if (! paste0(datamart,"/") %in% list_datamart_partitions(creds)) {
+    cli::cli_alert_danger("Oups, le datamart fourni n'existe pas! 😅")
+    # ask the user is we must create a new datamart
+    if (cli::cli_confirm("Voulez-vous créer un nouveau datamart?")) {
+      create_datamart(creds, datamart)
+    }
+    return(invisible(FALSE))
+  }
+
+  # check that the table does not exist in the datamart
+  if (table %in% list_datamart_tables(creds, datamart)) {
+    cli::cli_alert_danger("Oups, la table demandée existe déjà dans le datamart! 😅")
+    return(invisible(FALSE))
+  }
 
 }
