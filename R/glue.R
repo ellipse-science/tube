@@ -61,3 +61,28 @@ list_glue_tables <- function(type, datamart = NULL, credentials) {
 
   return(table_list)
 }
+
+
+list_glue_jobs <- function(credentials) {
+  logger::log_debug("[tube::list_glue_jobs] entering function")
+  job_list <- list()
+
+  logger::log_debug("[tube::list_glue_jobs] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = credentials
+  )
+
+  logger::log_debug("[tube::list_glue_jobs] listing jobs")
+  r <- glue_client$get_jobs()
+
+  if (length(r) == 0) {
+    return(NULL)
+  }
+
+  # Should the glue client be closed
+  # glue_client$close()
+
+  # For now just return the full unprocessed list
+  job_list <- r
+  return(job_list)
+}
