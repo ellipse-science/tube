@@ -335,7 +335,7 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
       cli::cli_alert_info("Création du datamart en cours...")
       # the file path will be created when the first file is uploaded with it in its key
     } else {
-      cli::cli_alert_info("Publication des données abandonnée.")
+      cli::cli_alert_danger("Publication des données abandonnée.")
       return(invisible(FALSE))
     }
   }
@@ -350,8 +350,9 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
     cli::cli_alert_danger("La table demandée existe déjà! 😅")
 
     choice <- ask_1_2(paste("Voulez-vous",
-      "1. ajouter des données à la table existante?",
-      "2. écraser la table existante?\nVotre choix:", sep = "\n"))
+      "  1. ajouter des données à la table existante?",
+      "  2. écraser la table existante?",
+      "  Votre choix:", sep = "\n"))
 
     if (choice == 1) {
       cli::cli_alert_info("Ajout des données à la table existante en cours...")
@@ -359,7 +360,7 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
       # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
       if (r) {
-        cli::cli_alert_info("Les données ont été ajoutées à la table existante.")
+        cli::cli_alert_success("Les données ont été ajoutées à la table existante.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
         return(invisible(FALSE))
@@ -367,18 +368,18 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
     }
 
     if (choice == 2) {
-      cli::cli_alert_info("Ecrasement de la table existante en cours...")
       # confirm by the user
       if (!ask_yes_no("Êtes-vous cetain.e de vouloir écraser la table existante?")) {
         cli::cli_alert_info("Publication des données abandonnée.")
         return(invisible(FALSE))
       }
+      cli::cli_alert_info("Ecrasement de la table existante en cours...")
       # delete the glue table
       r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
       # delete the content of the folder s3://datamarts-bucket/datamart/table
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
       if (r1 || r2) {
-        cli::cli_alert_info("La table a été écrasée avec succès.")
+        cli::cli_alert_success("La table a été écrasée avec succès.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
         return(invisible(FALSE))
@@ -387,26 +388,26 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
       if (r) {
-        cli::cli_alert_info("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
+        cli::cli_alert_success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
         return(invisible(FALSE))
       }
     }
   } else {
-    cli::cli_alert_info("La table demandée n'existe pas")
+    cli::cli_alert_danger("La table demandée n'existe pas")
     if (ask_yes_no("Voulez-vous créer la table?")) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       cli::cli_alert_info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
       if (r) {
-        cli::cli_alert_info("La table a été créée avec succès.")
+        cli::cli_alert_success("La table a été créée avec succès.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
         return(invisible(FALSE))
       }
     } else {
-      cli::cli_alert_info("Publication des données abandonnée.")
+      cli::cli_alert_danger("Publication des données abandonnée.")
       return(invisible(FALSE))
     }
   }
@@ -418,18 +419,18 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
   # The glue job will also create the table in the datamart database
   if (ask_yes_no(paste(
     "Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?",
-    "Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", sep = "\n"))) {
+    "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", 
+    "  Votre choix", sep = "\n"))) {
     glue_job <- list_glue_jobs(creds)
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table))
-    cli::cli_alert_info(paste(
-      "Le traitement des données a été déclenché avec succès.",
-      "Les données seront disponibles dans les prochaines minutes",
-      "N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.", sep = "\n"))
+    cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
+    cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
+    cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
+    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
   } else {
-    cli::cli_alert_info(paste(
-      "Publication des données complétée avec succès",
-      "Les données seront disponibles dans les 6 prochaines heures",
-      "N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.", sep = "\n"))
+    cli::cli_alert_success("Publication des données complétée avec succès")
+    cli::cli_alert_info("Les données seront disponibles dans les 6 prochaines heures")
+    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
     return(invisible(FALSE))
   }
 }
