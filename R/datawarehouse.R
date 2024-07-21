@@ -1,89 +1,68 @@
-# Returns the datawarehouse bucket
-#
+#' Returns the datawarehouse bucket name
+#'
+#' Technically the function returns all the buckets for which
+#' the name contains the string `datawarehousebucket` but in our
+#' infrastructure, there is only one per AWS account (DEV/PROD)
+#' 
+#' Currently the function is not used in the package but it is
+#' kept for future use
+#'
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @returns A string containing the name of the datamart bucket
 list_datawarehouse_bucket <- function(credentials) {
-  logger::log_debug("[tube::list_datalakes] entering function")
+  logger::log_debug("[tube::list_datawarehouse_bucket] entering function")
 
-  datalake_list <- list_s3_buckets("datawarehousebucket", credentials)
+  datalake_list <- list_s3_buckets(credentials, "datawarehousebucket")
 
-  logger::log_debug("[tube::list_datalakes] returning results")
+  logger::log_debug("[tube::list_datawarehouse_bucket] returning results")
   return(datalake_list)
 }
 
-# Returns the database name of the datawarehouse
+#' Returns the datawarehouse GLUE database name
+#'
+#' Technically the function returns all the databases of which
+#' the name contains the string `datamart` but in our 
+#' infrastructure, there is only one per AWS account (DEV/PROD)
+#' 
+#' It is used mainly by the ellipse_connect function to retrieve the
+#' schema with wich to instanciate the DBI connection
+#'
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @returns A string containing the name of the datawarehouse database
 list_datawarehouse_database <- function(credentials) {
   logger::log_debug("[tube::list_datawarehouse_database] entering function")
 
-  datawarehouse_database <- list_glue_databases("datawarehouse", credentials)
+  datawarehouse_database <- list_glue_databases(credentials, "datawarehouse")
 
   logger::log_debug("[tube::list_datawarehouse_database] returning results")
   return(datawarehouse_database)
 }
 
-# Returns the list of tables in the datawarehouse
-list_datawarehouse_tables <- function(credentials, simplify = TRUE) {
-  logger::log_debug("[tube::list_datawarehouse_tables] entering function")
-
-  datawarehouse_database <- list_glue_tables(type = "datawarehouse",
-                                             credentials = credentials)
-
-  logger::log_debug("[tube::list_datawarehouse_tables] returning results")
-
-  if (simplify) return(glue_table_list_to_tibble(datawarehouse_database))
-  return(datawarehouse_database)
-}
-
-#' Convert a list of tables from the AWS Glue API
+#' Returns the datawarehouse GLUE tables names
+#' 
+#' It is currently not used as the ellipse_discover function
+#' does the job through the list_glue_tables function
+#' We're keeping it for now just in case we need it later
 #'
-#' The Glue API returns a complex `JSON` response when the
-#' `list_database_tables` method is called. There is simply too much nested
-#' information for a data scientist to parse through to get to the information
-#' they need.
-#'
-#' This function converts the response into a human readable `tibble` containing
-#' only the most useful information, namely the table names, their respective
-#' columns and column types, as well which columns are partitionned in the
-#' data warehouse.
-#'
-#' @param glue_response A list of 2 elements, the first of which is named
-#'   `TableList`. What is expected here is the output from
-#'   `tube::list_datawarehouse_tables()`
-#' @returns A tibble with columns:
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @returns If simplify = true it returns a tibble with columns:
 #'
 #'   * `table_name` : Name of the table in the data warehouse
 #'   * `col_name` : Name of the column
 #'   * `col_type` : Data type of the column
 #'   * `is_partition` : Logical indicating wether or not the column is
 #'      partitionned
-glue_table_list_to_tibble <- function(glue_response) {
-  df <- tibble::tibble(table_name = character(),
-                       col_name = character(),
-                       col_type = character(),
-                       is_partition = logical())
+#' If simplify = false it returns the raw output from the AWS Glue API
+list_datawarehouse_tables <- function(credentials, simplify = TRUE) {
+  logger::log_debug("[tube::list_datawarehouse_tables] entering function")
 
-  table_names <- purrr::map(glue_response[[1]], \(x) x$Name) |> unlist()
+  datawarehouse_database <- list_glue_tables(credentials, "datawarehouse")
 
-  for (i in seq_along(table_names)) {
-    # Partitions and regulars columns are not together in the response
-    partitions <- glue_response[[1]][[i]]$PartitionKeys
-    col_names  <- purrr::map(partitions, \(x) x$Name) |> unlist()
-    col_types  <- purrr::map(partitions, \(x) x$Type) |> unlist()
+  logger::log_debug("[tube::list_datawarehouse_tables] returning results")
 
-    parts <- tibble::tibble(table_name = table_names[i],
-                            col_name = col_names,
-                            col_type = col_types,
-                            is_partition = TRUE)
-
-    columns   <- glue_response[[1]][[i]]$StorageDescriptor$Columns
-    col_names <- purrr::map(columns, \(x) x$Name) |> unlist()
-    col_types <- purrr::map(columns, \(x) x$Type) |> unlist()
-
-    cols <- tibble::tibble(table_name = table_names[i],
-                           col_name = col_names,
-                           col_type = col_types,
-                           is_partition = FALSE)
-
-    df <- dplyr::bind_rows(df, parts, cols)
-  }
-
-  return(df)
+  if (simplify) return(glue_table_list_to_tibble(datawarehouse_database))
+  return(datawarehouse_database)
 }
