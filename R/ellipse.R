@@ -425,7 +425,6 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table))
     cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
     cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
-    cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
     cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
   } else {
     cli::cli_alert_success("Publication des données complétée avec succès")
