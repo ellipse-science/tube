@@ -4,7 +4,7 @@
 #' @param question La question à poser
 #' @return La réponse de l'utilisateur
 ask_yes_no <- function(question) {
-  answer <- readline(prompt = paste(question, "(oui/non) "))
+  answer <- readline(prompt = paste0("❓",question, " (oui/non) "))
   return(invisible(tolower(answer) %in% c("oui", "o")))
 }
 
@@ -15,7 +15,7 @@ ask_yes_no <- function(question) {
 #' @return La réponse de l'utilisateur
 ask_1_2 <- function(question) {
   while (TRUE) {
-    answer <- readline(prompt = paste(question, "(1/2) "))
+    answer <- readline(prompt = paste0("❓", question, " (1/2) "))
     if (answer %in% c("1", "2")) {
       return(invisible(answer))
     }
