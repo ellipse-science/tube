@@ -291,6 +291,120 @@ Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 # ℹ Use `print(n = ...)` to see more rows
 ```
 
+### Croiser des données
+
+1. Aller chercher les médias dans l'entrepôt de données en DEV
+```r
+[ins] r$> condwd <- tube::ellipse_connect("DEV", "datawarehouse")
+ℹ Environnement: DEV
+ℹ Database: datawarehouse
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatawarehousedbe64d5725
+✔ Connexion établie avec succès! 👍
+
+r$> df_medias <- tube::ellipse_query(condwd, "dim-medias") |>
+      dplyr::collect()
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 4.98 KB)
+```
+
+2. Aller chercher les Unes des médias dans l'entrepôt de données en PROD
+```r
+[ins] r$> condwp <- tube::ellipse_connect("PROD", "datawarehouse")
+ℹ Environnement: PROD
+ℹ Database: datawarehouse
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatawarehousedbe64d5725
+✔ Connexion établie avec succès! 👍
+
+r$> df_headlines <- tube::ellipse_query(condwp, "r-media-headlines") |>
+      dplyr::filter(extraction_year == 2024 & extraction_month == 7 & extraction_day == 22) |>
+      dplyr::collect()
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 9.95 MB)
+```
+
+À ce stade nous avons deux dataframe.  Pour les croiser l'un avec l'autre, il faut qu'ils aient deux colonnes qui contiennent les mêmes valeurs standardisées.  Validons que c'est bien le cas.
+
+```r
+[ins] r$> colnames(df_medias)
+ [1] "id"                     "long_name"              "short_name"             "other_names"            "lang"
+ [6] "country_id"             "province_or_state"      "x_handle"               "web_site"               "start_date"
+[11] "end_date"               "wikipedia_qid"          "wikipedia_url"          "metadata_lake_item_key" "metadata_url"
+[16] "version"
+
+r$> colnames(df_headlines)
+ [1] "id"                     "extraction_date"        "extraction_time"        "publish_date"           "title"
+ [6] "author"                 "body"                   "metadata_url"           "metadata_lake_item_key" "extraction_year"
+[11] "extraction_month"       "extraction_day"         "media_id"
+```
+
+On va pouvoir joindre les deux datframes sur la colonne `id` de `df_medias` et `media_id` de `df_headlines`
+
+```r
+[ins] r$> df <- dplyr::inner_join(df_medias, df_headlines, by = c("id" = "media_id")) |>
+      dplyr::select(id, province_or_state, title, body, extraction_date)
+
+r$> head(df)
+# A tibble: 6 × 5
+  id    province_or_state title                                                                                        body  extraction_date
+  <chr> <chr>             <chr>                                                                                        <chr> <date>
+1 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+2 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+3 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+4 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+5 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+6 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+```
+
+### Publier un jeu de données dans un datamart
+
+Pour plus de détails sur les concepts de datalake, datawarehouse, datamarts, voir [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/clessn_data_platform-LacEntrepotComptoir.drawio.png)
+
+
+Pour publier notre nouveau jeu de données dans un datamart, on peut utiliser la fonction `tube::ellipse_publish()`.
+
+```r
+[ins] 
+
+# Connexion au datamarts en DEV
+r$> condmd <- tube::ellipse_connect("DEV", "datamarts")
+ℹ Environnement: DEV
+ℹ Database: datamarts
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatamartdbd046f685
+✔ Connexion établie avec succès! 👍
+
+# publication de la table nommée headlinesbyprovinces dans le datamart nommé myradardatamart
+# avec le contenu du dataframe df, dans la base de données des datamarts en DEV
+r$> tube::ellipse_publish(con = condmd,
+      dataframe = df,
+      datamart = "myradardatamart",
+      table = "headlinesbyprovinces",
+      tag = "headlines_du_22_juillet_2024")
+
+✖ Le datamart fourni n'existe pas! 😅
+❓Voulez-vous créer un nouveau datamart? (oui/non) oui
+ℹ Création du datamart en cours...
+✖ La table demandée n'existe pas
+
+❓Voulez-vous créer la table? (oui/non) oui
+ℹ Création de la table en cours...
+✔ La table a été créée avec succès.
+
+❓Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?
+  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.
+  Votre choix (oui/non) oui
+✔ Le traitement des données a été déclenché avec succès.
+ℹ Les données seront disponibles dans les prochaines minutes
+ℹ N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.
+```
+
+
+### Notes sur dplyr
+
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 
 Pour la documentation conceptuelle de la plateforme de données du CAPP, voir le répertoire [doc](https://github.com/ellipse-science/tube-doc/tree/main)
