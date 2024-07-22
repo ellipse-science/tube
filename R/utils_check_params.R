@@ -145,4 +145,5 @@ check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
   }
 
   logger::log_debug("[tube::check_params_before_publish] Exitting function")
+  return(TRUE)
 }
