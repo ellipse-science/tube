@@ -37,11 +37,13 @@ AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
 
 Pour éditer le fichier .Renviron tel qu'illustré ci-dessus, simplement lancer la commande `usethis::edit_r_environ()` dans votre console R.  Modifiez le fichier, enregistrez-le et redémarrez votre session R
 
-C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
+C'est au moment de la connexion à la plateforme dans votre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
 
 ```R
-tube::ellipse_connect("DEV")
+tube::ellipse_connect(env = "DEV", database = "datawarehouse")
 ```
+
+Additionnellement, comme le montre la commande ci-dessus, il vous faut spécifier si votre connexion doit se faire sur l'entrepôt de données (datawarehouse) ou sur les comptoirs de données (datamarts).  Pour plus d'explications sur ces concepts, veuillez vous référer au repo [`tube-doc`](https://github.com/ellipse-science/tube-doc) dans lequel on décrit [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/clessn_data_platform-LacEntrepotComptoir.drawio.png).
 
 ## Interface de haut hiveau
 
@@ -60,7 +62,7 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 ```R
 [ins] r$> library(tube)
 
-[ins] r$> con <- ellipse_connect(env = "PROD")
+[ins] r$> con <- ellipse_connect(env = "PROD", database = "datawarehouse")
 ℹ Environnement: PROD
 ℹ Database: datawarehouse
 INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
@@ -72,7 +74,7 @@ INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
 La première étape de toute analyse est de rencenser les données à notre disposition. C'est le rôle de la fonction `ellipse_discover()`. Elle prend minimalement en paramètre l'objet de connexion obtenu à l'étape précédente :
 
 ```r
-[ins] r$> con <- ellipse_connect(env = "DEV")
+[ins] r$> con <- ellipse_connect(env = "DEV", database = "datawarehouse")
 ℹ Environnement: DEV
 ℹ Database: datawarehouse
 ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
@@ -222,49 +224,53 @@ On peut, par exemple, rechercher les titres des unes d'un média pour une journ�
 ```r
 [ins] r$> ellipse_discover(con, "r-media-headlines")
 INFO [2024-03-30 10:21:04] [tube::list_glue_tables] listing tables from the datawarehouse
-# A tibble: 9 × 4
-  table_name        col_name               col_type is_partition
-  <chr>             <chr>                  <chr>    <lgl>
-1 r-media-headlines date                   date     TRUE
-2 r-media-headlines media_id               string   TRUE
-3 r-media-headlines id                     string   FALSE
-4 r-media-headlines extraction_datetime    string   FALSE
-5 r-media-headlines title                  string   FALSE
-6 r-media-headlines author_id              string   FALSE
-7 r-media-headlines body                   string   FALSE
-8 r-media-headlines metadata_lake_item_key string   FALSE
-9 r-media-headlines metadata_url           string   FALSE
+# A tibble: 13 × 4
+   table_name        col_name               col_type is_partition
+   <chr>             <chr>                  <chr>    <lgl>       
+ 1 r-media-headlines extraction_year        int      TRUE        
+ 2 r-media-headlines extraction_month       int      TRUE        
+ 3 r-media-headlines extraction_day         int      TRUE        
+ 4 r-media-headlines media_id               string   TRUE        
+ 5 r-media-headlines id                     string   FALSE       
+ 6 r-media-headlines extraction_date        date     FALSE       
+ 7 r-media-headlines extraction_time        string   FALSE       
+ 8 r-media-headlines publish_date           date     FALSE       
+ 9 r-media-headlines title                  string   FALSE       
+10 r-media-headlines author                 string   FALSE       
+11 r-media-headlines body                   string   FALSE       
+12 r-media-headlines metadata_url           string   FALSE       
+13 r-media-headlines metadata_lake_item_key string   FALSE  
 
 [ins] r$> ellipse_partitions(con, "r-media-headlines")
 INFO [2024-03-30 10:21:51] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
-# A tibble: 128 × 3
-   date       media_id       n
-   <date>     <chr>    <int64>
- 1 2023-10-23 TVA           24
- 2 2024-01-28 TVA           59
- 3 2024-01-29 RCI            7
- 4 2024-01-29 TVA          126
- 5 2024-01-30 RCI          143
- 6 2024-01-30 TVA          142
- 7 2024-01-31 RCI          144
- 8 2024-01-31 TVA          148
- 9 2024-02-01 RCI          144
-10 2024-02-01 TVA          136
-# ℹ 118 more rows
+# A tibble: 715 × 5
+   extraction_year extraction_month extraction_day media_id       n
+             <int>            <int>          <int> <chr>    <int64>
+ 1            2024                5             28 CBC           27
+ 2            2024                5             28 CTV           27
+ 3            2024                5             28 GAM           27
+ 4            2024                5             28 GN            27
+ 5            2024                5             28 JDM           30
+ 6            2024                5             28 LAP           27
+ 7            2024                5             28 LED           27
+ 8            2024                5             28 MG            27
+ 9            2024                5             28 NP            30
+10            2024                5             28 RCI           30
+# ℹ 705 more rows
 # ℹ Use `print(n = ...)` to see more rows
 
 [ins] r$> df <-
             ellipse_query(con, "r-media-headlines") |>
-            dplyr::filter(date == as.Date("2024-01-30"), media_id == "RCI") |>
+            dplyr::filter(extraction_year == 2024, extraction_month == 5, media_id == "RCI") |>
             dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 526.42 KB)
 
 [ins] r$> df |>
             dplyr::mutate(
-              date_heure = lubridate::as_datetime(extraction_datetime,
+              date_heure = lubridate::as_datetime(paste(extraction_date, extraction_time),
               tz = "America/New_York")) |>
             dplyr::distinct(date_heure, title)
 Date in ISO8601 format; converting timezone from UTC to "America/New_York".
