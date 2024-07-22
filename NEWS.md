@@ -1,7 +1,7 @@
 # tube 0.4.0
 * Implentation of the `ellipse_publish` function to publish a dataframe as a table in a datamart.  A datamart is a collection of one or many tables that are typically the result of refiners.  When publishing a dataframe into a datamart, if it does not already exist, the user will be asked if he wants to create it.  The same goes with the table to publish the data into.  Data in a dataframe to publish can be either added to an existing table of a datamart, or the existing table can be overwritten.
 
-Currently `ellipse_publish`is only to be used intreactively by the user from within the R console.  In a subsequent version of this package, we will have an unattended version of ir in order to support refiners meant to be automated and therefore run unattended.
+Currently `ellipse_publish`is only to be used intreactively by the user from within the R console.  In a subsequent version of this package, we will provide an unattended version of ir in order to support refiners meant to be fully automated.
 
 Upon exit the `ellipse_publish` function prompts the user to process the data in order make it available (run the glue job) in the data platform through the `ellipse_query` functions immediately, or later according to the regular 6 hours schedule. 
 

@@ -6,7 +6,8 @@
 #' 
 #' This is used to get the name of the bucket where the results of the
 #' athena queries are stored.  More specifically, it is used to create
-#' the `s3_staging_dir` parameter in the `DBI::dbConnect` function of the 
+#' the `s3_staging_dir` parameter in the `DBI::dbConnect` function call
+#' in ellipse_connect
 #'
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package

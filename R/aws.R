@@ -7,7 +7,7 @@
 #' #dev
 #' AWS_ACCESS_KEY_ID_DEV=<the access key id for the DEV account>
 #' AWS_SECRET_ACCESS_KEY_DEV=<the secret access key for the DEV account >
-#prod
+#' #prod
 #' AWS_ACCESS_KEY_ID_PROD=<the access key id for the PROD account>
 #' AWS_SECRET_ACCESS_KEY_PROD=<the access key id for the PROD account>
 #' 

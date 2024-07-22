@@ -369,7 +369,7 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
 
     if (choice == 2) {
       # confirm by the user
-      if (!ask_yes_no("Êtes-vous cetain.e de vouloir écraser la table existante?")) {
+      if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?")) {
         cli::cli_alert_info("Publication des données abandonnée.")
         return(invisible(FALSE))
       }
