@@ -96,7 +96,7 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
 #' @param table The table to publish the data to
 #' @param dataframe The dataframe to publish
 #' @return TRUE if the parameters are valid, FALSE otherwise
-check_params_before_publish <- function(env, dataframe, datamart, table) {
+check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
       "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
