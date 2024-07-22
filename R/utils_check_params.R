@@ -97,6 +97,8 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
 #' @param dataframe The dataframe to publish
 #' @return TRUE if the parameters are valid, FALSE otherwise
 check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
+  logger::debug("[tube::check_params_before_publish] Checking parameters before publishing the data")
+  logger::debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
       "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
@@ -104,6 +106,7 @@ check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
     return(FALSE)
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the tag parameter")
   if (!is.null(tag)) {
     if (!is.character(tag)) {
       cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
@@ -111,28 +114,35 @@ check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
     }
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the table parameter")
   if (is.null(table)) {
     cli::cli_alert_danger("Oups, il faut fournir un nom de table pour publier les données! 😅")
     return(FALSE)
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the dataframe parameter pass 1")
   if (is.null(dataframe) || !is.data.frame(dataframe)) {
     cli::cli_alert_danger("Oups, il faut fournir un dataframe pour publier les données! 😅")
     return(FALSE)
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the dataframe parameter pass 2")
   if (nrow(dataframe) == 0) {
     cli::cli_alert_danger("Oups, le dataframe est vide! 😅")
     return(FALSE)
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the datamart parameter pass 3")
   if (ncol(dataframe) == 0) {
     cli::cli_alert_danger("Oups, le dataframe n'a pas de colonnes! 😅")
     return(FALSE)
   }
 
+  logger::debug("[tube::check_params_before_publish] Checking the datamart parameter pass 4")
   if (any(duplicated(names(dataframe)))) {
     cli::cli_alert_danger("Oups, le dataframe a des colonnes en double! 😅")
     return(FALSE)
   }
+
+  logger::debug("[tube::check_params_before_publish] Exitting function")
 }
