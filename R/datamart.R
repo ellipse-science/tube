@@ -84,7 +84,7 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
         col_names[i], ":", 
         ifelse(is.character(dataframe[[i]]), "string", 
         ifelse(is.numeric(dataframe[[i]]), "int", 
-        ifelse(is.Date(dataframe[[i]]), "date", "unknown"))), 
+        ifelse(inherits(dataframe[[i]], "Date"), "date", "unknown"))), 
         sep = "")
   }
 
