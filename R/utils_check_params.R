@@ -96,9 +96,19 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
 #' @param table The table to publish the data to
 #' @param dataframe The dataframe to publish
 #' @return TRUE if the parameters are valid, FALSE otherwise
-check_params_before_publish <- function(env, table, dataframe) {
-    if (!check_env(env)) {
+check_params_before_publish <- function(env, dataframe, datamart, table) {
+  if (!check_env(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""))
     return(FALSE)
+  }
+
+  if (!is.null(tag)) {
+    if (!is.character(tag)) {
+      cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
+      return(FALSE)
+    }
   }
 
   if (is.null(table)) {

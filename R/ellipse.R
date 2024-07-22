@@ -306,25 +306,15 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL) {
+ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
-
-  if (!check_env(env)) {
-    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-                                sep = ""))
+  
+  if (!check_params_before_publish(env, dataframe, datamart, table, tag)) {
+    cli::cli_alert_danger("Contacter votre ingénieur de données! 😅")
     return(invisible(FALSE))
   }
 
-  # add the tag provided by the user to the dataframe
-  # as a string column
-  if (!is.null(data_tag)) {
-    if (!is.character(data_tag)) {
-      cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
-      return(invisible(FALSE))
-    }
-    dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
-  }
+  dataframe <- dataframe |> dplyr::mutate(tag = tag)
   
   creds <- get_aws_credentials(env)
   dm_glue_database <- list_datamarts_database(creds)
