@@ -37,11 +37,13 @@ AWS_SECRET_ACCESS_KEY_PROD=<clé d''accès secrète en PROD>
 
 Pour éditer le fichier .Renviron tel qu'illustré ci-dessus, simplement lancer la commande `usethis::edit_r_environ()` dans votre console R.  Modifiez le fichier, enregistrez-le et redémarrez votre session R
 
-C'est au moment de la connexion à la plateforme dans cotre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
+C'est au moment de la connexion à la plateforme dans votre code R que vous devez choisir à quel environnement vous voulez vous connecter, comme suit:
 
 ```R
-tube::ellipse_connect("DEV")
+tube::ellipse_connect(env = "DEV", database = "datawarehouse")
 ```
+
+Additionnellement, comme le montre la commande ci-dessus, il vous faut spécifier si votre connexion doit se faire sur l'entrepôt de données (datawarehouse) ou sur les comptoirs de données (datamarts).  Pour plus d'explications sur ces concepts, veuillez vous référer au repo [`tube-doc`](https://github.com/ellipse-science/tube-doc) dans lequel on décrit [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/clessn_data_platform-LacEntrepotComptoir.drawio.png).
 
 ## Interface de haut hiveau
 
@@ -60,7 +62,7 @@ Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre 
 ```R
 [ins] r$> library(tube)
 
-[ins] r$> con <- ellipse_connect(env = "PROD")
+[ins] r$> con <- ellipse_connect(env = "PROD", database = "datawarehouse")
 ℹ Environnement: PROD
 ℹ Database: datawarehouse
 INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
@@ -72,7 +74,7 @@ INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
 La première étape de toute analyse est de rencenser les données à notre disposition. C'est le rôle de la fonction `ellipse_discover()`. Elle prend minimalement en paramètre l'objet de connexion obtenu à l'étape précédente :
 
 ```r
-[ins] r$> con <- ellipse_connect(env = "DEV")
+[ins] r$> con <- ellipse_connect(env = "DEV", database = "datawarehouse")
 ℹ Environnement: DEV
 ℹ Database: datawarehouse
 ℹ Pour déconnecter: DBI::dbDisconnect(objet_de_connexion)
@@ -222,49 +224,53 @@ On peut, par exemple, rechercher les titres des unes d'un média pour une journ�
 ```r
 [ins] r$> ellipse_discover(con, "r-media-headlines")
 INFO [2024-03-30 10:21:04] [tube::list_glue_tables] listing tables from the datawarehouse
-# A tibble: 9 × 4
-  table_name        col_name               col_type is_partition
-  <chr>             <chr>                  <chr>    <lgl>
-1 r-media-headlines date                   date     TRUE
-2 r-media-headlines media_id               string   TRUE
-3 r-media-headlines id                     string   FALSE
-4 r-media-headlines extraction_datetime    string   FALSE
-5 r-media-headlines title                  string   FALSE
-6 r-media-headlines author_id              string   FALSE
-7 r-media-headlines body                   string   FALSE
-8 r-media-headlines metadata_lake_item_key string   FALSE
-9 r-media-headlines metadata_url           string   FALSE
+# A tibble: 13 × 4
+   table_name        col_name               col_type is_partition
+   <chr>             <chr>                  <chr>    <lgl>       
+ 1 r-media-headlines extraction_year        int      TRUE        
+ 2 r-media-headlines extraction_month       int      TRUE        
+ 3 r-media-headlines extraction_day         int      TRUE        
+ 4 r-media-headlines media_id               string   TRUE        
+ 5 r-media-headlines id                     string   FALSE       
+ 6 r-media-headlines extraction_date        date     FALSE       
+ 7 r-media-headlines extraction_time        string   FALSE       
+ 8 r-media-headlines publish_date           date     FALSE       
+ 9 r-media-headlines title                  string   FALSE       
+10 r-media-headlines author                 string   FALSE       
+11 r-media-headlines body                   string   FALSE       
+12 r-media-headlines metadata_url           string   FALSE       
+13 r-media-headlines metadata_lake_item_key string   FALSE  
 
 [ins] r$> ellipse_partitions(con, "r-media-headlines")
 INFO [2024-03-30 10:21:51] [tube::list_glue_tables] listing tables from the datawarehouse
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 0 Bytes)
-# A tibble: 128 × 3
-   date       media_id       n
-   <date>     <chr>    <int64>
- 1 2023-10-23 TVA           24
- 2 2024-01-28 TVA           59
- 3 2024-01-29 RCI            7
- 4 2024-01-29 TVA          126
- 5 2024-01-30 RCI          143
- 6 2024-01-30 TVA          142
- 7 2024-01-31 RCI          144
- 8 2024-01-31 TVA          148
- 9 2024-02-01 RCI          144
-10 2024-02-01 TVA          136
-# ℹ 118 more rows
+# A tibble: 715 × 5
+   extraction_year extraction_month extraction_day media_id       n
+             <int>            <int>          <int> <chr>    <int64>
+ 1            2024                5             28 CBC           27
+ 2            2024                5             28 CTV           27
+ 3            2024                5             28 GAM           27
+ 4            2024                5             28 GN            27
+ 5            2024                5             28 JDM           30
+ 6            2024                5             28 LAP           27
+ 7            2024                5             28 LED           27
+ 8            2024                5             28 MG            27
+ 9            2024                5             28 NP            30
+10            2024                5             28 RCI           30
+# ℹ 705 more rows
 # ℹ Use `print(n = ...)` to see more rows
 
 [ins] r$> df <-
             ellipse_query(con, "r-media-headlines") |>
-            dplyr::filter(date == as.Date("2024-01-30"), media_id == "RCI") |>
+            dplyr::filter(extraction_year == 2024, extraction_month == 5, media_id == "RCI") |>
             dplyr::collect()
 INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 526.42 KB)
 
 [ins] r$> df |>
             dplyr::mutate(
-              date_heure = lubridate::as_datetime(extraction_datetime,
+              date_heure = lubridate::as_datetime(paste(extraction_date, extraction_time),
               tz = "America/New_York")) |>
             dplyr::distinct(date_heure, title)
 Date in ISO8601 format; converting timezone from UTC to "America/New_York".
@@ -284,6 +290,120 @@ Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 # ℹ 133 more rows
 # ℹ Use `print(n = ...)` to see more rows
 ```
+
+### Croiser des données
+
+1. Aller chercher les médias dans l'entrepôt de données en DEV
+```r
+[ins] r$> condwd <- tube::ellipse_connect("DEV", "datawarehouse")
+ℹ Environnement: DEV
+ℹ Database: datawarehouse
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatawarehousedbe64d5725
+✔ Connexion établie avec succès! 👍
+
+r$> df_medias <- tube::ellipse_query(condwd, "dim-medias") |>
+      dplyr::collect()
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 4.98 KB)
+```
+
+2. Aller chercher les Unes des médias dans l'entrepôt de données en PROD
+```r
+[ins] r$> condwp <- tube::ellipse_connect("PROD", "datawarehouse")
+ℹ Environnement: PROD
+ℹ Database: datawarehouse
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatawarehousedbe64d5725
+✔ Connexion établie avec succès! 👍
+
+r$> df_headlines <- tube::ellipse_query(condwp, "r-media-headlines") |>
+      dplyr::filter(extraction_year == 2024 & extraction_month == 7 & extraction_day == 22) |>
+      dplyr::collect()
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 9.95 MB)
+```
+
+À ce stade nous avons deux dataframe.  Pour les croiser l'un avec l'autre, il faut qu'ils aient deux colonnes qui contiennent les mêmes valeurs standardisées.  Validons que c'est bien le cas.
+
+```r
+[ins] r$> colnames(df_medias)
+ [1] "id"                     "long_name"              "short_name"             "other_names"            "lang"
+ [6] "country_id"             "province_or_state"      "x_handle"               "web_site"               "start_date"
+[11] "end_date"               "wikipedia_qid"          "wikipedia_url"          "metadata_lake_item_key" "metadata_url"
+[16] "version"
+
+r$> colnames(df_headlines)
+ [1] "id"                     "extraction_date"        "extraction_time"        "publish_date"           "title"
+ [6] "author"                 "body"                   "metadata_url"           "metadata_lake_item_key" "extraction_year"
+[11] "extraction_month"       "extraction_day"         "media_id"
+```
+
+On va pouvoir joindre les deux datframes sur la colonne `id` de `df_medias` et `media_id` de `df_headlines`
+
+```r
+[ins] r$> df <- dplyr::inner_join(df_medias, df_headlines, by = c("id" = "media_id")) |>
+      dplyr::select(id, province_or_state, title, body, extraction_date)
+
+r$> head(df)
+# A tibble: 6 × 5
+  id    province_or_state title                                                                                        body  extraction_date
+  <chr> <chr>             <chr>                                                                                        <chr> <date>
+1 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+2 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+3 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+4 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+5 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+6 TVA   QC                EN DIRECT | Suivez les derniers développements sur le retrait de Joe Biden à la course à la… "Joe… 2024-07-22
+```
+
+### Publier un jeu de données dans un datamart
+
+Pour plus de détails sur les concepts de datalake, datawarehouse, datamarts, voir [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/clessn_data_platform-LacEntrepotComptoir.drawio.png)
+
+
+Pour publier notre nouveau jeu de données dans un datamart, on peut utiliser la fonction `tube::ellipse_publish()`.
+
+```r
+[ins] 
+
+# Connexion au datamarts en DEV
+r$> condmd <- tube::ellipse_connect("DEV", "datamarts")
+ℹ Environnement: DEV
+ℹ Database: datamarts
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatamartdbd046f685
+✔ Connexion établie avec succès! 👍
+
+# publication de la table nommée headlinesbyprovinces dans le datamart nommé myradardatamart
+# avec le contenu du dataframe df, dans la base de données des datamarts en DEV
+r$> tube::ellipse_publish(con = condmd,
+      dataframe = df,
+      datamart = "myradardatamart",
+      table = "headlinesbyprovinces",
+      tag = "headlines_du_22_juillet_2024")
+
+✖ Le datamart fourni n'existe pas! 😅
+❓Voulez-vous créer un nouveau datamart? (oui/non) oui
+ℹ Création du datamart en cours...
+✖ La table demandée n'existe pas
+
+❓Voulez-vous créer la table? (oui/non) oui
+ℹ Création de la table en cours...
+✔ La table a été créée avec succès.
+
+❓Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?
+  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.
+  Votre choix (oui/non) oui
+✔ Le traitement des données a été déclenché avec succès.
+ℹ Les données seront disponibles dans les prochaines minutes
+ℹ N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.
+```
+
+
+### Notes sur dplyr
 
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 

@@ -1,9 +1,20 @@
-# Returns the name of the landing zone bucket
-#
+#' Returns the landing zone bucket name
+#'
+#' Technically the function returns all the buckets for which
+#' the name contains the string `datalakebucket` but in our infrastructure, 
+#' there is only one per AWS account (DEV/PROD)
+#' 
+#' The landing zone is used by ellipse_ingest to allow users
+#' to ingest raw data into the dataplatform so that it gets
+#' processed by the pipeline (extractor - loader)
+#'
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @returns A string containing the name of the datalake bucket
 list_landing_zone_bucket <- function(credentials) {
   logger::log_debug("[tube::list_landing_zone_bucket] entering function")
 
-  datalake_list <- list_s3_buckets("landingzonebucket", credentials)
+  datalake_list <- list_s3_buckets(credentials, "landingzonebucket")
 
   logger::log_debug("[tube::list_landing_zone_bucket] returning results")
   return(datalake_list)
@@ -15,13 +26,16 @@ list_landing_zone_partitions <- function(credentials) {
   logger::log_debug("[tube::list_landing_zone_partitions] entering function")
 
   landing_zone_bucket <- list_landing_zone_bucket(credentials)
-  partitions_list <- list_s3_partitions(landing_zone_bucket, credentials)
+  partitions_list <- list_s3_partitions(credentials, landing_zone_bucket)
 
   logger::log_debug("[tube::list_landing_zone_partitions] returning results")
   return(partitions_list)
 }
 
-#' Uploads the file specified to the landing zone bucket.
+#' Uploads the file specified file to the landing zone bucket.
+#' 
+#' This function is used by the ellipse_ingest function to upload the raw data
+#' to the landing zone bucket so that it gets processed by the pipeline (extractor - loader)
 #'
 #' @param credentials An AWS session object with your credentials and the aws ressources required
 #' @param filepath The path to the file to upload
@@ -91,62 +105,3 @@ upload_file_to_landing_zone <- function(credentials, filepath, pipeline_name, fi
   logger::log_debug("[tube::upload_file_to_landing_zone] exiting function")
   TRUE
 }
-
-
-#' Checks is the files in the landing zone have been processed and tells the user if he can 
-#' upload more
-#'
-#' @param credentials An AWS session object with your credentials and the aws ressources required
-#' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
-#'
-#' @returns the number of unprocessed files in the landing zone
-#' @export
-#' @examples \dontrun{
-#'  r <- check_landing_zone(get_aws_credentials(), "my_pipeline")
-#' print(r)
-#' }
-check_landing_zone <- function(credentials, pipeline_name) {
-  logger::log_debug("[tube::check_landing_zone] entering function")
-
-  checkmate::assert_string(pipeline_name)
-
-  # instanciate s3 client
-  s3_client <- paws.storage::s3(
-    config = c(
-      credentials$credentials,
-      close_connection = TRUE)
-  )
-
-  landing_zone_bucket <- credentials$landing_zone_bucket
-  prefix <- paste0(pipeline_name, "/DEFAULT/")
-
-  # verify if the pipeline exists in the landing zone bucket
-  # by listing folders at the root of the landing zone bucket
-  objects <- s3_client$list_objects_v2(Bucket = landing_zone_bucket)
-
-  # Take only unprocessed objects and files
-  objects_list <- objects$Contents
-  filtered_data <- Filter(function(x) {
-    !grepl("processed", x$Key) && 
-    !grepl(paste0("^", pipeline_name, "/?$"), x$Key) && 
-    !grepl(paste0("^", pipeline_name, "/DEFAULT/?$"), x$Key)
-  }, objects_list)
-
-  # Take only objects from the pipelines specified by pipeline_name
-  nb_unprocessed_files <- Filter(function(x) {
-    grepl(paste0("^", pipeline_name, "/"), x$Key)
-  }, filtered_data)
-
-  logger::log_debug(
-    paste("[tube::check_landing_zone] There are currently",
-      length(nb_unprocessed_files),
-      "unprocessed files in the landing zone for pipeline",
-      pipeline_name)
-  )
-
-  logger::log_debug("[tube::upload_file_to_landing_zone] exiting function")
-  return(length(nb_unprocessed_files))
-}
-
-
-

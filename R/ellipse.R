@@ -1,5 +1,3 @@
-memoized_get_aws_credentials <- memoise::memoise(get_aws_credentials)
-
 #' Se connecter à la plateforme de données ellipse sur AWS
 #'
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
@@ -15,15 +13,21 @@ ellipse_connect <- function(
   database  = "datawarehouse"
 ) {
 
-  if (is.null(env) || !env %in% c("DEV", "PROD", "dev", "prod")) {
+  if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
                                 "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
                                 sep = ""))
-    return(NULL)
+    return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Environnement:", env))
 
-  env <- toupper(env)
+  if (!check_database(database)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir une base de données! 😅\n\n",
+                                "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
+                                sep = ""))
+    return(invisible(NULL))
+  }
+  cli::cli_alert_info(paste("Database:", database))
 
   aws_access_key_id <-
     switch(env,
@@ -47,35 +51,46 @@ ellipse_connect <- function(
             "AWS_SECRET_ACCESS_KEY_DEV=<votre secret access key de développement>\n\n",
             "Puis, redémarrez la session R.")
     cli::cli_alert_danger(usage)
-    return(NULL)
+    return(invisible(NULL))
   }
 
   # https://github.com/ellipse-science/tube/issues/16
   Sys.setenv("AWS_ACCESS_KEY_ID" = aws_access_key_id)
   Sys.setenv("AWS_SECRET_ACCESS_KEY" = aws_secret_access_key)
 
-  database <- match.arg(database)
-  cli::cli_alert_info(paste("Database:", database))
-
-  creds <- get_aws_credentials()
+  creds <- get_aws_credentials(env)
 
   aws_access_key_id <- creds$credentials$creds$access_key_id
   aws_secret_access_key <- creds$credentials$creds$secret_access_key
 
   datawarehouse_database <- list_datawarehouse_database(creds)
+  datamarts_database <- list_datamarts_database(creds)
   athena_staging_bucket <- list_athena_staging_bucket(creds)
 
   schema_name <- switch(database,
                         "datawarehouse" = paste0(datawarehouse_database),
+                        "datamarts" = paste0(datamarts_database),
                         database)
 
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
-  DBI::dbConnect(noctua::athena(),
+  con <- DBI::dbConnect(noctua::athena(),
                  aws_access_key_id = aws_access_key_id,
                  aws_secret_access_key = aws_secret_access_key,
                  schema_name = schema_name,
+                 profile_name = env,
                  work_group = "ellipse-work-group",
                  s3_staging_dir = paste0("s3://",athena_staging_bucket))
+
+  schema <- DBI::dbGetInfo(con)$dbms.name
+
+  if (length(schema) > 0) {
+    cli::cli_alert_info(paste("Base de données:", schema))
+    cli::cli_alert_success("Connexion établie avec succès! 👍")
+    return(con)
+  } else {
+    cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
+    return(invisible(NULL))
+  }
 }
 
 #' Se déconnecter de la plateforme de données ellipse
@@ -83,7 +98,7 @@ ellipse_connect <- function(
 #' @export
 ellipse_disconnect <- function(con = NULL) {
   if (is.null(con)) {
-    cli::cli_alert_danger("Oups! Il faut fournit un objet de connection! 😅")
+    cli::cli_alert_danger("Oups! Il faut fournir un objet de connection! 😅")
     return(invisible(FALSE))
   }
 
@@ -143,26 +158,45 @@ ellipse_partitions <- function(con, table) {
 #'
 #' @export
 ellipse_discover <- function(con, table = NULL) {
-  tables <- DBI::dbListTables(con)
-  if (!is.null(table)) {
-    if (!table %in% tables) {
-      cli::cli_alert_danger("La table demandée est inconnue.")
-      return(NULL)
-    }
-    creds <- memoized_get_aws_credentials()
-    df <-
-      list_datawarehouse_tables(creds) %>%
-      dplyr::filter(table_name == table)
-    return(df)
+  schema <- DBI::dbGetInfo(con)$dbms.name
+
+  if (length(schema) == 0) {
+    cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
+    return(invisible(NULL))
   }
-  tibble::tibble(table = tables) %>%
+
+  tables <- DBI::dbGetQuery(
+    con, paste0("SHOW TABLES IN ", schema)
+  )$tab_name
+
+  if (!is.null(table)) {
+    if (!any(grepl(table, tables))) {
+      cli::cli_alert_danger("La table demandée est inconnue.")
+      return(invisible(NULL))
+    } 
+
+    # See if there are many tables that match the table name
+    if (length(grep(table, tables)) > 1) {
+      cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
+      cli::cli_alert_info("Veuillez préciser votre recherche pour explorer la table.")
+      tables <- tables[grep(table, tables)]
+    } else {
+      creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
+      df <- list_glue_tables(creds, schema) |>
+        dplyr::filter(grepl(table, table_name))
+
+      return(df)
+    }
+  }
+
+  tibble::tibble(table = tables) |>
     dplyr::mutate(categorie =
-                    dplyr::case_when(startsWith(table, "a-")    ~ "Agora+",
-                                     startsWith(table, "c-")    ~ "Civimètre+",
-                                     startsWith(table, "r-")    ~ "Radar+",
-                                     startsWith(table, "dict-") ~ "Dictionnaire", # nolint
-                                     startsWith(table, "dim-")  ~ "Dimension",
-                                     .default = "Autre")) %>%
+    dplyr::case_when(startsWith(table, "a-")    ~ "Agora+",
+                      startsWith(table, "c-")    ~ "Civimètre+",
+                      startsWith(table, "r-")    ~ "Radar+",
+                      startsWith(table, "dict-") ~ "Dictionnaire", # nolint
+                      startsWith(table, "dim-")  ~ "Dimension",
+                      .default = "Autre")) |>
     dplyr::select(categorie, table)
 }
 
@@ -175,7 +209,12 @@ ellipse_discover <- function(con, table = NULL) {
 #'   `dplyr`.
 #' @export
 ellipse_query <- function(con, table) {
-  tables <- DBI::dbListTables(con)
+  schema_name <- DBI::dbGetInfo(con)$dbms.name
+
+  tables <- DBI::dbGetQuery(
+    con, paste0("SHOW TABLES IN ", schema_name)
+  )$tab_name
+  
   if (!table %in% tables) {
     cli::cli_alert_danger("La table demandée est inconnue.")
     return(NULL)
@@ -189,7 +228,7 @@ ellipse_query <- function(con, table) {
 #' vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
 #' dans une table de la datawarehouse.
 #'
-#' @param env L'environnement dans lequel les données doivent être injectées
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
 #' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.  Cela va va déterminer dans quelle table de données les données vont être injectées.
 #' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.
@@ -197,63 +236,39 @@ ellipse_query <- function(con, table) {
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export 
-ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
-  creds <- get_aws_credentials()
+ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
+  env <- DBI::dbGetInfo(con)$profile_name
+
+  if (!check_env(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+                                sep = ""))
+    return(invisible(NULL))
+  }
+
+  creds <- get_aws_credentials(env)
 
   landing_zone_bucket <- list_landing_zone_bucket(creds)
 
   if (is.null(landing_zone_bucket)) {
-    cli::cli_alert_danger("Oups, il semble que le bucket de la landing zone n'a pas été trouvé! 😅")
-    return(NULL)
+    cli::cli_alert_danger("Oups, il semble que le bucket de la landing zone n'a pas été trouvé! Contacter votre ingénieur de données 😅")
+    return(invisible(NULL))
+  }
+
+  if (!check_file_versioning_before_ingest(file_batch, file_version)) {
+    cli::cli_alert_danger("Contacter votre ingénieur de données! 😅")
+    return(invisible(NULL))
+  }
+
+  landing_zone_partitions <- list_landing_zone_partitions(creds)
+  if (!check_pipeline_before_ingest(pipeline, landing_zone_partitions, file_batch, file_version)) {
+    cli::cli_alert_danger("Contacter votre ingénieur de données! 😅")
+    return(invisible(NULL))
   }
 
   if (is.null(file_or_folder)) {
     cli::cli_alert_danger("Oups, il faut fournir un fichier ou un répertoire à injecter! 😅")
-    return(NULL)
-  }
-
-  if (is.null(pipeline)) {
-    cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
-    return(NULL)
-  }
-
-  # check that the pipeline exists by checking that the partition exists in the landing zone bucket
-  if (! paste0(pipeline,"/") %in% list_landing_zone_partitions(creds)) {
-    cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅\
-      demandez à votre ingénieur de données de créer le pipeline dans la plateforme de données\
-      pour que vous puissiez y injecter des données.")
-    return(NULL)
-  }
-
-  # check that pipeline name start with a, r, c, dict or dim
-  if (!grepl("^(a-|r-|c-|dict-|dim-)", pipeline)) {
-    cli::cli_alert_danger("Oups, le nom du pipeline doit commencer par a-, r-, c-, dict- ou dim-! 😅")
-    return(NULL)
-  }
-
-  if (is.null(file_batch) && is.null(file_version)) {
-    cli::cli_alert_danger("Oups, il faut fournir un batch ou une version pour injecter les données! 😅\
-    Si vous ne fournissez pas de batch, vous devez fournir une version.\
-    Si vous ne fournissez pas de version, vous devez fournir un batch.\
-    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
-    return(NULL)
-  }
-
-  if (!is.null(file_batch) && !is.null(file_version)) {
-    cli::cli_alert_danger("Oups, il faut fournir soit un batch, soit une version, mais pas les deux pour injecter les données! 😅\
-    On utilise un batch pour les données factuelles, et une version pour les données dimensionnelles ou les dictionnaires.")
-    return(NULL)
-  }
-
-  # check that we have a version for dim, or dict and that we have a batch for a, r, c pipelines
-  if (grepl("^(a-|r-|c-)", pipeline) && is.null(file_batch)) {
-    cli::cli_alert_danger("Oups, il faut fournir un batch pour les données factuelles (pipelines a-, r- ou c-)! 😅")
-    return(NULL)
-  }
-
-  if (grepl("^(dict-|dim-)", pipeline) && is.null(file_version)) {
-    cli::cli_alert_danger("Oups, il faut fournir une version pour les données dimensionnelles ou les dictionnaires (pipelines dict- ou dim-)! 😅")
-    return(NULL)
+    return(invisible(NULL))
   }
 
   # check whether the file_or_folder is a file or a folder
@@ -277,22 +292,143 @@ ellipse_ingest <- function(env, file_or_folder, pipeline, file_batch = NULL, fil
 
   # TODO: do something better than the progress bar for 1 file : length(folder_content)
   cli::cli_alert_info("Les données ont été injectées dans la landing zone.\
-  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect()` 👋.")
-
+  N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+  return(invisible(folder_content))
 }
 
 
 #' Publier un dataframe dans un datamart
 #'
-#' @param env L'environnement dans lequel les données doivent être injectées
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param dataframe Le chemin vers le répertoire qui contient les fichiers à charger dans tube
 #' @param datamart Le nom du pipeline qui doit être exécuté pour charger les données
 #' @param table Le nom de la table qui doit être créée dans le datamart
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
-ellipse_publish <- function(env, dataframe, datamart, table) {
-  creds <- memoized_get_aws_credentials()
+#' @export
+ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  
+  if (!check_params_before_publish(env, dataframe, datamart, table, tag)) {
+    return(invisible(FALSE))
+  }
 
-  cli::cli_alert_danger("Cette fonction n'est pas encore implémentée! Revenez plus tard😅")
+  dataframe <- dataframe |> dplyr::mutate(tag = tag)
+  
+  creds <- get_aws_credentials(env)
+  dm_glue_database <- list_datamarts_database(creds)
+  dm_bucket <- list_datamarts_bucket(creds)
 
+  # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
+  dm_partitions <- list_s3_partitions(creds, dm_bucket)
+  dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
+  if (is.null(datamart)) {
+    cli::cli_alert_danger("Oups, il faut fournir un datamart pour publier les données! 😅")
+    return(FALSE)
+  }
+
+  if (!datamart %in% dm_list) {
+    cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
+    # ask the user is we must create a new datamart
+    if (ask_yes_no("Voulez-vous créer un nouveau datamart?")) {
+      cli::cli_alert_info("Création du datamart en cours...")
+      # the file path will be created when the first file is uploaded with it in its key
+    } else {
+      cli::cli_alert_danger("Publication des données abandonnée.")
+      return(invisible(FALSE))
+    }
+  }
+
+  # check that the table does not exist in the datamart in the form of s3://datamarts-bucket/datamart/table
+  dm_folders <- list_s3_folders(creds, dm_bucket, paste0(datamart, "/"))
+
+  if (table %in% dm_folders) {
+    # ici on suppose que si le dossier datamart/table existe dans le bucket s3 des datamarts
+    # alors la table GLUE existe aussi ce qui n'est possible pas le cas dans les situations 
+    # où la GLUE job n'a pas roulé
+    cli::cli_alert_danger("La table demandée existe déjà! 😅")
+
+    choice <- ask_1_2(paste("Voulez-vous",
+      "  1. ajouter des données à la table existante?",
+      "  2. écraser la table existante?",
+      "  Votre choix:", sep = "\n"))
+
+    if (choice == 1) {
+      cli::cli_alert_info("Ajout des données à la table existante en cours...")
+      # append the dataframe to the table by uploading
+      # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
+      r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
+      if (r) {
+        cli::cli_alert_success("Les données ont été ajoutées à la table existante.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+        return(invisible(FALSE))
+      }
+    }
+
+    if (choice == 2) {
+      # confirm by the user
+      if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?")) {
+        cli::cli_alert_info("Publication des données abandonnée.")
+        return(invisible(FALSE))
+      }
+      cli::cli_alert_info("Ecrasement de la table existante en cours...")
+      # delete the glue table
+      r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
+      # delete the content of the folder s3://datamarts-bucket/datamart/table
+      r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
+      if (r1 || r2) {
+        cli::cli_alert_success("La table a été écrasée avec succès.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
+        return(invisible(FALSE))
+      }
+      
+      # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
+      r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
+      if (r) {
+        cli::cli_alert_success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+        return(invisible(FALSE))
+      }
+    }
+  } else {
+    cli::cli_alert_danger("La table demandée n'existe pas")
+    if (ask_yes_no("Voulez-vous créer la table?")) {
+      # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
+      cli::cli_alert_info("Création de la table en cours...")
+      r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
+      if (r) {
+        cli::cli_alert_success("La table a été créée avec succès.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+        return(invisible(FALSE))
+      }
+    } else {
+      cli::cli_alert_danger("Publication des données abandonnée.")
+      return(invisible(FALSE))
+    }
+  }
+
+  # At this point we have files in the datamart bucket under datamart/table/unprocessed
+  # We can now trigger the glue job to process the files
+  # The table will be created in the form of datamart-table
+  # The glue job will move the files from unprocessed to processed
+  # The glue job will also create the table in the datamart database
+  if (ask_yes_no(paste(
+    "Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?",
+    "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", 
+    "  Votre choix", sep = "\n"))) {
+    glue_job <- list_glue_jobs(creds)
+    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table))
+    cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
+    cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
+    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+  } else {
+    cli::cli_alert_success("Publication des données complétée avec succès")
+    cli::cli_alert_info("Les données seront disponibles dans les 6 prochaines heures")
+    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+    return(invisible(FALSE))
+  }
 }

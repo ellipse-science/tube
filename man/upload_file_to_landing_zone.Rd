@@ -2,7 +2,7 @@
 % Please edit documentation in R/landing.R
 \name{upload_file_to_landing_zone}
 \alias{upload_file_to_landing_zone}
-\title{Uploads the file specified to the landing zone bucket.}
+\title{Uploads the file specified file to the landing zone bucket.}
 \usage{
 upload_file_to_landing_zone(
   credentials,
@@ -27,7 +27,8 @@ upload_file_to_landing_zone(
 the status of each file upload
 }
 \description{
-Uploads the file specified to the landing zone bucket.
+This function is used by the ellipse_ingest function to upload the raw data
+to the landing zone bucket so that it gets processed by the pipeline (extractor - loader)
 }
 \examples{
 \dontrun{

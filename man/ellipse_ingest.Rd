@@ -8,7 +8,7 @@ vers la plateforme de données pour qu'ils soient transformés en données struc
 dans une table de la datawarehouse.}
 \usage{
 ellipse_ingest(
-  env,
+  con,
   file_or_folder,
   pipeline,
   file_batch = NULL,
@@ -16,7 +16,7 @@ ellipse_ingest(
 )
 }
 \arguments{
-\item{env}{L'environnement dans lequel les données doivent être injectées}
+\item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
 \item{file_or_folder}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
 

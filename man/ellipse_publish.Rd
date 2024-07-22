@@ -4,10 +4,10 @@
 \alias{ellipse_publish}
 \title{Publier un dataframe dans un datamart}
 \usage{
-ellipse_publish(env, dataframe, datamart, table)
+ellipse_publish(con, dataframe, datamart, table)
 }
 \arguments{
-\item{env}{L'environnement dans lequel les données doivent être injectées}
+\item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
 \item{dataframe}{Le chemin vers le répertoire qui contient les fichiers à charger dans tube}
 
