@@ -310,7 +310,6 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   
   if (!check_params_before_publish(env, dataframe, datamart, table, tag)) {
-    cli::cli_alert_danger("Contacter votre ingénieur de données! 😅")
     return(invisible(FALSE))
   }
 
