@@ -306,7 +306,7 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table) {
+ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
 
   if (!check_env(env)) {
@@ -315,12 +315,22 @@ ellipse_publish <- function(con, dataframe, datamart, table) {
                                 sep = ""))
     return(invisible(FALSE))
   }
+
+  # add the tag provided by the user to the dataframe
+  # as a string column
+  if (!is.null(tag)) {
+    if (!is.character(tag)) {
+      cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
+      return(invisible(FALSE))
+    }
+    dataframe <- dplyr::mutate(dataframe, tag = tag)
+  }
   
   creds <- get_aws_credentials(env)
   dm_glue_database <- list_datamarts_database(creds)
   dm_bucket <- list_datamarts_bucket(creds)
 
-  # check that the datamart exists by checking that the partition exists in the datamart bucket
+  # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
   dm_partitions <- list_s3_partitions(creds, dm_bucket)
   dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
   if (is.null(datamart)) {
