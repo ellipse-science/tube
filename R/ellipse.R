@@ -306,7 +306,7 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
+ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
 
   if (!check_env(env)) {
@@ -323,7 +323,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
       cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
       return(invisible(FALSE))
     }
-    dataframe <- dplyr::mutate(dataframe, tag = tag)
+    dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
   }
   
   creds <- get_aws_credentials(env)
