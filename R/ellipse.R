@@ -318,8 +318,8 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL) {
 
   # add the tag provided by the user to the dataframe
   # as a string column
-  if (!is.null(tag)) {
-    if (!is.character(tag)) {
+  if (!is.null(data_tag)) {
+    if (!is.character(data_tag)) {
       cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
       return(invisible(FALSE))
     }
