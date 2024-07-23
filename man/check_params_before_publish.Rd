@@ -4,14 +4,14 @@
 \alias{check_params_before_publish}
 \title{Check the parameters provided to the ellipse_publish function}
 \usage{
-check_params_before_publish(env, table, dataframe)
+check_params_before_publish(env, dataframe, datamart, table, tag)
 }
 \arguments{
 \item{env}{The environment to publish the data to}
 
-\item{table}{The table to publish the data to}
-
 \item{dataframe}{The dataframe to publish}
+
+\item{table}{The table to publish the data to}
 }
 \value{
 TRUE if the parameters are valid, FALSE otherwise
