@@ -432,3 +432,63 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
     return(invisible(FALSE))
   }
 }
+
+#' Retirer une table d'un datamart ou un datamart complet
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param datamart Le nom du datamart contenant la table à retirer.
+#' @param table Paramètre optionnel : Le nom de la table à retirer.  S'il est manquant, 
+#' vide ou null alors c'est le datamart complet qui est retiré
+#'
+#' @returns TRUE si la table a été retirée avec succès, FALSE sinon.
+#' @export
+ellipse_unpublish <- function(con, datamart, table) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  
+  if (!check_params_before_unpublish(env, datamart, table)) {
+    return(invisible(FALSE))
+  }
+  
+  creds <- get_aws_credentials(env)
+  dm_bucket <- list_datamarts_bucket(creds)
+  dm_glue_database <- list_datamarts_database(creds)
+
+  
+  # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
+  dm_partitions <- list_s3_partitions(creds, dm_bucket)
+  dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
+  if (!datamart %in% dm_list) {
+    cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # check that the table exists in the datamart in the form of s3://datamarts-bucket/datamart/table
+  dm_folders <- list_s3_folders(creds, dm_bucket, paste0(datamart, "/"))
+  
+  if (!table %in% dm_folders) {
+    cli::cli_alert_danger("La table demandée n'existe pas! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # confirm by the user
+  if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?")) {
+    cli::cli_alert_info("Retrait de la table abandonné.")
+    return(invisible(FALSE))
+  }
+  
+  cli::cli_alert_info("Retrait de la table en cours...")
+  
+  # delete the glue table
+  r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
+  
+  # delete the content of the folder s3://datamarts-bucket/datamart/table
+  r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
+  
+  if (r1 || r2) {
+    cli::cli_alert_success("La table a été retirée avec succès.")
+    return(invisible(TRUE))
+  } else {
+    cli::cli_alert_danger("Il y a eu une erreur lors du retrait de la table! 😅")
+    return(invisible(FALSE))
+  }
+}
