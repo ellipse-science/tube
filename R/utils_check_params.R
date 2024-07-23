@@ -165,10 +165,8 @@ check_params_before_unpublish <- function(env, datamart, table) {
   }
 
   logger::log_debug("[tube::check_params_before_unpublish] Checking the datamart parameter")
-  if (!check_database(datamart)) {
-    cli::cli_alert_danger(paste("Oups, il faut choisir un datamart valide! 😅\n\n",
-      "Le paramètre `datamart` peut être \"datawarehouse\" ou \"datamarts\"",
-      sep = ""))
+  if (is.null(datamart)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de datamart pour désactiver la publication des données! 😅")
     return(FALSE)
   }
 
