@@ -483,6 +483,7 @@ ellipse_unpublish <- function(con, datamart, table) {
   
   # delete the content of the folder s3://datamarts-bucket/datamart/table
   r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
+  r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
   
   if (r1 || r2) {
     cli::cli_alert_success("La table a été retirée avec succès.")
