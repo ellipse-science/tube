@@ -145,6 +145,11 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
 delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] entering function")
 
+  # if prefix does not with with / add it
+  if (!endsWith(prefix, "/")) {
+    prefix <- paste0(prefix, "/")
+  }
+
   logger::log_debug("[tube::delete_s3_folder] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
