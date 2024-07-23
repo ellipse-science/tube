@@ -375,12 +375,15 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
       cli::cli_alert_info("Ecrasement de la table existante en cours...")
       # delete the glue table
       r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
-      # delete the content of the folder s3://datamarts-bucket/datamart/table
+      # delete the content of the folder s3://datamarts-bucket/datamart/table and s3://datamarts-bucket/datamart/table-output
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
-      if (r1 || r2) {
+      r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
+  
+      if (r1 && r2 && r3) {
         cli::cli_alert_success("La table a été écrasée avec succès.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
+        cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
         return(invisible(FALSE))
       }
       
@@ -483,13 +486,14 @@ ellipse_unpublish <- function(con, datamart, table) {
   
   # delete the content of the folder s3://datamarts-bucket/datamart/table
   r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
-  r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
+  r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
   
-  if (r1 || r2) {
+  if (r1 && r2 && r3) {
     cli::cli_alert_success("La table a été retirée avec succès.")
     return(invisible(TRUE))
   } else {
     cli::cli_alert_danger("Il y a eu une erreur lors du retrait de la table! 😅")
+    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
     return(invisible(FALSE))
   }
 }
