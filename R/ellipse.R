@@ -307,14 +307,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
+ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, table_tags = NULL, table_description = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   
-  if (!check_params_before_publish(env, dataframe, datamart, table, tag)) {
+  if (!check_params_before_publish(env, dataframe, datamart, table, data_tag, table_tags, table_description)) {
     return(invisible(FALSE))
   }
 
-  dataframe <- dataframe |> dplyr::mutate(tag = tag)
+  dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
   
   creds <- get_aws_credentials(env)
   dm_glue_database <- list_datamarts_database(creds)
@@ -425,7 +425,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
     "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", 
     "  Votre choix", sep = "\n"))) {
     glue_job <- list_glue_jobs(creds)
-    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table))
+    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
     cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
     cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
     cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")

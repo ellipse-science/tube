@@ -35,7 +35,8 @@ Imports:
     tibble,
     tools,
     pbapply,
-    progress
+    progress,
+    jsonlite
 Suggests:
     covr,
     knitr,

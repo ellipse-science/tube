@@ -146,7 +146,7 @@ list_glue_jobs <- function(credentials) {
 #' in the datawarehouse, it represents the pipeline name
 #' in the datamart, it represents the datamart and table name separates with a /
 #' @returns A boolean indicating wether or not the job was started
-run_glue_job <- function(credentials, job_name, database, prefix) {
+run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
     paste("[tube::run_glue_job] entering function",
     "with job_name", job_name,
@@ -235,28 +235,33 @@ run_glue_job <- function(credentials, job_name, database, prefix) {
     if (length(unprocessed_prefixes) > 0) {
       s3_input_path = paste0("s3://",bucket, "/", unprocessed_prefixes)
       s3_output_path = paste0("s3://",bucket, "/", prefix, "-output/")
+
+      arguments_list <- list(
+          '--s3_input_path' = s3_input_path,
+          '--s3_output_path' = s3_output_path,
+          '--glue_db_name' = glue_db,
+          '--glue_table_name' = table_name
+      )
+
+      if (table_tags != NULL) {
+        arguments_list <- c(arguments_list, list('--custom_table_properties' = table_tags))
+      } 
+
+      if (table_description != NULL) {
+        arguments_list <- c(arguments_list, list('--table_description' = table_description))
+      }
       
       logger::log_debug(paste(
         "[tube::run_glue_job] starting job",
         job_name,
         "with arguments",
-        paste(list(
-          '--s3_input_path' = s3_input_path,
-          '--s3_output_path' = s3_output_path,
-          '--glue_db_name' = glue_db,
-          '--glue_table_name' = table_name
-          ), collapse = ", ")
+        paste(arguments_list, collapse = ", ")
       ))
 
       # start the glue job
       glue_client$start_job_run(
         JobName = job_name,
-        Arguments = list(
-          '--s3_input_path' = s3_input_path,
-          '--s3_output_path' = s3_output_path,
-          '--glue_db_name' = glue_db,
-          '--glue_table_name' = table_name
-        )
+        Arguments = arguments_list
       )
     }
   }
