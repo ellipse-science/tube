@@ -243,11 +243,11 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
           '--glue_table_name' = table_name
       )
 
-      if (table_tags != NULL) {
+      if (!is.null(table_tags)) {
         arguments_list <- c(arguments_list, list('--custom_table_properties' = table_tags))
       } 
 
-      if (table_description != NULL) {
+      if (!is.null(table_description)) {
         arguments_list <- c(arguments_list, list('--table_description' = table_description))
       }
       
