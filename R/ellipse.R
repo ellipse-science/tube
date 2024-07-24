@@ -175,17 +175,18 @@ ellipse_discover <- function(con, table = NULL) {
       return(invisible(NULL))
     } 
 
-    # See if there are many tables that match the table name
-    if (length(grep(table, tables)) > 1) {
-      cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
-      cli::cli_alert_info("Veuillez préciser votre recherche pour explorer la table.")
-      tables <- tables[grep(table, tables)]
-    } else {
+    # See if there is only one table or many tables that match the table name
+    if (length(grep(table, tables)) == 1 || table %in% tables) {
       creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
       df <- list_glue_tables(creds, schema) |>
-        dplyr::filter(grepl(table, table_name))
-
+        dplyr::filter(table_name == table)
       return(df)
+    } else {
+      if (length(grep(table, tables)) > 1) {
+        cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
+        cli::cli_alert_info("Veuillez préciser votre recherche pour explorer la table.")
+        tables <- tables[grep(table, tables)]
+      }
     }
   }
 
