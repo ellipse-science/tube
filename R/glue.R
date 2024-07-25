@@ -65,6 +65,46 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
   }
 }
 
+list_glue_table_properties <- function(credentials, schema, table) {
+  logger::log_debug("[tube::list_glue_table_properties] entering function")
+  props <- list()
+
+  logger::log_debug("[tube::list_glue_table_properties] instanciating glue client")
+
+  # close connextion
+  glue_client <- paws.analytics::glue(
+    credentials = credentials,
+  )
+
+  logger::log_debug("[tube::list_glue_table_properties] listing tables")
+  props <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  if (length(props) == 0) {
+    logger::log_error("[tube::list_glue_table_properties] no table found")
+    return(NULL)
+  } else {
+    logger::log_debug("[tube::list_glue_table_properties] returning results")
+
+    # only get the Parameters starting with "x-amz-meta-" as they are custom properties
+    custom_parameters <- props$Table$Parameters[grepl("^x-amz-meta-", names(props$Table$Parameters))]
+    custom_parameters <- if (length(custom_parameters) == 0) NA else custom_parameters
+
+    properties_tibble <- tibble::tibble(
+      table_name = props$Table$Name,
+      description = ifelse(is.null(props$Table$Description) || length(props$Table$Description) == 0, NA, props$Table$Description),
+      create_time = props$Table$CreateTime,
+      update_time = props$Table$UpdateTime,
+      location =  props$Table$StorageDescriptor$Location,
+      table_tags = custom_parameters
+    )
+    return(properties_tibble)
+  }
+}
+
+
 #' Delete glue table
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
@@ -244,6 +284,15 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       )
 
       if (!is.null(table_tags)) {
+        # change all the names of the named list
+        # to x-amz-meta-<name> for every item in the list 
+        # that is not null and not already prefixed with x-amz-meta-
+        table_tags <- setNames(table_tags, 
+                       ifelse(
+                        !sapply(table_tags, is.null) & !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(table_tags)), 
+                        names(table_tags)))
+
         arguments_list <- c(arguments_list, list('--custom_table_properties' = jsonlite::toJSON(table_tags, auto_unbox = TRUE, null = "null")))
       } 
 

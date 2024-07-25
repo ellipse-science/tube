@@ -159,6 +159,7 @@ ellipse_partitions <- function(con, table) {
 #' @export
 ellipse_discover <- function(con, table = NULL) {
   schema <- DBI::dbGetInfo(con)$dbms.name
+  creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
 
   if (length(schema) == 0) {
     cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
@@ -177,7 +178,6 @@ ellipse_discover <- function(con, table = NULL) {
 
     # See if there is only one table or many tables that match the table name
     if (length(grep(table, tables)) == 1 || table %in% tables) {
-      creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
       df <- list_glue_tables(creds, schema) |>
         dplyr::filter(table_name == table)
       return(df)
@@ -190,15 +190,24 @@ ellipse_discover <- function(con, table = NULL) {
     }
   }
 
-  tibble::tibble(table = tables) |>
+  tables_properties <- lapply(tables, function(table) {
+    list_glue_table_properties(creds, schema, table)
+  }) |> dplyr::bind_rows() |> dplyr::select(-c(location))
+
+  tables_tibble <- tibble::tibble(table_name = tables) |>
+    dplyr::left_join(tables_properties, by = "table_name")
+
+  tables_tibble |>
     dplyr::mutate(categorie =
-    dplyr::case_when(startsWith(table, "a-")    ~ "Agora+",
-                      startsWith(table, "c-")    ~ "Civimètre+",
-                      startsWith(table, "r-")    ~ "Radar+",
-                      startsWith(table, "dict-") ~ "Dictionnaire", # nolint
-                      startsWith(table, "dim-")  ~ "Dimension",
-                      .default = "Autre")) |>
-    dplyr::select(categorie, table)
+      dplyr::case_when(
+      startsWith(table_name, "a-")    ~ "Agora+",
+      startsWith(table_name, "c-")    ~ "Civimètre+",
+      startsWith(table_name, "r-")    ~ "Radar+",
+      startsWith(table_name, "dict-") ~ "Dictionnaire",
+      startsWith(table_name, "dim-")  ~ "Dimension",
+      !is.na(table_tags[["x-amz-meta-category"]]) ~ table_tags[["x-amz-meta-category"]],
+      TRUE ~ "Autre"
+      ))
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
@@ -310,6 +319,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, table_tags = NULL, table_description = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   
+  # if the x-amz-meta-category named element is not provided in table_tag, we add it 
+  if (is.null(table_tags)) {
+    table_tags <- list()
+  }
+  if (!"x-amz-meta-category" %in% names(table_tags)) {
+    table_tags$`x-amz-meta-category` <- "Datamart table"
+  }
+
   if (!check_params_before_publish(env, dataframe, datamart, table, data_tag, table_tags, table_description)) {
     return(invisible(FALSE))
   }
