@@ -22,6 +22,7 @@ set in ~/.Renviron in the following format:
 #dev
 AWS_ACCESS_KEY_ID_DEV=\if{html}{\out{<the access key id for the DEV account>}}
 AWS_SECRET_ACCESS_KEY_DEV=\if{html}{\out{<the secret access key for the DEV account >}}
+#prod
 AWS_ACCESS_KEY_ID_PROD=\if{html}{\out{<the access key id for the PROD account>}}
 AWS_SECRET_ACCESS_KEY_PROD=\if{html}{\out{<the access key id for the PROD account>}}
 

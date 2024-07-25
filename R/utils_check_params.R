@@ -147,3 +147,35 @@ check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
   logger::log_debug("[tube::check_params_before_publish] Exitting function")
   return(TRUE)
 }
+
+#' @title Check the parameters provided to the ellipse_unpublish function
+#' @description Check if the parameters are valid before unpublishing the data
+#' @param env The environment to unpublish the data from
+#' @param datamart The datamart to unpublish the data from
+#' @param table The table to unpublish the data from
+#' @return TRUE if the parameters are valid, FALSE otherwise
+check_params_before_unpublish <- function(env, datamart, table) {
+  logger::log_debug("[tube::check_params_before_unpublish] Checking parameters before unpublishing the data")
+  logger::log_debug("[tube::check_params_before_unpublish] Checking the env parameter")
+  if (!check_env(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""))
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_unpublish] Checking the datamart parameter")
+  if (is.null(datamart)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de datamart pour désactiver la publication des données! 😅")
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_unpublish] Checking the table parameter")
+  if (is.null(table)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de table pour désactiver la publication des données! 😅")
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_unpublish] Exitting function")
+  return(TRUE)
+}

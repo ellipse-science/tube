@@ -145,6 +145,11 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
 delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] entering function")
 
+  # if prefix does not end with / add it
+  if (!endsWith(prefix, "/")) {
+    prefix <- paste0(prefix, "/")
+  }
+
   logger::log_debug("[tube::delete_s3_folder] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
@@ -180,20 +185,22 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
     
     # Loop through each object and delete it
     for (object in object_list) {
-      tryCatch(
-        {
-          logger::log_debug("[tube::delete_s3_folder] deleting object")
-          s3_client$delete_object(
-           Bucket = bucket,
-           Key = object$Key
-          )
-        },
-        error = function(e) {
-          logger::log_error("[tube::delete_s3_folder] error deleting object")
-          logger::log_error(e$message)
-          return(FALSE)
-        }
-      )
+      if (startsWith(object$Key, prefix)) {
+        tryCatch(
+          {
+            logger::log_debug("[tube::delete_s3_folder] deleting object")
+            s3_client$delete_object(
+             Bucket = bucket,
+             Key = object$Key
+            )
+          },
+          error = function(e) {
+            logger::log_error("[tube::delete_s3_folder] error deleting object")
+            logger::log_error(e$message)
+            return(FALSE)
+          }
+        )
+      }
     }
   } else  {
     logger::log_debug("[tube::delete_s3_folder] folder is empty : deleting folder only")

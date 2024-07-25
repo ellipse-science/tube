@@ -175,17 +175,18 @@ ellipse_discover <- function(con, table = NULL) {
       return(invisible(NULL))
     } 
 
-    # See if there are many tables that match the table name
-    if (length(grep(table, tables)) > 1) {
-      cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
-      cli::cli_alert_info("Veuillez préciser votre recherche pour explorer la table.")
-      tables <- tables[grep(table, tables)]
-    } else {
+    # See if there is only one table or many tables that match the table name
+    if (length(grep(table, tables)) == 1 || table %in% tables) {
       creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
       df <- list_glue_tables(creds, schema) |>
-        dplyr::filter(grepl(table, table_name))
-
+        dplyr::filter(table_name == table)
       return(df)
+    } else {
+      if (length(grep(table, tables)) > 1) {
+        cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
+        cli::cli_alert_info("Veuillez préciser votre recherche pour explorer la table.")
+        tables <- tables[grep(table, tables)]
+      }
     }
   }
 
@@ -375,12 +376,15 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
       cli::cli_alert_info("Ecrasement de la table existante en cours...")
       # delete the glue table
       r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
-      # delete the content of the folder s3://datamarts-bucket/datamart/table
+      # delete the content of the folder s3://datamarts-bucket/datamart/table and s3://datamarts-bucket/datamart/table-output
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
-      if (r1 || r2) {
+      r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
+  
+      if (r1 && r2 && r3) {
         cli::cli_alert_success("La table a été écrasée avec succès.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
+        cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
         return(invisible(FALSE))
       }
       
@@ -429,6 +433,68 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
     cli::cli_alert_success("Publication des données complétée avec succès")
     cli::cli_alert_info("Les données seront disponibles dans les 6 prochaines heures")
     cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+    return(invisible(FALSE))
+  }
+}
+
+#' Retirer une table d'un datamart ou un datamart complet
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param datamart Le nom du datamart contenant la table à retirer.
+#' @param table Paramètre optionnel : Le nom de la table à retirer.  S'il est manquant, 
+#' vide ou null alors c'est le datamart complet qui est retiré
+#'
+#' @returns TRUE si la table a été retirée avec succès, FALSE sinon.
+#' @export
+ellipse_unpublish <- function(con, datamart, table) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  
+  if (!check_params_before_unpublish(env, datamart, table)) {
+    return(invisible(FALSE))
+  }
+  
+  creds <- get_aws_credentials(env)
+  dm_bucket <- list_datamarts_bucket(creds)
+  dm_glue_database <- list_datamarts_database(creds)
+
+  
+  # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
+  dm_partitions <- list_s3_partitions(creds, dm_bucket)
+  dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
+  if (!datamart %in% dm_list) {
+    cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # check that the table exists in the datamart in the form of s3://datamarts-bucket/datamart/table
+  dm_folders <- list_s3_folders(creds, dm_bucket, paste0(datamart, "/"))
+  
+  if (!table %in% dm_folders) {
+    cli::cli_alert_danger("La table demandée n'existe pas! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # confirm by the user
+  if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?")) {
+    cli::cli_alert_info("Retrait de la table abandonné.")
+    return(invisible(FALSE))
+  }
+  
+  cli::cli_alert_info("Retrait de la table en cours...")
+  
+  # delete the glue table
+  r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
+  
+  # delete the content of the folder s3://datamarts-bucket/datamart/table
+  r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
+  r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
+  
+  if (r1 && r2 && r3) {
+    cli::cli_alert_success("La table a été retirée avec succès.")
+    return(invisible(TRUE))
+  } else {
+    cli::cli_alert_danger("Il y a eu une erreur lors du retrait de la table! 😅")
+    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
     return(invisible(FALSE))
   }
 }

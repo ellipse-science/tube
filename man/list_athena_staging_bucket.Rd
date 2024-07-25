@@ -21,5 +21,6 @@ In our infrastructure, there is only one per AWS account (DEV/PROD)
 \details{
 This is used to get the name of the bucket where the results of the
 athena queries are stored.  More specifically, it is used to create
-the \code{s3_staging_dir} parameter in the \code{DBI::dbConnect} function of the
+the \code{s3_staging_dir} parameter in the \code{DBI::dbConnect} function call
+in ellipse_connect
 }
