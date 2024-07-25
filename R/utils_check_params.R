@@ -117,12 +117,16 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   logger::log_debug("[tube::check_params_before_publish] Checking the table_tags parameter")
   # check that the table_tags parameter is a valid json structure
   if (!is.null(table_tags)) {
-    tryCatch({
+    r <- tryCatch({
       jsonlite::fromJSON(table_tags)
     }, error = function(e) {
       cli::cli_alert_danger("Oups, le paramètre table_tags doit être une structure JSON valide! 😅")
       return(FALSE)
     })
+
+    if (r == FALSE) {
+      return(FALSE)
+    }
   }
 
   logger::log_debug("[tube::check_params_before_publish] Checking the table description parameter")
