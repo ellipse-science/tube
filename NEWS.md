@@ -1,3 +1,6 @@
+# tube 0.5.0
+* Version 0.5.0 adds the table properties to set the foundations for the built-in datacatalog.  In other words, when we publish a table in the datamart, we can assign tags to this table in the form of a named list (tag_name = "tag_value").  Morover, we can also provide a description for this table.  In turn, the function `ellipse_discover` will render these tage and description which essentially enrich the data catalog of the CAPP.
+* 0.5.1 will see an additional function to update the properties of a table only without having to publich or republish it.  Also in the dataplatform, a new property (table_description and table_tags) will be added to the aws_infra pipelines for tagging and describing datawarehouse tables also.
 # tube 0.4.1
 * Implementation of `ellipse_unpublish` to remove a table from a datamart.  When no table are left in a datamart, the datamart is automatically removed from the data platform.
 
