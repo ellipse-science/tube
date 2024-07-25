@@ -119,6 +119,7 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   if (!is.null(table_tags)) {
     r <- tryCatch({
       jsonlite::fromJSON(table_tags)
+      return(TRUE)
     }, error = function(e) {
       cli::cli_alert_danger("Oups, le paramètre table_tags doit être une structure JSON valide! 😅")
       return(FALSE)
