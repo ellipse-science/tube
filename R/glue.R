@@ -244,7 +244,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       )
 
       if (!is.null(table_tags)) {
-        arguments_list <- c(arguments_list, list('--custom_table_properties' = toJSON(table_tags, auto_unbox = TRUE, null = "null")))
+        arguments_list <- c(arguments_list, list('--custom_table_properties' = jsonlite::toJSON(table_tags, auto_unbox = TRUE, null = "null")))
       } 
 
       if (!is.null(table_description)) {
