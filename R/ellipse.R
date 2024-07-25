@@ -208,7 +208,6 @@ ellipse_discover <- function(con, table = NULL) {
       }
     }))
 
-
   tables_tibble |>
     dplyr::mutate(categorie =
       dplyr::case_when(
@@ -220,7 +219,16 @@ ellipse_discover <- function(con, table = NULL) {
       !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
       )) |>
-    dplyr::select(table_name, categorie, description, create_time, update_time, jsonlite::toJSON(table_tags, auto_unbox = TRUE))
+    dplyr::mutate(
+      tags = purrr::map_chr(table_tags, ~ {
+          if (length(.x) == 0 || (length(.x) == 1 && is.na(.x[[1]]))) {
+            jsonlite::toJSON(list(NA), auto_unbox = TRUE)
+          } else {
+            jsonlite::toJSON(.x, auto_unbox = TRUE)
+          }
+        }),
+      tags = stringr::str_replace_all(tags, '[\\\\"\\/]', '')) |>
+    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, tags)
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
