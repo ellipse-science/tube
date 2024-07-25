@@ -219,6 +219,7 @@ ellipse_discover <- function(con, table = NULL) {
       !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
       )) |>
+    dplyr::mutate(table_tags_list = table_tags) |>
     dplyr::mutate(
       table_tags = purrr::map_chr(table_tags, ~ {
           if (length(.x) == 0 || (length(.x) == 1 && is.na(.x[[1]]))) {
@@ -228,7 +229,6 @@ ellipse_discover <- function(con, table = NULL) {
           }
         }),
       table_tags = stringr::str_replace_all(table_tags, '[\\\\"\\/]', '')) |>
-    dplyr::mutate(table_tags_list = table_tags) |>
     dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, table_tags_list)
 }
 
