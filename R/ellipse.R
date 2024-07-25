@@ -441,8 +441,8 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param datamart Le nom du datamart contenant la table à retirer.
-#' @param table Paramètre optionnel : Le nom de la table à retirer.  S'il est manquant, 
-#' vide ou null alors c'est le datamart complet qui est retiré
+#' @param table Le nom de la table à retirer.  Lorsque toutes les tables sont retirées, 
+#' le datamart est détruit et supprimé de la plateforme
 #'
 #' @returns TRUE si la table a été retirée avec succès, FALSE sinon.
 #' @export
