@@ -98,7 +98,7 @@ list_glue_table_properties <- function(credentials, schema, table) {
       create_time = props$Table$CreateTime,
       update_time = props$Table$UpdateTime,
       location =  props$Table$StorageDescriptor$Location,
-      table_tags = custom_parameters
+      table_tags = list(custom_parameters)
     )
     return(properties_tibble)
   }

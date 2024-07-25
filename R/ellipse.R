@@ -192,10 +192,22 @@ ellipse_discover <- function(con, table = NULL) {
 
   tables_properties <- lapply(tables, function(table) {
     list_glue_table_properties(creds, schema, table)
-  }) |> dplyr::bind_rows() |> dplyr::select(-c(location))
+  }) |> dplyr::bind_rows() |> dplyr::select(-c(location)) 
+  
 
   tables_tibble <- tibble::tibble(table_name = tables) |>
     dplyr::left_join(tables_properties, by = "table_name")
+
+  # Extract x-amz-meta-category from table_tags
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(category_from_tags = purrr::map_chr(table_tags, ~ {
+      if (!("x-amz-meta-category" %in% names(.x))) {
+        NA_character_
+      } else {
+        .x[["x-amz-meta-category"]]
+      }
+    }))
+
 
   tables_tibble |>
     dplyr::mutate(categorie =
@@ -205,9 +217,10 @@ ellipse_discover <- function(con, table = NULL) {
       startsWith(table_name, "r-")    ~ "Radar+",
       startsWith(table_name, "dict-") ~ "Dictionnaire",
       startsWith(table_name, "dim-")  ~ "Dimension",
-      !is.na(table_tags[["x-amz-meta-category"]]) ~ table_tags[["x-amz-meta-category"]],
+      !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
-      ))
+      )) |>
+    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags)
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
