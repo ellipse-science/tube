@@ -220,7 +220,7 @@ ellipse_discover <- function(con, table = NULL) {
       !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
       )) |>
-    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags)
+    dplyr::select(table_name, categorie, description, create_time, update_time, jsonlite::toJSON(table_tags, auto_unbox = TRUE))
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
