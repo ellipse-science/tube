@@ -11,8 +11,8 @@ ellipse_unpublish(con, datamart, table)
 
 \item{datamart}{Le nom du datamart contenant la table à retirer.}
 
-\item{table}{Paramètre optionnel : Le nom de la table à retirer.  S'il est manquant,
-vide ou null alors c'est le datamart complet qui est retiré}
+\item{table}{Le nom de la table à retirer.  Lorsque toutes les tables sont retirées,
+le datamart est détruit et supprimé de la plateforme}
 }
 \value{
 TRUE si la table a été retirée avec succès, FALSE sinon.
