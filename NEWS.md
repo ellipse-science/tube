@@ -1,3 +1,6 @@
+# tube 0.4.1
+* Implementation of `ellipse_unpublish` to remove a table from a datamart.  When no table are left in a datamart, the datamart is automatically removed from the data platform.
+
 # tube 0.4.0
 * Implentation of the `ellipse_publish` function to publish a dataframe as a table in a datamart.  A datamart is a collection of one or many tables that are typically the result of refiners.  When publishing a dataframe into a datamart, if it does not already exist, the user will be asked if he wants to create it.  The same goes with the table to publish the data into.  Data in a dataframe to publish can be either added to an existing table of a datamart, or the existing table can be overwritten.
 
