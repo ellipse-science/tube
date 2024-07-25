@@ -220,15 +220,16 @@ ellipse_discover <- function(con, table = NULL) {
       TRUE ~ "Autre"
       )) |>
     dplyr::mutate(
-      tags = purrr::map_chr(table_tags, ~ {
+      table_tags = purrr::map_chr(table_tags, ~ {
           if (length(.x) == 0 || (length(.x) == 1 && is.na(.x[[1]]))) {
             jsonlite::toJSON(list(NA), auto_unbox = TRUE)
           } else {
             jsonlite::toJSON(.x, auto_unbox = TRUE)
           }
         }),
-      tags = stringr::str_replace_all(tags, '[\\\\"\\/]', '')) |>
-    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, tags)
+      table_tags = stringr::str_replace_all(tags, '[\\\\"\\/]', '')) |>
+    dplyr::mutate(table_tags_list = table_tags) |>
+    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, table_tags_list)
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
