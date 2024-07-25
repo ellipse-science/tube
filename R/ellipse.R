@@ -227,7 +227,7 @@ ellipse_discover <- function(con, table = NULL) {
             jsonlite::toJSON(.x, auto_unbox = TRUE)
           }
         }),
-      table_tags = stringr::str_replace_all(tags, '[\\\\"\\/]', '')) |>
+      table_tags = stringr::str_replace_all(table_tags, '[\\\\"\\/]', '')) |>
     dplyr::mutate(table_tags_list = table_tags) |>
     dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, table_tags_list)
 }
