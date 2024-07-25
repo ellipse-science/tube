@@ -90,7 +90,7 @@ list_glue_table_properties <- function(credentials, schema, table) {
 
     # only get the Parameters starting with "x-amz-meta-" as they are custom properties
     custom_parameters <- props$Table$Parameters[grepl("^x-amz-meta-", names(props$Table$Parameters))]
-    custom_parameters <- if (length(custom_parameters) == 0) NA else custom_parameters
+    # custom_parameters <- if (length(custom_parameters) == 0) NA else custom_parameters
 
     properties_tibble <- tibble::tibble(
       table_name = props$Table$Name,
@@ -98,7 +98,7 @@ list_glue_table_properties <- function(credentials, schema, table) {
       create_time = props$Table$CreateTime,
       update_time = props$Table$UpdateTime,
       location =  props$Table$StorageDescriptor$Location,
-      table_tags = list(custom_parameters)
+      table_tags = if (length(custom_parameters) == 0) NULL else list(custom_parameters)
     )
     return(properties_tibble)
   }

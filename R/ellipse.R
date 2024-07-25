@@ -178,9 +178,10 @@ ellipse_discover <- function(con, table = NULL) {
 
     # See if there is only one table or many tables that match the table name
     if (length(grep(table, tables)) == 1 || table %in% tables) {
-      df <- list_glue_tables(creds, schema) |>
+      table_properties_df <- list_glue_table_properties(creds, schema, table)
+      table_df <- list_glue_tables(creds, schema) |>
         dplyr::filter(table_name == table)
-      return(df)
+      return(list(name = table_properties_df$table_name, description = table_properties_df$description, tags = unlist(table_properties_df$table_tags), columns = table_df))
     } else {
       if (length(grep(table, tables)) > 1) {
         cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
@@ -198,17 +199,38 @@ ellipse_discover <- function(con, table = NULL) {
   tables_tibble <- tibble::tibble(table_name = tables) |>
     dplyr::left_join(tables_properties, by = "table_name")
 
+  if (!"table_tags" %in% colnames(tables_tibble)) {
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(table_tags = list(NULL))
+  }
+
   # Extract x-amz-meta-category from table_tags
   tables_tibble <- tables_tibble |>
-    dplyr::mutate(category_from_tags = purrr::map_chr(table_tags, ~ {
-      if (!("x-amz-meta-category" %in% names(.x))) {
-        NA_character_
-      } else {
-        .x[["x-amz-meta-category"]]
-      }
-    }))
+    dplyr::mutate(category_from_tags = 
+      purrr::map_chr(table_tags, ~ {
+        if (!("x-amz-meta-category" %in% names(.x))) {
+          NA_character_
+        } else {
+          .x[["x-amz-meta-category"]]
+        }
+      })
+    )
 
-  tables_tibble |>
+  # Extract x-amz-meta-datamart from table_tags
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(datamart_from_tags = 
+      purrr::map_chr(table_tags, ~ {
+        if (!("x-amz-meta-datamart" %in% names(.x))) {
+          NA_character_
+        } else {
+          .x[["x-amz-meta-datamart"]]
+        }
+      })
+    )
+
+  has_non_na_datamart <- any(!is.na(tables_tibble$datamart_from_tags))
+
+  tables_tibble <- tables_tibble |>
     dplyr::mutate(categorie =
       dplyr::case_when(
       startsWith(table_name, "a-")    ~ "Agora+",
@@ -219,17 +241,17 @@ ellipse_discover <- function(con, table = NULL) {
       !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
       )) |>
-    dplyr::mutate(table_tags_list = table_tags) |>
-    dplyr::mutate(
-      table_tags = purrr::map_chr(table_tags, ~ {
-          if (length(.x) == 0 || (length(.x) == 1 && is.na(.x[[1]]))) {
-            jsonlite::toJSON(list(NA), auto_unbox = TRUE)
-          } else {
-            jsonlite::toJSON(.x, auto_unbox = TRUE)
-          }
-        }),
-      table_tags = stringr::str_replace_all(table_tags, '[\\\\"\\/]', '')) |>
-    dplyr::select(table_name, categorie, description, create_time, update_time, table_tags, table_tags_list)
+    dplyr::mutate(datamart = 
+      dplyr::case_when(
+        !is.na(datamart_from_tags) ~ datamart_from_tags,
+        TRUE ~ NA_character_
+      ))
+
+    if (has_non_na_datamart) {
+      return (tables_tibble |> dplyr::select(table_name, categorie, datamart, description, create_time, update_time, table_tags))
+    } else {
+      return(tables_tibble |> dplyr::select(table_name, categorie, description, create_time, update_time, table_tags))
+    }
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
@@ -346,11 +368,15 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
     table_tags <- list()
   }
   if (!"x-amz-meta-category" %in% names(table_tags)) {
-    table_tags$`x-amz-meta-category` <- "Datamart table"
+    table_tags$`x-amz-meta-category` <- "DatamartTable"
   }
 
   if (!check_params_before_publish(env, dataframe, datamart, table, data_tag, table_tags, table_description)) {
     return(invisible(FALSE))
+  }
+
+  if (!"x-amz-meta-datamart" %in% names(table_tags)) {
+    table_tags$`x-amz-meta-datamart` <- datamart
   }
 
   dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
