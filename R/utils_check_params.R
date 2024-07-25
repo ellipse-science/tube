@@ -115,21 +115,22 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   }
 
   logger::log_debug("[tube::check_params_before_publish] Checking the table_tags parameter")
-  # check that the table_tags parameter is a valid json structure
+  # check that the table_tags parameter is a list that translates into a valid json structure
   if (!is.null(table_tags)) {
-    r <- tryCatch({
-      jsonlite::fromJSON(table_tags)
-      return(TRUE)
-    }, error = function(e) {
-      cli::cli_alert_danger("Oups, le paramètre table_tags doit être une structure JSON valide! 😅")
-      return(FALSE)
-    })
-
-    if (r == FALSE) {
+    if (!is.list(table_tags)) {
+      cli::cli_alert_danger("Les table_tags doivent être une liste! 😅")
       return(FALSE)
     }
+    r <- tryCatch({
+      jsonlite::toJSON(table_tags)
+      return(TRUE)
+    }, error = function(e) {
+      cli::cli_alert_danger("Les table_tags doivent être une liste valide! 😅")
+      return(FALSE)
+    })
+    return(r)
   }
-
+  
   logger::log_debug("[tube::check_params_before_publish] Checking the table description parameter")
   if (!is.null(table_description)) {
     if (!is.character(table_description)) {
