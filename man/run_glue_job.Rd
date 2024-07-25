@@ -5,7 +5,14 @@
 \title{Run a GLUE job manually specifically for ingesting CSV in to
 the datawarehouse or datamart}
 \usage{
-run_glue_job(credentials, job_name, database, prefix)
+run_glue_job(
+  credentials,
+  job_name,
+  database,
+  prefix,
+  table_tags = NULL,
+  table_description = NULL
+)
 }
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant

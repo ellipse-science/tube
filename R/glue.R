@@ -65,6 +65,46 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
   }
 }
 
+list_glue_table_properties <- function(credentials, schema, table) {
+  logger::log_debug("[tube::list_glue_table_properties] entering function")
+  props <- list()
+
+  logger::log_debug("[tube::list_glue_table_properties] instanciating glue client")
+
+  # close connextion
+  glue_client <- paws.analytics::glue(
+    credentials = credentials,
+  )
+
+  logger::log_debug("[tube::list_glue_table_properties] listing tables")
+  props <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  if (length(props) == 0) {
+    logger::log_error("[tube::list_glue_table_properties] no table found")
+    return(NULL)
+  } else {
+    logger::log_debug("[tube::list_glue_table_properties] returning results")
+
+    # only get the Parameters starting with "x-amz-meta-" as they are custom properties
+    custom_parameters <- props$Table$Parameters[grepl("^x-amz-meta-", names(props$Table$Parameters))]
+    # custom_parameters <- if (length(custom_parameters) == 0) NA else custom_parameters
+
+    properties_tibble <- tibble::tibble(
+      table_name = props$Table$Name,
+      description = ifelse(is.null(props$Table$Description) || length(props$Table$Description) == 0, NA, props$Table$Description),
+      create_time = props$Table$CreateTime,
+      update_time = props$Table$UpdateTime,
+      location =  props$Table$StorageDescriptor$Location,
+      table_tags = if (length(custom_parameters) == 0) NULL else list(custom_parameters)
+    )
+    return(properties_tibble)
+  }
+}
+
+
 #' Delete glue table
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
@@ -146,7 +186,7 @@ list_glue_jobs <- function(credentials) {
 #' in the datawarehouse, it represents the pipeline name
 #' in the datamart, it represents the datamart and table name separates with a /
 #' @returns A boolean indicating wether or not the job was started
-run_glue_job <- function(credentials, job_name, database, prefix) {
+run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
     paste("[tube::run_glue_job] entering function",
     "with job_name", job_name,
@@ -235,28 +275,42 @@ run_glue_job <- function(credentials, job_name, database, prefix) {
     if (length(unprocessed_prefixes) > 0) {
       s3_input_path = paste0("s3://",bucket, "/", unprocessed_prefixes)
       s3_output_path = paste0("s3://",bucket, "/", prefix, "-output/")
+
+      arguments_list <- list(
+          '--s3_input_path' = s3_input_path,
+          '--s3_output_path' = s3_output_path,
+          '--glue_db_name' = glue_db,
+          '--glue_table_name' = table_name
+      )
+
+      if (!is.null(table_tags)) {
+        # change all the names of the named list
+        # to x-amz-meta-<name> for every item in the list 
+        # that is not null and not already prefixed with x-amz-meta-
+        table_tags <- setNames(table_tags, 
+                       ifelse(
+                        !sapply(table_tags, is.null) & !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(table_tags)), 
+                        names(table_tags)))
+
+        arguments_list <- c(arguments_list, list('--custom_table_properties' = jsonlite::toJSON(table_tags, auto_unbox = TRUE, null = "null")))
+      } 
+
+      if (!is.null(table_description)) {
+        arguments_list <- c(arguments_list, list('--table_description' = table_description))
+      }
       
       logger::log_debug(paste(
         "[tube::run_glue_job] starting job",
         job_name,
         "with arguments",
-        paste(list(
-          '--s3_input_path' = s3_input_path,
-          '--s3_output_path' = s3_output_path,
-          '--glue_db_name' = glue_db,
-          '--glue_table_name' = table_name
-          ), collapse = ", ")
+        paste(arguments_list, collapse = ", ")
       ))
 
       # start the glue job
       glue_client$start_job_run(
         JobName = job_name,
-        Arguments = list(
-          '--s3_input_path' = s3_input_path,
-          '--s3_output_path' = s3_output_path,
-          '--glue_db_name' = glue_db,
-          '--glue_table_name' = table_name
-        )
+        Arguments = arguments_list
       )
     }
   }

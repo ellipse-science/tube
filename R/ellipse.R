@@ -159,6 +159,7 @@ ellipse_partitions <- function(con, table) {
 #' @export
 ellipse_discover <- function(con, table = NULL) {
   schema <- DBI::dbGetInfo(con)$dbms.name
+  creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
 
   if (length(schema) == 0) {
     cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
@@ -177,10 +178,10 @@ ellipse_discover <- function(con, table = NULL) {
 
     # See if there is only one table or many tables that match the table name
     if (length(grep(table, tables)) == 1 || table %in% tables) {
-      creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
-      df <- list_glue_tables(creds, schema) |>
+      table_properties_df <- list_glue_table_properties(creds, schema, table)
+      table_df <- list_glue_tables(creds, schema) |>
         dplyr::filter(table_name == table)
-      return(df)
+      return(list(name = table_properties_df$table_name, description = table_properties_df$description, tags = unlist(table_properties_df$table_tags), columns = table_df))
     } else {
       if (length(grep(table, tables)) > 1) {
         cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
@@ -190,15 +191,67 @@ ellipse_discover <- function(con, table = NULL) {
     }
   }
 
-  tibble::tibble(table = tables) |>
+  tables_properties <- lapply(tables, function(table) {
+    list_glue_table_properties(creds, schema, table)
+  }) |> dplyr::bind_rows() |> dplyr::select(-c(location)) 
+  
+
+  tables_tibble <- tibble::tibble(table_name = tables) |>
+    dplyr::left_join(tables_properties, by = "table_name")
+
+  if (!"table_tags" %in% colnames(tables_tibble)) {
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(table_tags = list(NULL))
+  }
+
+  # Extract x-amz-meta-category from table_tags
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(category_from_tags = 
+      purrr::map_chr(table_tags, ~ {
+        if (!("x-amz-meta-category" %in% names(.x))) {
+          NA_character_
+        } else {
+          .x[["x-amz-meta-category"]]
+        }
+      })
+    )
+
+  # Extract x-amz-meta-datamart from table_tags
+  tables_tibble <- tables_tibble |>
+    dplyr::mutate(datamart_from_tags = 
+      purrr::map_chr(table_tags, ~ {
+        if (!("x-amz-meta-datamart" %in% names(.x))) {
+          NA_character_
+        } else {
+          .x[["x-amz-meta-datamart"]]
+        }
+      })
+    )
+
+  has_non_na_datamart <- any(!is.na(tables_tibble$datamart_from_tags))
+
+  tables_tibble <- tables_tibble |>
     dplyr::mutate(categorie =
-    dplyr::case_when(startsWith(table, "a-")    ~ "Agora+",
-                      startsWith(table, "c-")    ~ "Civimètre+",
-                      startsWith(table, "r-")    ~ "Radar+",
-                      startsWith(table, "dict-") ~ "Dictionnaire", # nolint
-                      startsWith(table, "dim-")  ~ "Dimension",
-                      .default = "Autre")) |>
-    dplyr::select(categorie, table)
+      dplyr::case_when(
+      startsWith(table_name, "a-")    ~ "Agora+",
+      startsWith(table_name, "c-")    ~ "Civimètre+",
+      startsWith(table_name, "r-")    ~ "Radar+",
+      startsWith(table_name, "dict-") ~ "Dictionnaire",
+      startsWith(table_name, "dim-")  ~ "Dimension",
+      !is.na(category_from_tags) ~ category_from_tags,
+      TRUE ~ "Autre"
+      )) |>
+    dplyr::mutate(datamart = 
+      dplyr::case_when(
+        !is.na(datamart_from_tags) ~ datamart_from_tags,
+        TRUE ~ NA_character_
+      ))
+
+    if (has_non_na_datamart) {
+      return (tables_tibble |> dplyr::select(table_name, categorie, datamart, description, create_time, update_time, table_tags))
+    } else {
+      return(tables_tibble |> dplyr::select(table_name, categorie, description, create_time, update_time, table_tags))
+    }
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
@@ -307,14 +360,26 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
+ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, table_tags = NULL, table_description = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   
-  if (!check_params_before_publish(env, dataframe, datamart, table, tag)) {
+  # if the x-amz-meta-category named element is not provided in table_tag, we add it 
+  if (is.null(table_tags)) {
+    table_tags <- list()
+  }
+  if (!"x-amz-meta-category" %in% names(table_tags)) {
+    table_tags$`x-amz-meta-category` <- "DatamartTable"
+  }
+
+  if (!check_params_before_publish(env, dataframe, datamart, table, data_tag, table_tags, table_description)) {
     return(invisible(FALSE))
   }
 
-  dataframe <- dataframe |> dplyr::mutate(tag = tag)
+  if (!"x-amz-meta-datamart" %in% names(table_tags)) {
+    table_tags$`x-amz-meta-datamart` <- datamart
+  }
+
+  dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
   
   creds <- get_aws_credentials(env)
   dm_glue_database <- list_datamarts_database(creds)
@@ -425,7 +490,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, tag = NULL) {
     "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", 
     "  Votre choix", sep = "\n"))) {
     glue_job <- list_glue_jobs(creds)
-    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table))
+    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
     cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
     cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
     cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")

@@ -96,7 +96,7 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
 #' @param table The table to publish the data to
 #' @param dataframe The dataframe to publish
 #' @return TRUE if the parameters are valid, FALSE otherwise
-check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
+check_params_before_publish <- function(env, dataframe, datamart, table, data_tag, table_tags, table_description) {
   logger::log_debug("[tube::check_params_before_publish] Checking parameters before publishing the data")
   logger::log_debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
@@ -106,10 +106,35 @@ check_params_before_publish <- function(env, dataframe, datamart, table, tag) {
     return(FALSE)
   }
 
-  logger::log_debug("[tube::check_params_before_publish] Checking the tag parameter")
-  if (!is.null(tag)) {
-    if (!is.character(tag)) {
-      cli::cli_alert_danger("Le tag doit être une chaîne de caractères! 😅")
+  logger::log_debug("[tube::check_params_before_publish] Checking the data_tag parameter")
+  if (!is.null(data_tag)) {
+    if (!is.character(data_tag)) {
+      cli::cli_alert_danger("Le data_tag doit être une chaîne de caractères! 😅")
+      return(FALSE)
+    }
+  }
+
+  logger::log_debug("[tube::check_params_before_publish] Checking the table_tags parameter")
+  # check that the table_tags parameter is a list that translates into a valid json structure
+  if (!is.null(table_tags)) {
+    if (!is.list(table_tags)) {
+      cli::cli_alert_danger("Les table_tags doivent être une liste! 😅")
+      return(FALSE)
+    }
+    r <- tryCatch({
+      jsonlite::toJSON(table_tags)
+      return(TRUE)
+    }, error = function(e) {
+      cli::cli_alert_danger("Les table_tags doivent être une liste valide! 😅")
+      return(FALSE)
+    })
+    return(r)
+  }
+  
+  logger::log_debug("[tube::check_params_before_publish] Checking the table description parameter")
+  if (!is.null(table_description)) {
+    if (!is.character(table_description)) {
+      cli::cli_alert_danger("La description de la table doit être une chaîne de caractères! 😅")
       return(FALSE)
     }
   }

@@ -4,7 +4,15 @@
 \alias{ellipse_publish}
 \title{Publier un dataframe dans un datamart}
 \usage{
-ellipse_publish(con, dataframe, datamart, table, tag = NULL)
+ellipse_publish(
+  con,
+  dataframe,
+  datamart,
+  table,
+  data_tag = NULL,
+  table_tags = NULL,
+  table_description = NULL
+)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}

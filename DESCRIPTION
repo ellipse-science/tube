@@ -1,7 +1,7 @@
 Package: tube
 Type: Package
 Title: Access Ellipse Data Hub on AWS
-Version: 0.4.1
+Version: 0.5.0
 Authors@R:
   c(person(
       given = "Patrick",
@@ -35,7 +35,8 @@ Imports:
     tibble,
     tools,
     pbapply,
-    progress
+    progress,
+    jsonlite
 Suggests:
     covr,
     knitr,
