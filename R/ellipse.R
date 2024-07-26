@@ -1,5 +1,5 @@
-#' @description Se connecter à la plateforme de données ellipse sur AWS
-#'
+#' Se connecter à la plateforme de données ellipse
+#' 
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
 #'
