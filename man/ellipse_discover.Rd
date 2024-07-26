@@ -13,7 +13,7 @@ ellipse_discover(con, table = NULL)
 \item{table}{Une table pour laquelle on veut obtenir les informations.}
 }
 \value{
-Un \code{tibble} contenant les tables diposnibles dans l'entrepôt de
+Un \code{tibble} contenant les tables disponibles dans l'entrepôt de
 données, ou un descriptino des colonnes pour une table en particulier.
 }
 \description{
