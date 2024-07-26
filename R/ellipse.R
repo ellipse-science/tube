@@ -153,7 +153,7 @@ ellipse_partitions <- function(con, table) {
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param table Une table pour laquelle on veut obtenir les informations.
 #'
-#' @returns Un `tibble` contenant les tables diposnibles dans l'entrepôt de
+#' @returns Un `tibble` contenant les tables disponibles dans l'entrepôt de
 #'   données, ou un descriptino des colonnes pour une table en particulier.
 #'
 #' @export
@@ -357,6 +357,9 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @param dataframe Le chemin vers le répertoire qui contient les fichiers à charger dans tube
 #' @param datamart Le nom du pipeline qui doit être exécuté pour charger les données
 #' @param table Le nom de la table qui doit être créée dans le datamart
+#' @param data_tag Le tag à ajouter aux données pour les identifier à l'intérieur-même du jeu de données (une colonne tag est ajoutée au dataframe)
+#' @param table_tags Les tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param table_description La description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
