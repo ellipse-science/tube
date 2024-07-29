@@ -1,3 +1,7 @@
+# tube 0.5.1
+
+* Fix `ellipse_partitions` function which would break when `ellipse_discover` returned a list.
+
 # tube 0.5.0
 * Version 0.5.0 adds the table properties to set the foundations for the built-in datacatalog.  In other words, when we publish a table in the datamart, we can assign tags to this table in the form of a named list (tag_name = "tag_value").  Morover, we can also provide a description for this table.  In turn, the function `ellipse_discover` will render these tage and description which essentially enrich the data catalog of the CAPP.
 * 0.5.1 will see an additional function to update the properties of a table only without having to publich or republish it.  Also in the dataplatform, a new property (table_description and table_tags) will be added to the aws_infra pipelines for tagging and describing datawarehouse tables also.
@@ -9,7 +13,7 @@
 
 Currently `ellipse_publish`is only to be used intreactively by the user from within the R console.  In a subsequent version of this package, we will provide an unattended version of ir in order to support refiners meant to be fully automated.
 
-Upon exit the `ellipse_publish` function prompts the user to process the data in order make it available (run the glue job) in the data platform through the `ellipse_query` functions immediately, or later according to the regular 6 hours schedule. 
+Upon exit the `ellipse_publish` function prompts the user to process the data in order make it available (run the glue job) in the data platform through the `ellipse_query` functions immediately, or later according to the regular 6 hours schedule.
 
 * This version features the possibility to work wirth multiple ellipse connections at the same time in the datawarehouse and in the datamarts, in both the DEV or the PROD environment of the data platform.
 
