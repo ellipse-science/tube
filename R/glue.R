@@ -65,13 +65,21 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
   }
 }
 
+#' List the properties of a GLUE table
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @param schema The DBI schema to list the tables from
+#' @param table The name of the table to list the properties from
+#' @returns A tibble with the properties of the table
+#' @examples
+#' list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
+#' 
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
   props <- list()
 
   logger::log_debug("[tube::list_glue_table_properties] instanciating glue client")
 
-  # close connextion
   glue_client <- paws.analytics::glue(
     credentials = credentials,
   )
@@ -371,4 +379,90 @@ glue_table_list_to_tibble <- function(glue_response) {
   }
 
   return(df)
+}
+
+
+# Update the custom tags (advanced properties) of a glue table
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @param schema The DBI schema to list the tables from
+#' @param table The name of the table to list the properties from
+#' @param table_tags A list of custom tags to update the table with
+#' @returns A boolean indicating wether or not the tags were updated
+#' successfully
+#' @examples
+#' update_glue_table_tags(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", list(tag1 = "value1", tag2 = "value2"))
+#' 
+update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
+  logger::log_debug(
+    paste("[tube::update_glue_table_tags] entering function",
+    "with schema", schema,
+    "table", table,
+    "and new_table_tags", new_table_tags)
+  )
+
+  # instanciate clue client
+  logger::log_debug("[tube::update_glue_table_tags] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = creds
+  )
+
+  # Get the table details
+  logger::log_debug("[tube::update_glue_table_tags] Getting table details")
+  table_details <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  # add x-amz-meta- prefix to the tags if not already present
+  new_table_tags <- setNames(new_table_tags, 
+                       ifelse(
+                        !sapply(new_table_tags, is.null) & !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(new_table_tags)), 
+                        names(new_table_tags)))
+
+  properties_to_remove <- list()
+  custom_table_properties <- new_table_tags
+  if (is.list(custom_table_properties) && !is.null(custom_table_properties) && length(custom_table_properties) > 0) {
+    # custom_table_properties <- jsonlite::fromJSON(custom_table_properties)
+    # Identify properties to remove (those explicitly set to NULL)
+    properties_to_remove <- names(custom_table_properties)[sapply(custom_table_properties, is.null)]
+    # Remove properties that are set to NULL from custom_table_properties
+    custom_table_properties <- custom_table_properties[!sapply(custom_table_properties, is.null)]
+  }
+
+  # Get the glue table
+  logger::log_debug("[tube::update_glue_table_tags] Getting glue table")
+  glue_client <- paws.analytics::glue(
+    credentials = creds
+  )
+  glue_table <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  existing_parameters <- glue_table$Table$Parameters
+
+  if (!is.null(custom_table_properties) && length(custom_table_properties) > 0) {
+    existing_parameters <- modifyList(existing_parameters, custom_table_properties)
+  }
+
+  if (length(properties_to_remove) > 0) {
+    existing_parameters <- existing_parameters[!names(existing_parameters) %in% properties_to_remove]
+  }
+  
+  # Update the glue table
+  logger::log_debug("[tube::update_glue_table_tags] Updating glue table")
+
+  glue_client$update_table(
+    DatabaseName = schema,
+    TableInput = list(
+      Name = table,
+      Parameters = existing_parameters
+    )
+  )
+
+  # Return TRUE indicating successful update
+  logger::log_debug("[tube::update_glue_table_tags] Tags updated successfully")
+  TRUE
 }

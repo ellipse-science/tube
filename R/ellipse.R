@@ -566,3 +566,72 @@ ellipse_unpublish <- function(con, datamart, table) {
     return(invisible(FALSE))
   }
 }
+
+
+#' Changer pes proprités d'une table dans un datamart ou dans la datawarehouse
+#' 
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param table Le nom de la table à modifier.
+#' @param new_table_tags Les nouveaux tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param new_table_description La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' 
+#' @returns TRUE si la table a été modifiée avec succès, FALSE sinon.
+#' @export
+ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_description = NULL) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  schema <- DBI::dbGetInfo(con)$dbms.name
+  creds <- get_aws_credentials(env)
+
+  
+  if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_description)) {
+    return(invisible(FALSE))
+  }
+
+  table_props <- list_glue_table_properties(creds, schema, table)
+
+  if (!is.null(table_props$description)) {
+    cli::cli_alert_info(paste("Description actuelle de la table:", table_props$description))
+  }
+
+  if (!is.null(table_props$table_tags)) {
+    cli::cli_alert_info("Tags actuels de la table")
+    print(unlist(table_props$table_tags))
+  }
+
+  if (table_props$description == new_table_description && identical(table_props$table_tags, new_table_tags)) {
+    cli::cli_alert_danger("Les propriétés proposées de la table ne sont pas différentes des propriétés actuelles! 😅")
+
+    return(invisible(FALSE))
+  }
+
+  # confirm by the user
+  if (!ask_yes_no("Êtes-vous certain.e de vouloir modifier les propriétés de la table?")) {
+    cli::cli_alert_info("Modification des propriétés de la table abandonnée.")
+    return(invisible(FALSE))
+  }
+
+  # update the table tags and description
+  cli::cli_alert_info("Mise à jour des tags de la table en cours...")
+
+  # if the table tags are different from the current table tags, we update them
+  r <- update_glue_table_tags(creds, schema, table, new_table_tags)
+  if (r) {
+    cli::cli_alert_success("Les tags de la table ont été mises à jour avec succès.")
+    return(invisible(TRUE))
+  } else {
+    cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour des tags de la table! 😅")
+    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+    return(invisible(FALSE))
+  }
+
+  # if the table description is different from the current table description, we update it
+  r <- update_glue_table_description(creds, schema, table, new_table_description)
+  if (r) {
+    cli::cli_alert_success("La description de la table a été mise à jour avec succès.")
+    return(invisible(TRUE))
+  } else {
+    cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour de la description de la table! 😅")
+    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+    return(invisible(FALSE))
+  }
+}
