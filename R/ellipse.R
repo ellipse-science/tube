@@ -1,5 +1,5 @@
 #' Se connecter à la plateforme de données ellipse
-#' 
+#'
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
 #'
@@ -135,7 +135,11 @@ ellipse_disconnect <- function(con = NULL) {
 #'
 #' @export
 ellipse_partitions <- function(con, table) {
-  df <- ellipse_discover(con, table) |> dplyr::filter(is_partition)
+  df <- ellipse_discover(con, table)
+  if (is.list(df) && "columns" %in% names(df)) {
+    df <- df$columns
+  }
+  df <- dplyr::filter(df, is_partition)
   partitions <- dplyr::pull(df, col_name)
   ellipse_query(con, table) |>
     dplyr::count(dplyr::across(dplyr::all_of(partitions))) |>
@@ -174,7 +178,7 @@ ellipse_discover <- function(con, table = NULL) {
     if (!any(grepl(table, tables))) {
       cli::cli_alert_danger("La table demandée est inconnue.")
       return(invisible(NULL))
-    } 
+    }
 
     # See if there is only one table or many tables that match the table name
     if (length(grep(table, tables)) == 1 || table %in% tables) {
@@ -193,8 +197,8 @@ ellipse_discover <- function(con, table = NULL) {
 
   tables_properties <- lapply(tables, function(table) {
     list_glue_table_properties(creds, schema, table)
-  }) |> dplyr::bind_rows() |> dplyr::select(-c(location)) 
-  
+  }) |> dplyr::bind_rows() |> dplyr::select(-c(location))
+
 
   tables_tibble <- tibble::tibble(table_name = tables) |>
     dplyr::left_join(tables_properties, by = "table_name")
@@ -206,7 +210,7 @@ ellipse_discover <- function(con, table = NULL) {
 
   # Extract x-amz-meta-category from table_tags
   tables_tibble <- tables_tibble |>
-    dplyr::mutate(category_from_tags = 
+    dplyr::mutate(category_from_tags =
       purrr::map_chr(table_tags, ~ {
         if (!("x-amz-meta-category" %in% names(.x))) {
           NA_character_
@@ -218,7 +222,7 @@ ellipse_discover <- function(con, table = NULL) {
 
   # Extract x-amz-meta-datamart from table_tags
   tables_tibble <- tables_tibble |>
-    dplyr::mutate(datamart_from_tags = 
+    dplyr::mutate(datamart_from_tags =
       purrr::map_chr(table_tags, ~ {
         if (!("x-amz-meta-datamart" %in% names(.x))) {
           NA_character_
@@ -241,7 +245,7 @@ ellipse_discover <- function(con, table = NULL) {
       !is.na(category_from_tags) ~ category_from_tags,
       TRUE ~ "Autre"
       )) |>
-    dplyr::mutate(datamart = 
+    dplyr::mutate(datamart =
       dplyr::case_when(
         !is.na(datamart_from_tags) ~ datamart_from_tags,
         TRUE ~ NA_character_
@@ -268,7 +272,7 @@ ellipse_query <- function(con, table) {
   tables <- DBI::dbGetQuery(
     con, paste0("SHOW TABLES IN ", schema_name)
   )$tab_name
-  
+
   if (!table %in% tables) {
     cli::cli_alert_danger("La table demandée est inconnue.")
     return(NULL)
@@ -289,7 +293,7 @@ ellipse_query <- function(con, table) {
 #' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
-#' @export 
+#' @export
 ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
 
@@ -365,8 +369,8 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @export
 ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, table_tags = NULL, table_description = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
-  
-  # if the x-amz-meta-category named element is not provided in table_tag, we add it 
+
+  # if the x-amz-meta-category named element is not provided in table_tag, we add it
   if (is.null(table_tags)) {
     table_tags <- list()
   }
@@ -383,7 +387,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
   }
 
   dataframe <- dataframe |> dplyr::mutate(tag = data_tag)
-  
+
   creds <- get_aws_credentials(env)
   dm_glue_database <- list_datamarts_database(creds)
   dm_bucket <- list_datamarts_bucket(creds)
@@ -413,7 +417,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
 
   if (table %in% dm_folders) {
     # ici on suppose que si le dossier datamart/table existe dans le bucket s3 des datamarts
-    # alors la table GLUE existe aussi ce qui n'est possible pas le cas dans les situations 
+    # alors la table GLUE existe aussi ce qui n'est possible pas le cas dans les situations
     # où la GLUE job n'a pas roulé
     cli::cli_alert_danger("La table demandée existe déjà! 😅")
 
@@ -447,7 +451,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
       # delete the content of the folder s3://datamarts-bucket/datamart/table and s3://datamarts-bucket/datamart/table-output
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
       r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
-  
+
       if (r1 && r2 && r3) {
         cli::cli_alert_success("La table a été écrasée avec succès.")
       } else {
@@ -455,7 +459,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
         cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
         return(invisible(FALSE))
       }
-      
+
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
       if (r) {
@@ -490,7 +494,7 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
   # The glue job will also create the table in the datamart database
   if (ask_yes_no(paste(
     "Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?",
-    "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.", 
+    "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
     "  Votre choix", sep = "\n"))) {
     glue_job <- list_glue_jobs(creds)
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
@@ -509,23 +513,23 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param datamart Le nom du datamart contenant la table à retirer.
-#' @param table Le nom de la table à retirer.  Lorsque toutes les tables sont retirées, 
+#' @param table Le nom de la table à retirer.  Lorsque toutes les tables sont retirées,
 #' le datamart est détruit et supprimé de la plateforme
 #'
 #' @returns TRUE si la table a été retirée avec succès, FALSE sinon.
 #' @export
 ellipse_unpublish <- function(con, datamart, table) {
   env <- DBI::dbGetInfo(con)$profile_name
-  
+
   if (!check_params_before_unpublish(env, datamart, table)) {
     return(invisible(FALSE))
   }
-  
+
   creds <- get_aws_credentials(env)
   dm_bucket <- list_datamarts_bucket(creds)
   dm_glue_database <- list_datamarts_database(creds)
 
-  
+
   # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
   dm_partitions <- list_s3_partitions(creds, dm_bucket)
   dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
@@ -533,30 +537,30 @@ ellipse_unpublish <- function(con, datamart, table) {
     cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
     return(invisible(FALSE))
   }
-  
+
   # check that the table exists in the datamart in the form of s3://datamarts-bucket/datamart/table
   dm_folders <- list_s3_folders(creds, dm_bucket, paste0(datamart, "/"))
-  
+
   if (!table %in% dm_folders) {
     cli::cli_alert_danger("La table demandée n'existe pas! 😅")
     return(invisible(FALSE))
   }
-  
+
   # confirm by the user
   if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?")) {
     cli::cli_alert_info("Retrait de la table abandonné.")
     return(invisible(FALSE))
   }
-  
+
   cli::cli_alert_info("Retrait de la table en cours...")
-  
+
   # delete the glue table
   r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
-  
+
   # delete the content of the folder s3://datamarts-bucket/datamart/table
   r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
   r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
-  
+
   if (r1 && r2 && r3) {
     cli::cli_alert_success("La table a été retirée avec succès.")
     return(invisible(TRUE))
