@@ -625,57 +625,112 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 
   table_props <- list_glue_table_properties(creds, schema, table)
 
+  cli::cli_rule()
+
   if (!is.null(table_props$description)) {
-    cli::cli_alert_info(paste("Description actuelle de la table:", table_props$description))
+    cli::cli_alert_info("Description actuelle de la table:")
+    cli::cli_text(cli::col_cyan(table_props$description))
+    cli::cli_text("")
   }
 
   if (!is.null(table_props$table_tags)) {
     cli::cli_alert_info("Tags actuels de la table")
-    print(unlist(table_props$table_tags))
+    print_list_with_nulls(unlist(table_props$table_tags))
   }
 
-  if (table_props$description == new_table_desc && identical(table_props$table_tags, new_table_tags)) {
-    cli::cli_alert_danger("Les propriétés proposées de la table ne sont pas différentes des propriétés actuelles! 😅")
+  cli::cli_rule()
 
-    return(invisible(FALSE))
-  }
+  # add x-amz-meta- prefix to the tags if not already present
+  new_table_tags <- setNames(new_table_tags, 
+                       ifelse(
+                        !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(new_table_tags)), 
+                        names(new_table_tags)))
 
-  # confirm by the user
-  if (!ask_yes_no("Êtes-vous certain.e de vouloir modifier les propriétés de la table?")) {
-    cli::cli_alert_info("Modification des propriétés de la table abandonnée.")
-    return(invisible(FALSE))
-  }
+  # if there are new tags in new_table_tags that are not in the current table tags, we add them
+  # if there are tags in new_table_tags that are also in the current table tags and have diffrent values, we update them 
+  current_table_tags <- unlist(table_props$table_tags)
 
-  # update the table tags and description
-  cli::cli_alert_info("Mise à jour des tags de la table en cours...")
-
-  # if the table tags are different from the current table tags, we update them
-  if (!is.null(new_table_tags) && length(new_table_tags) > 0 && !identical(table_props$table_tags, new_table_tags)) {
-    r <- update_glue_table_tags(creds, schema, table, new_table_tags)
-    if (r) {
-      cli::cli_alert_success("Les tags de la table ont été mises à jour avec succès.")
-    } else {
-      cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour des tags de la table! 😅")
-      cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
-      return(invisible(FALSE))
-    }
+  if (!is.null(new_table_tags) && length(new_table_tags) > 0) {
+    tags_to_add <- new_table_tags[!names(new_table_tags) %in% names(current_table_tags)]
+    tags_to_update <- new_table_tags[names(new_table_tags) %in% names(current_table_tags)]
+    tags_to_update <- tags_to_update[tags_to_update != current_table_tags[names(tags_to_update)]]
+    new_tags <- c(tags_to_add, tags_to_update)
   } else {
-    cli::cli_alert_info("Les tags de la table n'ont pas été modifiés.")
+    new_tags <- NULL
   }
 
-  # if the table description is different from the current table description, we update it
+    # add x-amz-meta- prefix to the tags if not already present
+  new_tags <- setNames(new_tags, 
+                       ifelse(
+                        !sapply(grepl("x-amz-meta-", names(new_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(new_tags)), 
+                        names(new_tags)))
+
+  change_tags <- FALSE
+  change_desc <- FALSE
+
+  if (!is.null(new_tags) && length(new_tags) > 0) {
+    # confirm by the user
+    cli::cli_alert_info("Les changements apportés sur les tags seront:")
+    print_list_with_nulls(new_tags)
+    change_tags <- TRUE
+  } else {
+    cli::cli_alert_info("Aucun changement n'est à faire sur les tags.")
+  }
+
+  cli::cli_text("")
+  
   if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 && (is.na(table_props$description) || table_props$description != new_table_desc)) {
-    r <- update_glue_table_desc(creds, schema, table, new_table_desc)
-    if (r) {
-      cli::cli_alert_success("La description de la table a été mise à jour avec succès.")
-    } else {
-      cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour de la description de la table! 😅")
-      cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+    cli::cli_alert_info("La nouvelle description de la table sera:")
+    cli::cli_alert_info(cli::col_cyan(new_table_desc))
+    change_desc <- TRUE
+  } else {
+    cli::cli_alert_info("Aucun changement n'est à faire sur la description.")
+
+  }
+
+  cli::cli_rule()
+  if (change_tags || change_desc) {
+    confirm_change <- ask_yes_no("Voulez-vous vraiment changer les propriétés de la table?")
+
+    if (!confirm_change) {
+      cli::cli_alert_info("Les changements ont été abandonnés.")
       return(invisible(FALSE))
     }
   } else {
-    cli::cli_alert_info("La description de la table n'a pas été modifiée.")
+    cli::cli_alert_info("Aucun changement n'est requis.")
+    return(invisible(TRUE))
   }
+
+  if (confirm_change) {
+    # update the table tags and description
+    if (change_tags) {
+      cli::cli_alert_info("Mise à jour des tags de la table en cours...")
+
+      r1 <- update_glue_table_tags(creds, schema, table, new_tags)
+
+      if (r1) {
+        cli::cli_alert_success("Les tags de la table ont été mises à jour avec succès.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour des tags de la table! 😅")
+        cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+        return(invisible(FALSE))
+      }
+    }
+
+    if (change_desc) {
+      cli::cli_alert_info("Mise à jour de la description de la table en cours...")
+      r2 <- update_glue_table_desc(creds, schema, table, new_table_desc)
+      if (r2) {
+        cli::cli_alert_success("La description de la table a été mise à jour avec succès.")
+      } else {
+        cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour de la description de la table! 😅")
+        cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+        return(invisible(FALSE))
+      }
+    }
+  } 
 
   return(invisible(TRUE))
 }

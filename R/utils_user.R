@@ -45,3 +45,15 @@ suppress_console_output <- function(expr) {
   
   result
 }
+
+
+print_list_with_nulls <- function(lst) {
+  for (name in names(lst)) {
+    value <- lst[[name]]
+    if (is.null(value)) {
+      cli::cli_text(cli::col_cyan(paste0(name, ": ", "NULL")))
+    } else {
+      cli::cli_text(cli::col_cyan(paste0(name, ": ", value)))
+    }
+  }
+}
