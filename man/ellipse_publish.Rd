@@ -23,11 +23,14 @@ ellipse_publish(
 
 \item{table}{Le nom de la table qui doit être créée dans le datamart}
 
-\item{data_tag}{Le tag à ajouter aux données pour les identifier à l'intérieur-même du jeu de données (une colonne tag est ajoutée au dataframe)}
+\item{data_tag}{Le tag à ajouter aux données pour les identifier à l'intérieur-même du
+jeu de données (une colonne tag est ajoutée au dataframe)}
 
-\item{table_tags}{Les tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données}
+\item{table_tags}{Les tags à ajouter à la table pour la catégoriser dans le datamart
+pour faciliter la découvrabilité des données dans le catalogue de données}
 
-\item{table_description}{La description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données}
+\item{table_description}{La description de la table à ajouter dans le datamart pour
+faciliter la découvrabilité des données dans le catalogue de données}
 }
 \value{
 TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
