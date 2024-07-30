@@ -609,17 +609,17 @@ ellipse_unpublish <- function(con, datamart, table) {
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param table Le nom de la table à modifier.
 #' @param new_table_tags Les nouveaux tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
-#' @param new_table_description La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param new_table_desc La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
 #' 
 #' @returns TRUE si la table a été modifiée avec succès, FALSE sinon.
 #' @export
-ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_description = NULL) {
+ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
   
-  if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_description)) {
+  if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_desc)) {
     return(invisible(FALSE))
   }
 
@@ -634,7 +634,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_descri
     print(unlist(table_props$table_tags))
   }
 
-  if (table_props$description == new_table_description && identical(table_props$table_tags, new_table_tags)) {
+  if (table_props$description == new_table_desc && identical(table_props$table_tags, new_table_tags)) {
     cli::cli_alert_danger("Les propriétés proposées de la table ne sont pas différentes des propriétés actuelles! 😅")
 
     return(invisible(FALSE))
@@ -650,24 +650,32 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_descri
   cli::cli_alert_info("Mise à jour des tags de la table en cours...")
 
   # if the table tags are different from the current table tags, we update them
-  r <- update_glue_table_tags(creds, schema, table, new_table_tags)
-  if (r) {
-    cli::cli_alert_success("Les tags de la table ont été mises à jour avec succès.")
-    return(invisible(TRUE))
+  if (!is.null(new_table_tags) && length(new_table_tags) > 0 && !identical(table_props$table_tags, new_table_tags)) {
+    r <- update_glue_table_tags(creds, schema, table, new_table_tags)
+    if (r) {
+      cli::cli_alert_success("Les tags de la table ont été mises à jour avec succès.")
+    } else {
+      cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour des tags de la table! 😅")
+      cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+      return(invisible(FALSE))
+    }
   } else {
-    cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour des tags de la table! 😅")
-    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
-    return(invisible(FALSE))
+    cli::cli_alert_info("Les tags de la table n'ont pas été modifiés.")
   }
 
   # if the table description is different from the current table description, we update it
-  r <- update_glue_table_description(creds, schema, table, new_table_description)
-  if (r) {
-    cli::cli_alert_success("La description de la table a été mise à jour avec succès.")
-    return(invisible(TRUE))
+  if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 && (is.na(table_props$description) || table_props$description != new_table_desc)) {
+    r <- update_glue_table_desc(creds, schema, table, new_table_desc)
+    if (r) {
+      cli::cli_alert_success("La description de la table a été mise à jour avec succès.")
+    } else {
+      cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour de la description de la table! 😅")
+      cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+      return(invisible(FALSE))
+    }
   } else {
-    cli::cli_alert_danger("Il y a eu une erreur lors de la mise à jour de la description de la table! 😅")
-    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
-    return(invisible(FALSE))
+    cli::cli_alert_info("La description de la table n'a pas été modifiée.")
   }
+
+  return(invisible(TRUE))
 }
