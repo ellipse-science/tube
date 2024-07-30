@@ -1,3 +1,7 @@
+# tube 0.5.2
+
+* Fix warning when `ellipse_discover` is called for a table that has no tags.
+
 # tube 0.5.1
 
 * Fix `ellipse_partitions` function which would break when `ellipse_discover` returned a list.

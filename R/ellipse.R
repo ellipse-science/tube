@@ -74,12 +74,12 @@ ellipse_connect <- function(
 
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
   con <- DBI::dbConnect(noctua::athena(),
-                 aws_access_key_id = aws_access_key_id,
-                 aws_secret_access_key = aws_secret_access_key,
-                 schema_name = schema_name,
-                 profile_name = env,
-                 work_group = "ellipse-work-group",
-                 s3_staging_dir = paste0("s3://",athena_staging_bucket))
+                        aws_access_key_id = aws_access_key_id,
+                        aws_secret_access_key = aws_secret_access_key,
+                        schema_name = schema_name,
+                        profile_name = env,
+                        work_group = "ellipse-work-group",
+                        s3_staging_dir = paste0("s3://", athena_staging_bucket))
 
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -185,7 +185,15 @@ ellipse_discover <- function(con, table = NULL) {
       table_properties_df <- list_glue_table_properties(creds, schema, table)
       table_df <- list_glue_tables(creds, schema) |>
         dplyr::filter(table_name == table)
-      return(list(name = table_properties_df$table_name, description = table_properties_df$description, tags = unlist(table_properties_df$table_tags), columns = table_df))
+      if ("table_tags" %in% colnames(table_properties_df)) {
+        tags <- unlist(table_properties_df$table_tags)
+      } else {
+        tags <- NA_character_
+      }
+      return(list(name = table_properties_df$table_name,
+                  description = table_properties_df$description,
+                  tags = tags,
+                  columns = table_df))
     } else {
       if (length(grep(table, tables)) > 1) {
         cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
@@ -197,65 +205,70 @@ ellipse_discover <- function(con, table = NULL) {
 
   tables_properties <- lapply(tables, function(table) {
     list_glue_table_properties(creds, schema, table)
-  }) |> dplyr::bind_rows() |> dplyr::select(-c(location))
-
+  }) |>
+    dplyr::bind_rows() |>
+    dplyr::select(-location)
 
   tables_tibble <- tibble::tibble(table_name = tables) |>
     dplyr::left_join(tables_properties, by = "table_name")
 
   if (!"table_tags" %in% colnames(tables_tibble)) {
-  tables_tibble <- tables_tibble |>
-    dplyr::mutate(table_tags = list(NULL))
+    tables_tibble <- tables_tibble |>
+      dplyr::mutate(table_tags = list(NULL))
   }
 
   # Extract x-amz-meta-category from table_tags
   tables_tibble <- tables_tibble |>
     dplyr::mutate(category_from_tags =
-      purrr::map_chr(table_tags, ~ {
-        if (!("x-amz-meta-category" %in% names(.x))) {
-          NA_character_
-        } else {
-          .x[["x-amz-meta-category"]]
-        }
-      })
+        purrr::map_chr(table_tags, ~ {
+          if (!("x-amz-meta-category" %in% names(.x))) {
+            NA_character_
+          } else {
+            .x[["x-amz-meta-category"]]
+          }
+        })
     )
 
   # Extract x-amz-meta-datamart from table_tags
   tables_tibble <- tables_tibble |>
     dplyr::mutate(datamart_from_tags =
-      purrr::map_chr(table_tags, ~ {
-        if (!("x-amz-meta-datamart" %in% names(.x))) {
-          NA_character_
-        } else {
-          .x[["x-amz-meta-datamart"]]
-        }
-      })
+        purrr::map_chr(table_tags, ~ {
+          if (!("x-amz-meta-datamart" %in% names(.x))) {
+            NA_character_
+          } else {
+            .x[["x-amz-meta-datamart"]]
+          }
+        })
     )
 
   has_non_na_datamart <- any(!is.na(tables_tibble$datamart_from_tags))
 
   tables_tibble <- tables_tibble |>
     dplyr::mutate(categorie =
-      dplyr::case_when(
-      startsWith(table_name, "a-")    ~ "Agora+",
-      startsWith(table_name, "c-")    ~ "Civimètre+",
-      startsWith(table_name, "r-")    ~ "Radar+",
-      startsWith(table_name, "dict-") ~ "Dictionnaire",
-      startsWith(table_name, "dim-")  ~ "Dimension",
-      !is.na(category_from_tags) ~ category_from_tags,
-      TRUE ~ "Autre"
-      )) |>
+                    dplyr::case_when(startsWith(table_name, "a-")    ~ "Agora+",
+                                     startsWith(table_name, "c-")    ~ "Civimètre+",
+                                     startsWith(table_name, "r-")    ~ "Radar+",
+                                     startsWith(table_name, "dict-") ~ "Dictionnaire",
+                                     startsWith(table_name, "dim-")  ~ "Dimension",
+                                     !is.na(category_from_tags) ~ category_from_tags,
+                                     TRUE ~ "Autre")) |>
     dplyr::mutate(datamart =
-      dplyr::case_when(
-        !is.na(datamart_from_tags) ~ datamart_from_tags,
-        TRUE ~ NA_character_
-      ))
+                    dplyr::case_when(
+                      !is.na(datamart_from_tags) ~ datamart_from_tags,
+                      TRUE ~ NA_character_
+                    ))
 
-    if (has_non_na_datamart) {
-      return (tables_tibble |> dplyr::select(table_name, categorie, datamart, description, create_time, update_time, table_tags))
-    } else {
-      return(tables_tibble |> dplyr::select(table_name, categorie, description, create_time, update_time, table_tags))
-    }
+  if (has_non_na_datamart) {
+    ret <- tables_tibble |>
+      dplyr::select(table_name, categorie, datamart, description, create_time,
+                    update_time, table_tags)
+    return(ret)
+  } else {
+    ret <- tables_tibble |>
+      dplyr::select(table_name, categorie, description, create_time, update_time,
+                    table_tags)
+    return(ret)
+  }
 }
 
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
@@ -280,17 +293,22 @@ ellipse_query <- function(con, table) {
   dplyr::tbl(con, table)
 }
 
-
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#'
 #' Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
 #' vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
 #' dans une table de la datawarehouse.
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
-#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.  Cela va va déterminer dans quelle table de données les données vont être injectées.
-#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de données.  Utilisé pour les données factuelles seulement, NULL sinon.  Si NULL, il faut fournir un file_version.
-#' @param file_version La version des données qui doit être accollée aux données dans l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
+#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.
+#'   Cela va va déterminer dans quelle table de données les données vont être injectées.
+#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de
+#'   données. Utilisé pour les données factuelles seulement, NULL sinon.
+#'   Si NULL, il faut fournir un file_version.
+#' @param file_version La version des données qui doit être accollée aux données dans
+#'   l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires
+#'   seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export
@@ -309,7 +327,8 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
   landing_zone_bucket <- list_landing_zone_bucket(creds)
 
   if (is.null(landing_zone_bucket)) {
-    cli::cli_alert_danger("Oups, il semble que le bucket de la landing zone n'a pas été trouvé! Contacter votre ingénieur de données 😅")
+    cli::cli_alert_danger(paste0("Oups, il semble que le bucket de la landing zone n'a ",
+                                 "pas été trouvé! Contacter votre ingénieur de données 😅"))
     return(invisible(NULL))
   }
 
@@ -361,13 +380,24 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @param dataframe Le chemin vers le répertoire qui contient les fichiers à charger dans tube
 #' @param datamart Le nom du pipeline qui doit être exécuté pour charger les données
 #' @param table Le nom de la table qui doit être créée dans le datamart
-#' @param data_tag Le tag à ajouter aux données pour les identifier à l'intérieur-même du jeu de données (une colonne tag est ajoutée au dataframe)
-#' @param table_tags Les tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
-#' @param table_description La description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param data_tag Le tag à ajouter aux données pour les identifier à l'intérieur-même du
+#'   jeu de données (une colonne tag est ajoutée au dataframe)
+#' @param table_tags Les tags à ajouter à la table pour la catégoriser dans le datamart
+#'   pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param table_description La description de la table à ajouter dans le datamart pour
+#'   faciliter la découvrabilité des données dans le catalogue de données
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
-ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, table_tags = NULL, table_description = NULL) {
+ellipse_publish <- function(
+  con,
+  dataframe,
+  datamart,
+  table,
+  data_tag = NULL,
+  table_tags = NULL,
+  table_description = NULL
+) {
   env <- DBI::dbGetInfo(con)$profile_name
 
   # if the x-amz-meta-category named element is not provided in table_tag, we add it
@@ -422,9 +452,9 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
     cli::cli_alert_danger("La table demandée existe déjà! 😅")
 
     choice <- ask_1_2(paste("Voulez-vous",
-      "  1. ajouter des données à la table existante?",
-      "  2. écraser la table existante?",
-      "  Votre choix:", sep = "\n"))
+                            "  1. ajouter des données à la table existante?",
+                            "  2. écraser la table existante?",
+                            "  Votre choix:", sep = "\n"))
 
     if (choice == 1) {
       cli::cli_alert_info("Ajout des données à la table existante en cours...")
@@ -448,7 +478,9 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
       cli::cli_alert_info("Ecrasement de la table existante en cours...")
       # delete the glue table
       r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
-      # delete the content of the folder s3://datamarts-bucket/datamart/table and s3://datamarts-bucket/datamart/table-output
+      # delete the content of the folders :
+      #  - s3://datamarts-bucket/datamart/table
+      #  - s3://datamarts-bucket/datamart/table-output
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
       r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
 
@@ -492,10 +524,10 @@ ellipse_publish <- function(con, dataframe, datamart, table, data_tag = NULL, ta
   # The table will be created in the form of datamart-table
   # The glue job will move the files from unprocessed to processed
   # The glue job will also create the table in the datamart database
-  if (ask_yes_no(paste(
-    "Voulez-vous traiter les données maintenant pour les rendre disponibles immédiatement?",
-    "  Si vous ne le faites pas maintenant, le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
-    "  Votre choix", sep = "\n"))) {
+  if (ask_yes_no(paste("Voulez-vous traiter les données maintenant pour les rendre ",
+                       "disponibles immédiatement?  Si vous ne le faites pas maintenant, ",
+                       "le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
+                       "  Votre choix", sep = "\n"))) {
     glue_job <- list_glue_jobs(creds)
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
     cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
