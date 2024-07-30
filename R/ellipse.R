@@ -484,7 +484,7 @@ ellipse_publish <- function(
       r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
       r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
 
-      if (r1 && r2 && r3) {
+      if (r1 || (r2 && r3)) {
         cli::cli_alert_success("La table a été écrasée avec succès.")
       } else {
         cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
