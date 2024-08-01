@@ -65,13 +65,21 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
   }
 }
 
+#' List the properties of a GLUE table
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @param schema The DBI schema to list the tables from
+#' @param table The name of the table to list the properties from
+#' @returns A tibble with the properties of the table
+#' @examples
+#' list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
+#' 
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
   props <- list()
 
   logger::log_debug("[tube::list_glue_table_properties] instanciating glue client")
 
-  # close connextion
   glue_client <- paws.analytics::glue(
     credentials = credentials,
   )
@@ -371,4 +379,157 @@ glue_table_list_to_tibble <- function(glue_response) {
   }
 
   return(df)
+}
+
+
+# Update the custom tags (advanced properties) of a glue table
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @param schema The DBI schema to list the tables from
+#' @param table The name of the table to update the tags of
+#' @param table_tags A list of custom tags to update the table with
+#' @returns A boolean indicating wether or not the tags were updated
+#' successfully
+#' @examples
+#' update_glue_table_tags(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", list(tag1 = "value1", tag2 = "value2"))
+#' 
+update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
+  logger::log_debug(
+    paste("[tube::update_glue_table_tags] entering function",
+    "with schema", schema,
+    "table", table,
+    "and new_table_tags", paste(new_table_tags, collapse = ", "))
+  )
+
+  # instanciate clue client
+  logger::log_debug("[tube::update_glue_table_tags] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = creds
+  )
+
+  # Get the table details
+  logger::log_debug("[tube::update_glue_table_tags] Getting table details")
+  table_details <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  # add x-amz-meta- prefix to the tags if not already present
+  new_table_tags <- setNames(new_table_tags, 
+                       ifelse(
+                        !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+                        paste0("x-amz-meta-", names(new_table_tags)), 
+                        names(new_table_tags)))
+
+  properties_to_remove <- list()
+  custom_table_properties <- new_table_tags
+  if (is.list(custom_table_properties) && !is.null(custom_table_properties) && length(custom_table_properties) > 0) {
+    # custom_table_properties <- jsonlite::fromJSON(custom_table_properties)
+    # Identify properties to remove (those explicitly set to NULL)
+    properties_to_remove <- names(custom_table_properties)[sapply(custom_table_properties, is.null)]
+    # Remove properties that are set to NULL from custom_table_properties
+    custom_table_properties <- custom_table_properties[!sapply(custom_table_properties, is.null)]
+  }
+
+  custom_table_properties <- setNames(custom_table_properties, 
+                       ifelse(
+                        !sapply(custom_table_properties, is.null) & !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
+                        paste0("x-amz-meta-", names(custom_table_properties)), 
+                        names(custom_table_properties)))
+
+  existing_parameters <- table_details$Table$Parameters
+
+  if (!is.null(custom_table_properties) && length(custom_table_properties) > 0) {
+    existing_parameters <- modifyList(existing_parameters, custom_table_properties)
+  }
+
+  if (length(properties_to_remove) > 0) {
+    existing_parameters <- existing_parameters[!names(existing_parameters) %in% properties_to_remove]
+  }
+  
+  # Update the glue table
+  logger::log_debug("[tube::update_glue_table_tags] Updating glue table")
+
+  # Define the table input list
+  table_input <- list(
+    Name = table_details$Table$Name,
+    Retention = table_details$Table$Retention,
+    StorageDescriptor = table_details$Table$StorageDescriptor,
+    PartitionKeys = table_details$Table$PartitionKeys,
+    TableType = table_details$Table$TableType,
+    Description = ifelse(!is.null(table_details$Table$Description), table_details$Table$Description, "")
+  )
+
+  # Only include Parameters if it's not empty
+  if (!is.null(existing_parameters)) {
+    table_input$Parameters <- existing_parameters
+  }
+
+  glue_client$update_table(
+    DatabaseName = schema,
+    TableInput = table_input
+  )
+
+  # Return TRUE indicating successful update
+  logger::log_debug("[tube::update_glue_table_tags] Tags updated successfully")
+  TRUE
+}
+
+
+# Update the description of a glue table
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @param schema The DBI schema to list the tables from
+#' @param table The name of the table to change the description of
+#' @param desc A string contaning the new description of the table
+#' @returns A boolean indicating wether or not the description was updated
+#' successfully
+#' @examples
+#' update_glue_table_desc(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", "new description of my_table")
+#' 
+update_glue_table_desc <- function(creds, schema, table, desc) {
+  logger::log_debug(
+    paste("[tube::update_glue_table_desc] entering function",
+    "with schema", schema,
+    "table", table,
+    "and desc", desc)
+  )
+
+  # instanciate clue client
+  logger::log_debug("[tube::update_glue_table_desc] instanciating glue client")
+  glue_client <- paws.analytics::glue(
+    credentials = creds
+  )
+
+  # Get the table details
+  logger::log_debug("[tube::update_glue_table_desc] Getting table details")
+  table_details <- glue_client$get_table(
+    DatabaseName = schema,
+    Name = table
+  )
+
+  # Define the table input list
+  table_input <- list(
+    Name = table_details$Table$Name,
+    Retention = table_details$Table$Retention,
+    StorageDescriptor = table_details$Table$StorageDescriptor,
+    PartitionKeys = table_details$Table$PartitionKeys,
+    TableType = table_details$Table$TableType,
+    Parameters = table_details$Table$Parameters,
+    Description = desc
+  )
+
+  r <- glue_client$update_table(
+    DatabaseName = schema,
+    TableInput = table_input
+  )
+
+  # Return TRUE indicating successful update
+  if (length(r) != 0) {
+    logger::log_error("[tube::update_glue_table_desc] Description not updated")
+    return(FALSE)
+  }
+  
+  logger::log_debug("[tube::update_glue_table_desc] Description updated successfully")
+  TRUE
 }

@@ -204,3 +204,90 @@ check_params_before_unpublish <- function(env, datamart, table) {
   logger::log_debug("[tube::check_params_before_unpublish] Exitting function")
   return(TRUE)
 }
+
+#' @title Check the parameters provided to the ellipse_describe function
+#' @description Check if the parameters are valid before executing the function
+#' @param env The environment to describe the data from
+#' @param schema The datamart to describe the data from
+#' @param table The table to describe the data from 
+#' @param new_table_tags The new table tags to apply to the table
+#' @param new_table_description The new table description to apply to the table
+#' @return TRUE if the parameters are valid, FALSE otherwise
+check_params_before_describe <- function(env, schema, table, new_table_tags, new_table_description) {
+  logger::log_debug("[tube::check_params_before_describe] Checking parameters before applying changes to a glue table properties")
+  logger::log_debug("[tube::check_params_before_describe] Checking the env parameter")
+
+  # Check env
+  if (!check_env(env)) {
+    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""))
+    return(FALSE)
+  }
+
+  # Check schema
+  logger::log_debug("[tube::check_params_before_describe] Checking the schema parameter")
+  if (is.null(schema)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de datamart pour décrire les données! 😅")
+    return(FALSE)
+  }
+
+  # Check table
+  logger::log_debug("[tube::check_params_before_describe] Checking the table parameter")
+  if (is.null(table)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de table pour décrire les données! 😅")
+    return(FALSE)
+  }
+
+  # Check tags 
+  logger::log_debug("[tube::check_params_before_describe] Checking the new_table_tags parameter")
+  # check that the table_tags parameter is a list that translates into a valid json structure
+  if (!is.null(new_table_tags)) {
+    if (!is.list(new_table_tags)) {
+      cli::cli_alert_danger("Les table_tags doivent être une liste! 😅")
+      return(FALSE)
+    }
+    r <- tryCatch({
+      jsonlite::toJSON(new_table_tags)
+    }, error = function(e) {
+      cli::cli_alert_danger("Les tags doivent être une liste valide! 😅")
+      cli::cli_alert_danger(e$message)
+      return(FALSE)
+    })
+  }
+
+  # Check description
+  logger::log_debug("[tube::check_params_before_describe] Checking the new_table_description parameter")
+  if (!is.null(new_table_description)) {
+    if (!is.character(new_table_description)) {
+      cli::cli_alert_danger("La description de la table doit être une chaîne de caractères! 😅")
+      return(FALSE)
+    }
+  }
+
+  creds <- get_aws_credentials(env)
+
+  # Check that schema exists
+  logger::log_debug("[tube::check_params_before_describe] checking that the glue schema exists")
+  schemas_list <- list_glue_databases(creds, "datamart|datawarehouse") |> unique()
+  if (! schema %in% schemas_list) {
+    cli::cli_alert_danger("Oups, le datamart n'existe pas! 😅")
+    cli::cli_alert_danger(paste("Les datamarts disponibles sont:", sep = ""))
+    print(as.list(schemas_list))
+    return(FALSE)
+  }
+
+  #Check that table exists
+  logger::log_debug("[tube::check_params_before_describe] checking that the glue table exists")
+  tables_details <- list_glue_tables(creds, schema, table)
+  if (! table %in% tables_details$table_name) {
+    cli::cli_alert_danger("Oups, la table n'existe pas! 😅")
+    tables_list <- list_glue_tables(creds, schema) |> dplyr::select(table_name) |> unique()
+    cli::cli_alert_danger(paste("Les tables disponibles dans ", schema, " sont:", sep = ""))
+    print(as.list(tables_list))
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_describe] Exiting function")
+  return(TRUE)
+}
