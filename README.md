@@ -8,7 +8,7 @@ Interface R d'accès à la plateforme de données _Ellipse_.
 ## Pré-requis
 
 ### Installation
-Pour installer ce package, utilisez la commande `remotes::install_github("ellipse-science/tube")`  ou `remotes::install_github("ellipse-science/tube")`.  Si les packages dépendants ne sont pas à jour, SVP assurez-vous de chois l'option 1 pour tous les mettre à jour.
+Pour installer ce package, utilisez la commande `remotes::install_github("ellipse-science/tube")`  ou `devtools::install_github("ellipse-science/tube")`.  Si les packages dépendants ne sont pas à jour, SVP assurez-vous de chois l'option 1 pour tous les mettre à jour.
 
 ### Clé d'accès
 Pour accéder aux données de la plateforme, il faut configurer les clés d'accès AWS. Pour obtenir ces informations, contacter Patrick Poncet (@patoscope) sur Slack.
@@ -24,6 +24,8 @@ Il existe deux environnement (deux copies non identiques) de la plateforme de do
 
 * Une copie de développement (DEV) dans laquelle on développe les pipelines et où on conçoit la structure des données (tables, variables etc.).  Vous allez principalement vous connecter en DEV pour valider le travail des développeurs et la structure de données que leur pipelines va générer, en faisant des tests les plus réels possible selon vos projets de recherche, sur des petits échantillons de données.  vous pourries aussi utiliser l'environnement de DEV pour valider des dictionnaires ou des dimensions.
 * Une copie de PROD: Lorsqu'on est satisfait avec la conception, on passe en production (PROD). Là les données sont officielles, de qualité en tout temps, dans leur structure approuvée (par vous en DEV).
+
+Pour plus de détails sur les environnements, voir le [diagramme descriptif des environnements de la plateforme `Ellipse`](https://github.com/ellipse-science/tube-doc/blob/develop/ellipse-dev-prod.drawio.png).
 
 Pour se connecter à l'un ou l'autre des environnements, il faut le choisir au moment de la connection.  Pour cela, il faut configurer 2 paires "ID de clé"+"Secret de clé" comme suit:
 
@@ -43,7 +45,7 @@ C'est au moment de la connexion à la plateforme dans votre code R que vous deve
 tube::ellipse_connect(env = "DEV", database = "datawarehouse")
 ```
 
-Additionnellement, comme le montre la commande ci-dessus, il vous faut spécifier si votre connexion doit se faire sur l'entrepôt de données (datawarehouse) ou sur les comptoirs de données (datamarts).  Pour plus d'explications sur ces concepts, veuillez vous référer au repo [`tube-doc`](https://github.com/ellipse-science/tube-doc) dans lequel on décrit [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/clessn_data_platform-LacEntrepotComptoir.drawio.png).
+Additionnellement, comme le montre la commande ci-dessus, il vous faut spécifier si votre connexion doit se faire sur l'entrepôt de données (datawarehouse) ou sur les comptoirs de données (datamarts).  Pour plus d'explications sur ces concepts, veuillez vous référer au repo [`tube-doc`](https://github.com/ellipse-science/tube-doc) dans lequel on décrit [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/develop/ellipse-datalake-datawarehouse-datamart.drawio.png).
 
 ## Interface de haut hiveau
 
@@ -294,6 +296,9 @@ Date in ISO8601 format; converting timezone from UTC to "America/New_York".
 ### Croiser des données
 
 1. Aller chercher les médias dans l'entrepôt de données en DEV
+
+Les médias, comme les autres données de références du CAPP, sont ce qu'on appelle des données dimensionnelles.  Pour plus d'information sur les données dimensionnelles, veuillez consulter le [README du dépôt tube-dimensions](https://github.com/ellipse-science/tube-dimensions/blob/develop/README.md), le [diagramme de flux de travail organique des dimensions](https://github.com/ellipse-science/tube-doc/blob/develop/dimensions-workflow-organique.drawio.png) ainsi que le [diagramme de flux de travail organisationnel des dimensions](https://github.com/ellipse-science/tube-doc/blob/develop/dimensions-workflow-organisationnel.drawio.png).
+
 ```r
 [ins] r$> condwd <- tube::ellipse_connect("DEV", "datawarehouse")
 ℹ Environnement: DEV
@@ -309,7 +314,7 @@ INFO: (Data scanned: 0 Bytes)
 INFO: (Data scanned: 4.98 KB)
 ```
 
-2. Aller chercher les Unes des médias dans l'entrepôt de données en PROD
+1. Aller chercher les Unes des médias dans l'entrepôt de données en PROD
 ```r
 [ins] r$> condwp <- tube::ellipse_connect("PROD", "datawarehouse")
 ℹ Environnement: PROD
