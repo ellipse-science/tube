@@ -54,10 +54,6 @@ ellipse_connect <- function(
     return(invisible(NULL))
   }
 
-  # https://github.com/ellipse-science/tube/issues/16
-  Sys.setenv("AWS_ACCESS_KEY_ID" = aws_access_key_id)
-  Sys.setenv("AWS_SECRET_ACCESS_KEY" = aws_secret_access_key)
-
   creds <- get_aws_credentials(env)
 
   aws_access_key_id <- creds$credentials$creds$access_key_id
@@ -72,6 +68,11 @@ ellipse_connect <- function(
                         "datamarts" = paste0(datamarts_database),
                         database)
 
+  logger::log_debug(paste("[ellipse_connect] datawarehouse_database = ", datawarehouse_database))
+  logger::log_debug(paste("[ellipse_connect] datamarts_database = ", datamarts_database))
+  logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
+  logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
+
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
   con <- DBI::dbConnect(noctua::athena(),
                         aws_access_key_id = aws_access_key_id,
@@ -82,6 +83,8 @@ ellipse_connect <- function(
                         s3_staging_dir = paste0("s3://", athena_staging_bucket))
 
   schema <- DBI::dbGetInfo(con)$dbms.name
+
+  logger::log_debug(paste("[ellipse_connect] schema = ", schema))
 
   if (length(schema) > 0) {
     cli::cli_alert_info(paste("Base de données:", schema))
@@ -204,6 +207,7 @@ ellipse_discover <- function(con, table = NULL) {
   }
 
   tables_properties <- lapply(tables, function(table) {
+    logger::log_debug(paste("[ellipse_discover] listing table properties for", table, "in schema", schema))
     list_glue_table_properties(creds, schema, table)
   }) |>
     dplyr::bind_rows() |>

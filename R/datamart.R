@@ -61,13 +61,14 @@ list_datamarts_database <- function(credentials) {
 list_datamart_tables <- function(credentials, datamart_name, simplify = TRUE) {
   logger::log_debug("[tube::list_datamart_tables] entering function")
 
-  datamart_tables <- list_glue_tables(type = "datamart", datamart = datamart_name,
-                                             credentials = credentials)
+  #datamart_tables <- list_glue_tables(type = "datamart", datamart = datamart_name,
+  #                                           credentials = credentials)
 
   logger::log_debug("[tube::list_datamart_tables] returning results")
 
-  if (simplify) return(glue_table_list_to_tibble(datamart_tables))
-  return(datamart_tables)
+  #if (simplify) return(glue_table_list_to_tibble(datamart_tables))
+  #return(datamart_tables)
+  return(NULL)
 }
 
 upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix, partition) {

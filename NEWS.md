@@ -1,3 +1,7 @@
+# tube 0.5.3
+
+* Fix glue_client authentication parameter causing multi-env-database connections to be confused.
+
 # tube 0.5.2
 
 * Fix warning when `ellipse_discover` is called for a table that has no tags.

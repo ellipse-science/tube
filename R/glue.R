@@ -12,8 +12,8 @@ list_glue_databases <- function(credentials, type) {
 
   logger::log_debug("[tube::list_glue_databases] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = credentials
-  )
+    config = credentials
+    )
 
   logger::log_debug("[tube::list_glue_databases] listing databases")
   r <- glue_client$get_databases()
@@ -45,7 +45,7 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
 
   logger::log_debug("[tube::list_glue_tables] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = credentials
+    config = credentials
   )
 
   logger::log_debug("[tube::list_glue_tables] listing tables")
@@ -76,15 +76,16 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
 #' 
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
+
   props <- list()
 
   logger::log_debug("[tube::list_glue_table_properties] instanciating glue client")
 
   glue_client <- paws.analytics::glue(
-    credentials = credentials,
+    config = credentials,
   )
 
-  logger::log_debug("[tube::list_glue_table_properties] listing tables")
+  logger::log_debug(paste("[tube::list_glue_table_properties] getting table", table, "in schema", schema))
   props <- glue_client$get_table(
     DatabaseName = schema,
     Name = table
@@ -135,7 +136,7 @@ delete_glue_table <- function(credentials, database_name, table_name) {
 
   logger::log_debug("[tube::delete_glue_table] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = credentials
+    config = credentials
   )
 
   result <- tryCatch({
@@ -163,7 +164,7 @@ list_glue_jobs <- function(credentials) {
 
   logger::log_debug("[tube::list_glue_jobs] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = credentials
+    config = credentials
   )
 
   logger::log_debug("[tube::list_glue_jobs] listing jobs")
@@ -209,7 +210,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
 
   logger::log_debug("[tube::run_glue_job] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = credentials
+    config = credentials
   )
 
  switch(database,
@@ -404,7 +405,7 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_tags] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = creds
+    config = creds
   )
 
   # Get the table details
@@ -498,7 +499,7 @@ update_glue_table_desc <- function(creds, schema, table, desc) {
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_desc] instanciating glue client")
   glue_client <- paws.analytics::glue(
-    credentials = creds
+    config = creds
   )
 
   # Get the table details
