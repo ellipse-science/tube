@@ -25,7 +25,7 @@ Il existe deux environnements (deux copies non identiques) de la plateforme de d
 * Une copie de développement (DEV) dans laquelle on développe les pipelines et où on conçoit la structure des données (tables, variables etc.).  Vous allez principalement vous connecter en DEV pour valider le travail des développeurs et la structure de données que leurs pipelines ont générée, en faisant des tests les plus réels possible selon vos projets de recherche, sur des petits échantillons de données.  vous pourries aussi utiliser l'environnement de DEV pour valider des dictionnaires ou des dimensions.
 * Une copie de PROD: Lorsqu'on est satisfait avec la conception, on passe en production (PROD). Là les données sont officielles, de qualité en tout temps, dans leur structure approuvée (par vous en DEV).
 
-Un cas d'usage très fréquent sera de vous connecter en PROD pour obtenir les données récentes, à jour, et en DEV pour publier des dataframes issus du croisement des données de PROD et valider leur qualité avant de les publier en PROD.  
+Un cas d'usage très fréquent sera de vous connecter en PROD pour obtenir les données récentes, à jour, et en DEV pour publier des dataframes issus de vos travaux d'analyse dans R et valider leur qualité avant de les publier en PROD.  Nous avons plus de détails sur ça plus loin.
 
 Pour plus de détails sur les environnements, voir le [diagramme descriptif des environnements de la plateforme `Ellipse`](https://github.com/ellipse-science/tube-doc/blob/main/ellipse-dev-prod.drawio.png).
 
