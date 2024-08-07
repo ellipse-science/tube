@@ -20,7 +20,7 @@ Ensuite, il faut les ajouter au fichier `~/.Renviron` qui est chargé au démarr
 * Linux : `/home/<votre utilisateur>/.Renviron`
 
 ### Environnements
-Il existe deux environnement (deux copies non identiques) de la plateforme de données sur AWS.
+Il existe deux environnements (deux copies non identiques) de la plateforme de données sur AWS.
 
 * Une copie de développement (DEV) dans laquelle on développe les pipelines et où on conçoit la structure des données (tables, variables etc.).  Vous allez principalement vous connecter en DEV pour valider le travail des développeurs et la structure de données que leur pipelines va générer, en faisant des tests les plus réels possible selon vos projets de recherche, sur des petits échantillons de données.  vous pourries aussi utiliser l'environnement de DEV pour valider des dictionnaires ou des dimensions.
 * Une copie de PROD: Lorsqu'on est satisfait avec la conception, on passe en production (PROD). Là les données sont officielles, de qualité en tout temps, dans leur structure approuvée (par vous en DEV).
