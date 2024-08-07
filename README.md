@@ -407,6 +407,21 @@ r$> tube::ellipse_publish(con = condmd,
 ℹ N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.
 ```
 
+### Injecter des données brutes dans la plateforme Ellipse
+La règle c'est que l'injection de données dans Ellipse est automatisée de bout-en bout:  Les données sont extraites sur internet à un intervalle défini. Elles sont entreposées dans le lac de données telles quelles.  Et ensuite elles sont transformées sous forme tabulaire et stockées dans l'entrepôt de données où vous pouvez y accéder avec les fonctions `ellipse_*`.  Il y a 3 exceptions à cette règle:
+
+#### L'obtention des données brutes n'est pas automatisable
+Dans certains cas, malheureusement, il n'est pas possible d'extraire les données brutes automatiquement.  Il faut qu'une personne se charge de collecter les fichiers contenant les données brutes et les pousse dans la plateforme de données Ellipse.  Pour cela il faut qu'un pipeline de données semi-automatisé ait été développé préalablement par un développeur.  C'est le cas notamment des articles de presse disponibles dans la banque de données Factiva, de certains sondages (qualtrics) etc.  Pour comprendre le flus de travail relié à ce type d'acquisition et traitement des données, veuilles vous référer à [ce diagramme](https://github.com/ellipse-science/tube-doc/blob/main/pipeline_semi_automatise.drawio.png).  Pour toute question ou imprécision, n'hésitez pas à ouvrir une issue dans ce dépôt.
+
+#### Il s'agit de données dimensionnelles
+Les données dimensionnelles sont les données de références du CAPP.  Elles représentent les axes sur lesquelles nous sommes typiquement intéressés à porter nos analyses.  Par exemple, le ton des députés de l'Assemblée nationale du Québec **par parti** au fil du temps ou sur des **enjeux** précis.  Pour cela il nous fait croiser des données factuelles (les interventions des députés) avec les données dimensionnelles (les députés et leur attribut `party`) et un dictionnaire d'enjeux (voir prochaine section).
+
+Lorsqu'on construire nos données de références reviens à construire les dimensions (des entités comme partis, médias, cisconscriptions etc).  Cela se fait en créant des CSV et en les injectant dans `Ellipse`.  Ensuite il faut les entretenir en fonction de l'évolution des choses (p.ex. si un député change de parti ou qu'il n'est pas réélu) et les réinjecter dans la plateforme.
+
+Cela se fait via des pipelines de données dimensionnelles.  Pour plus d'information veuillez lire le [README du dépôt tube-dimensions](https://github.com/ellipse-science/tube-dimensions) et vous référer à aux diagrammes de flux de travail qui décrivent l'injection de données dimentionnelles dans `Ellipse`:  [ici](https://github.com/ellipse-science/tube-doc/blob/main/dimensions-workflow-organique.drawio.png) et [ici](https://github.com/ellipse-science/tube-doc/blob/main/dimensions-workflow-organisationnel.drawio.png).
+
+#### Il s'agit de dictionnaires
+Les dictionnaires sont des données dimensionnelles (dans le sens qu'elles sont des données de références du CAPP).  Elles sont dédiées à l'analyse textuelles.  Nos dictionnaires sont construits de toute pièce, manuellement, via des techniques particulières.  Pour plus de détails sur les dictionnaires, veuillez consultes le [README du dépôt tube-dictionaries]([https://github.com/ellipse-science/tube-dictionaries/tree/main](https://github.com/ellipse-science/tube-dictionaries/blob/develop/README.md).
 
 ### Notes sur dplyr
 
