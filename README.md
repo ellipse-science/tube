@@ -64,13 +64,12 @@ Des efforts sont déployés pour documenter les différentes fonctions fournies 
 Pour se connecter, utiliser la fonction `ellipse_connect()`. Le seul paramètre obligatoire est l'environnement (`DEV` ou `PROD`) :
 
 ```R
-[ins] r$> library(tube)
-
-[ins] r$> con <- ellipse_connect(env = "PROD", database = "datawarehouse")
+r$> con <- ellipse_connect(env = "PROD", database = "datawarehouse")
 ℹ Environnement: PROD
 ℹ Database: datawarehouse
-INFO [2024-06-25 17:49:18] [get_aws_credentials] successful connection to aws
 ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+ℹ Base de données: gluestackdatawarehousedbe64d5725
+✔ Connexion établie avec succès! 👍
 ```
 
 ### Découvrir les données
