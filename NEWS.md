@@ -1,3 +1,7 @@
+# tube 0.5.5
+
+* Implementation guardrails to prevent publish, unpublish and describe in datawarehouse
+
 # tube 0.5.4
 
 * Implementation of ellipse_process, used to update a data table with unprocessed data.  This is useful when ingesting data manually in Ellipse.
