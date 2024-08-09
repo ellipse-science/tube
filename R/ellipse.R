@@ -740,14 +740,15 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 }
 
 
-#' Rafraichir un table
+#' Traiter les données en attente d'être insérées dans une table
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
-#' @param table Le nom de la table qui doit être créée dans le datamart
+#' @param table Le nom de la table qui doit traitée
 #'
-#' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
+#' @returns TRUE si les données en attente d'être insérées ont bien été traitées.
+#' FALSE sinon.
 #' @export
-ellipse_refresh <- function(con, table) {
+ellipse_process <- function(con, table) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
@@ -776,7 +777,7 @@ ellipse_refresh <- function(con, table) {
     return(invisible(FALSE))
   }
 
-  logger::log_debug(paste("[ellipse_refresh] about to run glue job on database = ", database, " schema = ", schema, " table = ", table))
+  logger::log_debug(paste("[ellipse_process] about to run glue job on database = ", database, " schema = ", schema, " table = ", table))
   r <- run_glue_job(creds, glue_job, database, table, NULL, NULL)
 
   if (r) {

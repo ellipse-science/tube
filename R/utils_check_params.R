@@ -293,7 +293,7 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
 }
 
 
-#' @title Check the parameters provided to the ellipse_refresh function
+#' @title Check the parameters provided to the ellipse_process function
 #' @description Check if the parameters are valid before executing the function
 #' @param con The connection to the database
 #' @param schema The datamart to refresh the table from
