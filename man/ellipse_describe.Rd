@@ -4,12 +4,7 @@
 \alias{ellipse_describe}
 \title{Changer pes proprités d'une table dans un datamart ou dans la datawarehouse}
 \usage{
-ellipse_describe(
-  con,
-  table,
-  new_table_tags = NULL,
-  new_table_description = NULL
-)
+ellipse_describe(con, table, new_table_tags = NULL, new_table_desc = NULL)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
@@ -18,7 +13,7 @@ ellipse_describe(
 
 \item{new_table_tags}{Les nouveaux tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données}
 
-\item{new_table_description}{La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données}
+\item{new_table_desc}{La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données}
 }
 \value{
 TRUE si la table a été modifiée avec succès, FALSE sinon.
