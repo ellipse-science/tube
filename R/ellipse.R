@@ -738,3 +738,59 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 
   return(invisible(TRUE))
 }
+
+
+#' Rafraichir un table
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param table Le nom de la table qui doit être créée dans le datamart
+#'
+#' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
+#' @export
+ellipse_refresh <- function(con, table) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  schema <- DBI::dbGetInfo(con)$dbms.name
+  creds <- get_aws_credentials(env)
+
+  if (!check_params_before_refresh(con, schema, table)) {
+    return(invisible(FALSE))
+  }
+
+  # confirm by the user
+  if (!ask_yes_no("Êtes-vous certain.e de vouloir rafraîchir la table?")) {
+    cli::cli_alert_info("Rafraîchissement de la table abandonné.")
+    return(invisible(FALSE))
+  }
+
+  cli::cli_alert_info("Rafraîchissement de la table en cours...")
+  glue_job <- list_glue_jobs(creds)
+
+  database <- dplyr::case_when(
+    grepl("datawarehouse", schema) ~ "datawarehouse",
+    grepl("datamart", schema) ~ "datamarts",
+    TRUE ~ NA
+  )
+
+  if (is.na(database)) {
+    cli::cli_alert_danger("Oups, il semble que la base de données n'a pas été trouvée! 😅")
+    return(invisible(FALSE))
+  }
+
+  logger::log_debug(paste("[ellipse_refresh] about to run glue job on database = ", database, " schema = ", schema, " table = ", table))
+  r <- run_glue_job(creds, glue_job, database, table, NULL, NULL)
+
+  if (r) {
+    if (r == -1) {
+      cli::cli_alert_info("Il n'y a aucune nouvelle donnée à traiter.")
+    } else  {
+      cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
+      cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
+      cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+    }
+    return(invisible(TRUE))
+  } else {
+    cli::cli_alert_danger("Il y a eu une erreur lors du rafraîchissement de la table! 😅")
+    cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+    return(invisible(FALSE))
+  }
+}

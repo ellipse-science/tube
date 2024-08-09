@@ -1,3 +1,7 @@
+# tube 0.5.4
+
+* Implementation of ellipse_refresh, used to update a data table with unprocessed data.  This is useful when ingesting data manually in Ellipse.
+
 # tube 0.5.3
 
 * Fix glue_client authentication parameter causing multi-env-database connections to be confused.

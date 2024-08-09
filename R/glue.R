@@ -171,6 +171,7 @@ list_glue_jobs <- function(credentials) {
   r <- glue_client$get_jobs()
 
   if (length(r) == 0) {
+    logger::log_debug("[tube::list_glue_jobs] listing jobs")
     return(NULL)
   }
 
@@ -179,6 +180,8 @@ list_glue_jobs <- function(credentials) {
 
   # For now just return the full unprocessed list
   job_names <- sapply(r$Jobs, function(x) x$Name)
+
+  logger::log_debug(paste("[tube::list_glue_jobs] returning results", paste(job_names, collapse = " | ")))
 
   return(job_names)
 }
@@ -229,7 +232,15 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     }
   )
 
+  logger::log_debug(paste(
+    "[tube::run_glue_job] database", database,
+    "bucket", bucket,
+    "glue_db", glue_db,
+    "table_name", table_name
+  ))
+
   job_names <- list_glue_jobs(credentials)
+
   if (length(job_names) == 0) {
     logger::log_error("[tube::run_glue_job] no job found")
     return(FALSE)
@@ -245,25 +256,59 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     return(FALSE)
   }
 
+
   # list all the unprocessed folders across the pipeline partitions
   # instanciate s3 client
+  logger::log_debug("[tube::run_glue_job] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
       close_connection = TRUE)
   )
 
-  # list all the unprocessed folders across the pipeline prefix in the datawarehouse bucket
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
-    Delimiter = "/"
-  )
+  # list all the unprocessed folders across the pipeline prefix in the bucket
+  logger::log_debug("[tube::run_glue_job] listing unprocessed folders")
 
+  tmp_prefix <- gsub("^/", "", prefix)  
+  tmp_prefix <- gsub("/$", "", tmp_prefix)
+  tmp_prefix_split <- strsplit(tmp_prefix, "/")
+
+  if (length(tmp_prefix_split[[1]]) == 2) {
+    r <- s3_client$list_objects_v2(
+      Bucket = bucket,
+      Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
+      Delimiter = "/"
+      )
+    
+    index <- 1
+  }
+
+  if (length(tmp_prefix_split[[1]]) == 1) {
+   first_level <- s3_client$list_objects_v2(
+     Bucket = bucket,
+     Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
+     Delimiter = "/"
+     )
+   
+   # only get the commonprefixes$Prefix values
+   r <- lapply(first_level$CommonPrefixes, \(x) {
+     s3_client$list_objects_v2(
+       Bucket = bucket,
+       Prefix = x$Prefix,
+       Delimiter = "/"
+     )
+   })
+
+   r <- r[[1]]
+   index <- 2
+  }
+ 
+  logger::log_debug("[tube::run_glue_job] wrangling partitions")
   partitions <- sapply(r$CommonPrefixes, function(x) {
-    prefix <- x$Prefix
-    parts <- unlist(strsplit(prefix, "/"))
-    return(parts[length(parts)])
+    ret <- gsub(prefix, "", x$Prefix)
+    ret <- gsub("^/", "", ret)
+    ret <- gsub("/$", "", ret)
+    return(ret)
   })
 
   has_unprocessed <- function(prefix_list) {
@@ -271,7 +316,18 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
   }
 
   # for each partition, list the ones containing an "unprocessed" folder
+  logger::log_debug("[tube::run_glue_job] looping through partitions")
+
+  job_count <- 0
+
   for (partition in partitions) {
+    logger::log_debug(paste(
+      "[tube::run_glue_job] processing partition",
+      partition,
+      "in prefix",
+      prefix
+    ))
+
     r <- s3_client$list_objects_v2(
       Bucket = bucket,
       Prefix = paste0(prefix,"/",partition),
@@ -281,9 +337,26 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     unprocessed_prefixes <- Filter(has_unprocessed, r$CommonPrefixes)
     unprocessed_prefixes <- lapply(unprocessed_prefixes, function(x) x$Prefix)
 
+    logger::log_debug(paste(
+      "[tube::run_glue_job] found",
+      length(unprocessed_prefixes),
+      "unprocessed folders in partition",
+      partition
+    ))
+
     if (length(unprocessed_prefixes) > 0) {
       s3_input_path = paste0("s3://",bucket, "/", unprocessed_prefixes)
       s3_output_path = paste0("s3://",bucket, "/", prefix, "-output/")
+
+      logger::log_debug(paste(
+        "[tube::run_glue_job] wrangling glue job arguments",
+        job_name,
+        "with arguments",
+        "s3_input_path", s3_input_path,
+        "s3_output_path", s3_output_path,
+        "glue_db_name", glue_db,
+        "glue_table_name", table_name
+      ))
 
       arguments_list <- list(
           '--s3_input_path' = s3_input_path,
@@ -308,12 +381,10 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       if (!is.null(table_description)) {
         arguments_list <- c(arguments_list, list('--table_description' = table_description))
       }
-      
+
       logger::log_debug(paste(
-        "[tube::run_glue_job] starting job",
-        job_name,
-        "with arguments",
-        paste(arguments_list, collapse = ", ")
+        "[tube::run_glue_job] starting glue job",
+        job_name
       ))
 
       # start the glue job
@@ -321,8 +392,20 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
         JobName = job_name,
         Arguments = arguments_list
       )
+
+      job_count <- job_count + 1
+    } else {
+      logger::log_debug("[tube::run_glue_job] no unprocessed folders found")
     }
   }
+
+  if (job_count == 0) {
+    logger::log_debug("[tube::run_glue_job] no job started as there was no unprocessed data")
+    return(-1)
+  }
+
+  logger::log_debug("[tube::run_glue_job] job started successfully")
+  return(TRUE)
 }
 
 

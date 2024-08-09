@@ -291,3 +291,41 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
   logger::log_debug("[tube::check_params_before_describe] Exiting function")
   return(TRUE)
 }
+
+
+#' @title Check the parameters provided to the ellipse_refresh function
+#' @description Check if the parameters are valid before executing the function
+#' @param con The connection to the database
+#' @param schema The datamart to refresh the table from
+#' @param table The table to run the glue job against
+#' @return TRUE if the parameters are valid, FALSE otherwise
+check_params_before_refresh <- function(con, schema, table) {
+  logger::log_debug("[tube::check_params_before_describe] Checking parameters before refreshing the table")
+  logger::log_debug("[tube::check_params_before_describe] Checking the con parameter")
+  if (is.null(con)) {
+    cli::cli_alert_danger("Oups, il faut fournir une connexion à la base de données pour rafraîchir la table! 😅")
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_describe] Checking the schema parameter")
+  if (is.null(schema)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de datamart pour rafraîchir la table! 😅")
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_describe] Checking the table parameter")
+  if (is.null(table)) {
+    cli::cli_alert_danger("Oups, il faut fournir un nom de table pour rafraîchir la table! 😅")
+    return(FALSE)
+  }
+
+  # check that the table exists
+  logger::log_debug("[tube::check_params_before_describe] Checking that the table exists")
+  if (!DBI::dbExistsTable(con, table)) {
+    cli::cli_alert_danger("Oups, la table n'existe pas! 😅")
+    return(FALSE)
+  }
+
+  logger::log_debug("[tube::check_params_before_describe] Exiting function")
+  return(TRUE)
+}
