@@ -403,6 +403,13 @@ ellipse_publish <- function(
   table_description = NULL
 ) {
   env <- DBI::dbGetInfo(con)$profile_name
+  schema <- DBI::dbGetInfo(con)$dbms.name
+
+  # Protect datawarehouse from publishing
+  if (grepl("datawarehouse", schema)) {
+    cli::cli_alert_danger("L'opération ellipse_publish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
+    return(invisible(FALSE))
+  }
 
   # if the x-amz-meta-category named element is not provided in table_tag, we add it
   if (is.null(table_tags)) {
@@ -556,6 +563,13 @@ ellipse_publish <- function(
 #' @export
 ellipse_unpublish <- function(con, datamart, table) {
   env <- DBI::dbGetInfo(con)$profile_name
+  schema <- DBI::dbGetInfo(con)$dbms.name
+
+  # Protect datawarehouse from unpublishing
+  if (grepl("datawarehouse", schema)) {
+    cli::cli_alert_danger("L'opération ellipse_unpublish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
+    return(invisible(FALSE))
+  }
 
   if (!check_params_before_unpublish(env, datamart, table)) {
     return(invisible(FALSE))
@@ -622,6 +636,11 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
+  # If schema contains datawarehouse, exit the function
+  if (grepl("datawarehouse", schema)) {
+    cli::cli_alert_danger("L'opération ellipse_describe n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
+    return(invisible(FALSE))
+  }
   
   if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_desc)) {
     return(invisible(FALSE))
