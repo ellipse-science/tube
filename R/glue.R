@@ -466,7 +466,7 @@ glue_table_list_to_tibble <- function(glue_response) {
 }
 
 
-# Update the custom tags (advanced properties) of a glue table
+#' Update the custom tags (advanced properties) of a glue table
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
@@ -560,7 +560,7 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 }
 
 
-# Update the description of a glue table
+#' Update the description of a glue table
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
