@@ -501,17 +501,15 @@ ellipse_publish <- function(
       # append the dataframe to the table by uploading
       # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      print(r)
-      if (r) {
-        if (class(r) == "character" && r == "Unsupported column type") {
-          danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
-          return(invisible(FALSE))
-        } else {
-          success("Les données ont été ajoutées à la table existante.")
-        }
-      } else {
-        danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("Les données ont été ajoutées à la table existante.")
       }
     }
 
@@ -540,17 +538,15 @@ ellipse_publish <- function(
 
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      print(r)
-      if (r) {
-        if (class(r) == "character" && r == "Unsupported column type") {
-          danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
-          return(invisible(FALSE))
-        } else {
-          success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
-        }
-      } else {
-        danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
       }
     }
   } else {
@@ -560,17 +556,15 @@ ellipse_publish <- function(
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      print(r)
-      if (r) {
-        if (class(r) == "character" && r == "Unsupported column type") {
-          danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
-          return(invisible(FALSE))
-        } else {
-          success("La table a été créée avec succès.")
-        }
-      } else {
-        danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("La table a été créée avec succès.")
       }
     } else {
       danger("Publication des données abandonnée.")
