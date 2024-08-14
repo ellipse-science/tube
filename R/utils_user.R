@@ -3,7 +3,10 @@
 #' il peut répondre par oui ou non
 #' @param question La question à poser
 #' @return La réponse de l'utilisateur
-ask_yes_no <- function(question) {
+ask_yes_no <- function(question, unattended_option = NULL) {
+  if (!is.null(unattended_option)) {
+    return(unattended_option %in% c("oui", "o"))
+  }
   answer <- readline(prompt = paste0(cli::symbol$fancy_question_mark, question, " (oui/non) "))
   return(invisible(tolower(answer) %in% c("oui", "o")))
 }
@@ -13,7 +16,14 @@ ask_yes_no <- function(question) {
 #' il peut répondre par 1 ou 2
 #' @param question La question à poser
 #' @return La réponse de l'utilisateur
-ask_1_2 <- function(question) {
+ask_1_2 <- function(question, unattended_option = NULL) {
+  if (!is.null(unattended_option)) {
+    if (unattended_option %in% c("1", "2")) {
+      return(unattended_option)
+    } else {
+      stop("L'option unattended de ask_1_2 doit être 1 ou 2")
+    }
+  }
   while (TRUE) {
     answer <- readline(prompt = paste0(cli::symbol$fancy_question_mark, question, " (1/2) "))
     if (answer %in% c("1", "2")) {
