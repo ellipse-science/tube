@@ -80,20 +80,21 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
   # supported types are: string, int and date
   col_names <- colnames(dataframe)
   for (i in 1:length(col_names)) {
-    col_type <- switch(
-      TRUE,
-      is.character(dataframe[[i]]) ~ "string",
-      is_integer(dataframe[[i]]) ~ "int",
-      is_decimal(dataframe[[i]]) ~ "double",
-      inherits(dataframe[[i]], "Date") ~ "date",
+    dataframe_col_type <- get_column_type(dataframe[[i]])
+    glue_col_type <- switch(
+      dataframe_col_type,
+      "character" = "string",
+      "integer" = "int",
+      "decimal" = "double",
+      "date" = "date",
       FALSE
     )
 
-    if (col_type == FALSE) {
+    if (glue_col_type == FALSE) {
       return("Unsupported column type")
     }
 
-    col_names[i] <- paste(col_names[i], ":", col_type, sep = "")
+    col_names[i] <- paste(col_names[i], ":", glue_col_type, sep = "")
   }
 
   colnames(dataframe) <- tolower(col_names)
