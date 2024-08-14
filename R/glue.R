@@ -7,13 +7,13 @@
 list_glue_databases <- function(credentials, type) {
   logger::log_debug(
     paste("[tube::list_glue_databases] entering function",
-    "with type", type)
+          "with type", type)
   )
 
   logger::log_debug("[tube::list_glue_databases] instanciating glue client")
   glue_client <- paws.analytics::glue(
     config = credentials
-    )
+  )
 
   logger::log_debug("[tube::list_glue_databases] listing databases")
   r <- glue_client$get_databases()
@@ -73,7 +73,6 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
 #' @returns A tibble with the properties of the table
 #' @examples
 #' list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
-#' 
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
 
@@ -345,8 +344,8 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     ))
 
     if (length(unprocessed_prefixes) > 0) {
-      s3_input_path = paste0("s3://",bucket, "/", unprocessed_prefixes)
-      s3_output_path = paste0("s3://",bucket, "/", prefix, "-output/")
+      s3_input_path <- paste0("s3://", bucket, "/", unprocessed_prefixes)
+      s3_output_path <- paste0("s3://", bucket, "/", prefix, "-output/")
 
       logger::log_debug(paste(
         "[tube::run_glue_job] wrangling glue job arguments",
@@ -359,27 +358,31 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       ))
 
       arguments_list <- list(
-          '--s3_input_path' = s3_input_path,
-          '--s3_output_path' = s3_output_path,
-          '--glue_db_name' = glue_db,
-          '--glue_table_name' = table_name
+        "--s3_input_path" = s3_input_path,
+        "--s3_output_path" = s3_output_path,
+        "--glue_db_name" = glue_db,
+        "--glue_table_name" = table_name
       )
 
       if (!is.null(table_tags)) {
         # change all the names of the named list
-        # to x-amz-meta-<name> for every item in the list 
+        # to x-amz-meta-<name> for every item in the list
         # that is not null and not already prefixed with x-amz-meta-
-        table_tags <- setNames(table_tags, 
-                       ifelse(
-                        !sapply(table_tags, is.null) & !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
-                        paste0("x-amz-meta-", names(table_tags)), 
-                        names(table_tags)))
+        table_tags <-
+          setNames(table_tags,
+                   ifelse(!sapply(table_tags, is.null) &
+                            !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+                          paste0("x-amz-meta-", names(table_tags)),
+                          names(table_tags)))
 
-        arguments_list <- c(arguments_list, list('--custom_table_properties' = jsonlite::toJSON(table_tags, auto_unbox = TRUE, null = "null")))
-      } 
+        arguments_list <- c(arguments_list, list("--custom_table_properties" =
+                                                   jsonlite::toJSON(table_tags,
+                                                                    auto_unbox = TRUE,
+                                                                    null = "null")))
+      }
 
       if (!is.null(table_description)) {
-        arguments_list <- c(arguments_list, list('--table_description' = table_description))
+        arguments_list <- c(arguments_list, list("--table_description" = table_description))
       }
 
       logger::log_debug(paste(
@@ -423,7 +426,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
 #'
 #' @param glue_response A list of 2 elements, the first of which is named
 #'   `TableList`. What is expected here is the output from
-#'   `tube::list_glue_tables()` 
+#'   `tube::list_glue_tables()`
 #' @returns A tibble with columns:
 #'
 #'   * `table_name` : Name of the table in the data warehouse
@@ -475,15 +478,16 @@ glue_table_list_to_tibble <- function(glue_response) {
 #' @returns A boolean indicating wether or not the tags were updated
 #' successfully
 #' @examples
-#' update_glue_table_tags(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", list(tag1 = "value1", tag2 = "value2"))
-#' 
+#' update_glue_table_tags(credentials,
+#'                        DBI::dbGetInfo(con)$dbms.name,
+#'                        "my_table",
+#'                        list(tag1 = "value1", tag2 = "value2"))
+
 update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
-  logger::log_debug(
-    paste("[tube::update_glue_table_tags] entering function",
-    "with schema", schema,
-    "table", table,
-    "and new_table_tags", paste(new_table_tags, collapse = ", "))
-  )
+  logger::log_debug(paste("[tube::update_glue_table_tags] entering function",
+                          "with schema", schema,
+                          "table", table,
+                          "and new_table_tags", paste(new_table_tags, collapse = ", ")))
 
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_tags] instanciating glue client")
@@ -499,11 +503,11 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   )
 
   # add x-amz-meta- prefix to the tags if not already present
-  new_table_tags <- setNames(new_table_tags, 
-                       ifelse(
-                        !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
-                        paste0("x-amz-meta-", names(new_table_tags)), 
-                        names(new_table_tags)))
+  new_table_tags <-
+    setNames(new_table_tags,
+             ifelse(!sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+                    paste0("x-amz-meta-", names(new_table_tags)),
+                    names(new_table_tags)))
 
   properties_to_remove <- list()
   custom_table_properties <- new_table_tags
@@ -515,11 +519,12 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
     custom_table_properties <- custom_table_properties[!sapply(custom_table_properties, is.null)]
   }
 
-  custom_table_properties <- setNames(custom_table_properties, 
-                       ifelse(
-                        !sapply(custom_table_properties, is.null) & !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
-                        paste0("x-amz-meta-", names(custom_table_properties)), 
-                        names(custom_table_properties)))
+  custom_table_properties <-
+    setNames(custom_table_properties,
+             ifelse(!sapply(custom_table_properties, is.null) &
+                      !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
+                    paste0("x-amz-meta-", names(custom_table_properties)),
+                    names(custom_table_properties)))
 
   existing_parameters <- table_details$Table$Parameters
 
@@ -530,7 +535,7 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   if (length(properties_to_remove) > 0) {
     existing_parameters <- existing_parameters[!names(existing_parameters) %in% properties_to_remove]
   }
-  
+
   # Update the glue table
   logger::log_debug("[tube::update_glue_table_tags] Updating glue table")
 
@@ -570,14 +575,11 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 #' successfully
 #' @examples
 #' update_glue_table_desc(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", "new description of my_table")
-#' 
 update_glue_table_desc <- function(creds, schema, table, desc) {
-  logger::log_debug(
-    paste("[tube::update_glue_table_desc] entering function",
-    "with schema", schema,
-    "table", table,
-    "and desc", desc)
-  )
+  logger::log_debug(paste("[tube::update_glue_table_desc] entering function",
+                          "with schema", schema,
+                          "table", table,
+                          "and desc", desc))
 
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_desc] instanciating glue client")
@@ -613,7 +615,7 @@ update_glue_table_desc <- function(creds, schema, table, desc) {
     logger::log_error("[tube::update_glue_table_desc] Description not updated")
     return(FALSE)
   }
-  
+
   logger::log_debug("[tube::update_glue_table_desc] Description updated successfully")
   TRUE
 }

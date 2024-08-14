@@ -390,6 +390,8 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'   pour faciliter la découvrabilité des données dans le catalogue de données
 #' @param table_description La description de la table à ajouter dans le datamart pour
 #'   faciliter la découvrabilité des données dans le catalogue de données
+#' @param unattended_options Les options de la commande de publication pour l'exécution
+#'   de la tâche de publication de façon automatisée (pour les raffineurs de données)
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
@@ -400,14 +402,39 @@ ellipse_publish <- function(
   table,
   data_tag = NULL,
   table_tags = NULL,
-  table_description = NULL
+  table_description = NULL,
+  unattended_options = NULL
 ) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
 
+  danger <- function(msg) {
+    if (is.null(unattended_options)) {
+      cli::cli_alert_danger(msg)
+    } else {
+      logger::log_error(msg)
+    }
+  }
+
+  info <- function(msg) {
+    if (is.null(unattended_options)) {
+      cli::cli_alert_info(msg)
+    } else {
+      logger::log_info(msg)
+    }
+  }
+
+  success <- function(msg) {
+    if (is.null(unattended_options)) {
+      cli::cli_alert_success(msg)
+    } else {
+      logger::log_info(msg)
+    }
+  }
+
   # Protect datawarehouse from publishing
   if (grepl("datawarehouse", schema)) {
-    cli::cli_alert_danger("L'opération ellipse_publish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
+    danger("L'opération ellipse_publish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
     return(invisible(FALSE))
   }
 
@@ -437,18 +464,19 @@ ellipse_publish <- function(
   dm_partitions <- list_s3_partitions(creds, dm_bucket)
   dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
   if (is.null(datamart)) {
-    cli::cli_alert_danger("Oups, il faut fournir un datamart pour publier les données! 😅")
+    danger("Oups, il faut fournir un datamart pour publier les données! 😅")
     return(FALSE)
   }
 
   if (!datamart %in% dm_list) {
-    cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
+    danger("Le datamart fourni n'existe pas! 😅")
     # ask the user is we must create a new datamart
-    if (ask_yes_no("Voulez-vous créer un nouveau datamart?")) {
+    if (ask_yes_no(question = "Voulez-vous créer un nouveau datamart?",
+                   unattended_option = unattended_options$create_datamart)) {
       cli::cli_alert_info("Création du datamart en cours...")
       # the file path will be created when the first file is uploaded with it in its key
     } else {
-      cli::cli_alert_danger("Publication des données abandonnée.")
+      danger("Publication des données abandonnée.")
       return(invisible(FALSE))
     }
   }
@@ -460,33 +488,38 @@ ellipse_publish <- function(
     # ici on suppose que si le dossier datamart/table existe dans le bucket s3 des datamarts
     # alors la table GLUE existe aussi ce qui n'est possible pas le cas dans les situations
     # où la GLUE job n'a pas roulé
-    cli::cli_alert_danger("La table demandée existe déjà! 😅")
+    danger("La table demandée existe déjà! 😅")
 
     choice <- ask_1_2(paste("Voulez-vous",
                             "  1. ajouter des données à la table existante?",
                             "  2. écraser la table existante?",
-                            "  Votre choix:", sep = "\n"))
+                            "  Votre choix:", sep = "\n"),
+                      unattended_option = unattended_options$addto_or_replace_table)
 
     if (choice == 1) {
-      cli::cli_alert_info("Ajout des données à la table existante en cours...")
+      info("Ajout des données à la table existante en cours...")
       # append the dataframe to the table by uploading
       # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (r) {
-        cli::cli_alert_success("Les données ont été ajoutées à la table existante.")
-      } else {
-        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("Les données ont été ajoutées à la table existante.")
       }
     }
 
     if (choice == 2) {
       # confirm by the user
       if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?")) {
-        cli::cli_alert_info("Publication des données abandonnée.")
+        info("Publication des données abandonnée.")
         return(invisible(FALSE))
       }
-      cli::cli_alert_info("Ecrasement de la table existante en cours...")
+      info("Ecrasement de la table existante en cours...")
       # delete the glue table
       r1 <- delete_glue_table(creds, dm_glue_database, paste0(datamart, "-", table))
       # delete the content of the folders :
@@ -496,36 +529,45 @@ ellipse_publish <- function(
       r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
 
       if (r1 || (r2 && r3)) {
-        cli::cli_alert_success("La table a été écrasée avec succès.")
+        success("La table a été écrasée avec succès.")
       } else {
-        cli::cli_alert_danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
-        cli::cli_alert_danger("Veuillez contacter votre ingénieur de données.")
+        danger("Il y a eu une erreur lors de la suppression de la table dans la datamart! 😅")
+        danger("Veuillez contacter votre ingénieur de données.")
         return(invisible(FALSE))
       }
 
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (r) {
-        cli::cli_alert_success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
-      } else {
-        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("La table existante a été écrasée et les nouvelles données ont été ajoutées.")
       }
     }
   } else {
-    cli::cli_alert_danger("La table demandée n'existe pas")
-    if (ask_yes_no("Voulez-vous créer la table?")) {
+    danger("La table demandée n'existe pas")
+    if (ask_yes_no("Voulez-vous créer la table?",
+                   unattended_option = unattended_options$create_table)) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
-      cli::cli_alert_info("Création de la table en cours...")
+      info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (r) {
-        cli::cli_alert_success("La table a été créée avec succès.")
-      } else {
-        cli::cli_alert_danger("Il y a eu une erreur lors de la publication des données! 😅")
+      if (class(r) == "character" && r == "Unsupported column type") {
+        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
         return(invisible(FALSE))
+      } else {
+        if (r == FALSE) {
+          danger("Il y a eu une erreur lors de la publication des données! 😅")
+          return(invisible(FALSE))
+        }
+        success("La table a été créée avec succès.")
       }
     } else {
-      cli::cli_alert_danger("Publication des données abandonnée.")
+      danger("Publication des données abandonnée.")
       return(invisible(FALSE))
     }
   }
@@ -538,16 +580,17 @@ ellipse_publish <- function(
   if (ask_yes_no(paste("Voulez-vous traiter les données maintenant pour les rendre ",
                        "disponibles immédiatement?  Si vous ne le faites pas maintenant, ",
                        "le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
-                       "  Votre choix", sep = "\n"))) {
+                       "  Votre choix", sep = "\n"),
+                 unattended_option = unattended_options$process_data)) {
     glue_job <- list_glue_jobs(creds)
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
-    cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
-    cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
-    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+    success("Le traitement des données a été déclenché avec succès.")
+    info("Les données seront disponibles dans les prochaines minutes\n")
+    info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
   } else {
-    cli::cli_alert_success("Publication des données complétée avec succès")
-    cli::cli_alert_info("Les données seront disponibles dans les 6 prochaines heures")
-    cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+    success("Publication des données complétée avec succès")
+    info("Les données seront disponibles dans les 6 prochaines heures")
+    info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
     return(invisible(FALSE))
   }
 }
