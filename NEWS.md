@@ -1,3 +1,7 @@
+# tube 0.5.6
+
+* Support for double data type in datamarts tables
+
 # tube 0.5.5
 
 * Implementation guardrails to prevent publish, unpublish and describe in datawarehouse
