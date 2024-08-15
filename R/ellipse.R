@@ -15,41 +15,41 @@ ellipse_connect <- function(
 
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-                                sep = ""))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Environnement:", env))
 
   if (!check_database(database)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir une base de données! 😅\n\n",
-                                "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
-                                sep = ""))
+        "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
+        sep = ""))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Database:", database))
 
   aws_access_key_id <-
     switch(env,
-           "PROD" = "AWS_ACCESS_KEY_ID_PROD",
-           "DEV"  = "AWS_ACCESS_KEY_ID_DEV") |>
+      "PROD" = "AWS_ACCESS_KEY_ID_PROD",
+      "DEV"  = "AWS_ACCESS_KEY_ID_DEV") |>
     Sys.getenv()
 
   aws_secret_access_key <-
     switch(env,
-           "PROD" = "AWS_SECRET_ACCESS_KEY_PROD",
-           "DEV"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
+      "PROD" = "AWS_SECRET_ACCESS_KEY_PROD",
+      "DEV"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
     Sys.getenv()
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
       paste("On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
-            "Dans le fichier ~/.Renviron, ajoutez les lignes:\n\n",
-            "AWS_ACCESS_KEY_ID_PROD=<votre access key id de production>\n",
-            "AWS_SECRET_ACCESS_KEY_PROD=<votre secret access key de production>\n",
-            "AWS_ACCESS_KEY_ID_DEV=<votre access key id de développement>\n",
-            "AWS_SECRET_ACCESS_KEY_DEV=<votre secret access key de développement>\n\n",
-            "Puis, redémarrez la session R.")
+        "Dans le fichier ~/.Renviron, ajoutez les lignes:\n\n",
+        "AWS_ACCESS_KEY_ID_PROD=<votre access key id de production>\n",
+        "AWS_SECRET_ACCESS_KEY_PROD=<votre secret access key de production>\n",
+        "AWS_ACCESS_KEY_ID_DEV=<votre access key id de développement>\n",
+        "AWS_SECRET_ACCESS_KEY_DEV=<votre secret access key de développement>\n\n",
+        "Puis, redémarrez la session R.")
     cli::cli_alert_danger(usage)
     return(invisible(NULL))
   }
@@ -64,9 +64,9 @@ ellipse_connect <- function(
   athena_staging_bucket <- list_athena_staging_bucket(creds)
 
   schema_name <- switch(database,
-                        "datawarehouse" = paste0(datawarehouse_database),
-                        "datamarts" = paste0(datamarts_database),
-                        database)
+    "datawarehouse" = paste0(datawarehouse_database),
+    "datamarts" = paste0(datamarts_database),
+    database)
 
   logger::log_debug(paste("[ellipse_connect] datawarehouse_database = ", datawarehouse_database))
   logger::log_debug(paste("[ellipse_connect] datamarts_database = ", datamarts_database))
@@ -75,12 +75,12 @@ ellipse_connect <- function(
 
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
   con <- DBI::dbConnect(noctua::athena(),
-                        aws_access_key_id = aws_access_key_id,
-                        aws_secret_access_key = aws_secret_access_key,
-                        schema_name = schema_name,
-                        profile_name = env,
-                        work_group = "ellipse-work-group",
-                        s3_staging_dir = paste0("s3://", athena_staging_bucket))
+    aws_access_key_id = aws_access_key_id,
+    aws_secret_access_key = aws_secret_access_key,
+    schema_name = schema_name,
+    profile_name = env,
+    work_group = "ellipse-work-group",
+    s3_staging_dir = paste0("s3://", athena_staging_bucket))
 
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -194,9 +194,9 @@ ellipse_discover <- function(con, table = NULL) {
         tags <- NA_character_
       }
       return(list(name = table_properties_df$table_name,
-                  description = table_properties_df$description,
-                  tags = tags,
-                  columns = table_df))
+          description = table_properties_df$description,
+          tags = tags,
+          columns = table_df))
     } else {
       if (length(grep(table, tables)) > 1) {
         cli::cli_alert_info("Plusieurs tables correspondent à votre recherche (voir résultat retourné).")
@@ -249,18 +249,18 @@ ellipse_discover <- function(con, table = NULL) {
 
   tables_tibble <- tables_tibble |>
     dplyr::mutate(categorie =
-                    dplyr::case_when(startsWith(table_name, "a-")    ~ "Agora+",
-                                     startsWith(table_name, "c-")    ~ "Civimètre+",
-                                     startsWith(table_name, "r-")    ~ "Radar+",
-                                     startsWith(table_name, "dict-") ~ "Dictionnaire",
-                                     startsWith(table_name, "dim-")  ~ "Dimension",
-                                     !is.na(category_from_tags) ~ category_from_tags,
-                                     TRUE ~ "Autre")) |>
+        dplyr::case_when(startsWith(table_name, "a-")    ~ "Agora+",
+          startsWith(table_name, "c-")    ~ "Civimètre+",
+          startsWith(table_name, "r-")    ~ "Radar+",
+          startsWith(table_name, "dict-") ~ "Dictionnaire",
+          startsWith(table_name, "dim-")  ~ "Dimension",
+          !is.na(category_from_tags) ~ category_from_tags,
+          TRUE ~ "Autre")) |>
     dplyr::mutate(datamart =
-                    dplyr::case_when(
-                      !is.na(datamart_from_tags) ~ datamart_from_tags,
-                      TRUE ~ NA_character_
-                    ))
+        dplyr::case_when(
+          !is.na(datamart_from_tags) ~ datamart_from_tags,
+          TRUE ~ NA_character_
+        ))
 
   if (has_non_na_datamart) {
     ret <- tables_tibble |>
@@ -320,9 +320,10 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
   env <- DBI::dbGetInfo(con)$profile_name
 
   if (!check_env(env)) {
-    cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-                                "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-                                sep = ""))
+    cli::cli_alert_danger(
+      paste("Oups, il faut choisir un environnement! 😅\n\n",
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""))
     return(invisible(NULL))
   }
 
@@ -331,8 +332,9 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
   landing_zone_bucket <- list_landing_zone_bucket(creds)
 
   if (is.null(landing_zone_bucket)) {
-    cli::cli_alert_danger(paste0("Oups, il semble que le bucket de la landing zone n'a ",
-                                 "pas été trouvé! Contacter votre ingénieur de données 😅"))
+    cli::cli_alert_danger(
+      paste0("Oups, il semble que le bucket de la landing zone n'a ",
+      "pas été trouvé! Contacter votre ingénieur de données 😅"))
     return(invisible(NULL))
   }
 
@@ -390,8 +392,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #'   pour faciliter la découvrabilité des données dans le catalogue de données
 #' @param table_description La description de la table à ajouter dans le datamart pour
 #'   faciliter la découvrabilité des données dans le catalogue de données
-#' @param unattended_options Les options de la commande de publication pour l'exécution
-#'   de la tâche de publication de façon automatisée (pour les raffineurs de données)
+#' @param unattended_options une liste nommée contenant les options de la commande de
+#'   publication pour l'exécution de la tâche de publication de façon automatisée
+#'   (pour les raffineurs de données)
+#' - create_datamart: "oui" si on doit créer un nouveau datamart si celui spécifié n'existe pas, "non" sinon
+#' - addto_or_replace_table: 1 pour ajouter des données à la table existante, 2 pour écraser la table existante
+#' - are_you_sure: "oui" si on est certain de vouloir écraser la table existante, "non" sinon
+#' - create_table: "oui" si on doit créer la table si elle n'existe pas, "non" sinon
+#' - process_data: "oui" si on doit traiter les données maintenant, "non" sinon
 #'
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
@@ -472,7 +480,7 @@ ellipse_publish <- function(
     danger("Le datamart fourni n'existe pas! 😅")
     # ask the user is we must create a new datamart
     if (ask_yes_no(question = "Voulez-vous créer un nouveau datamart?",
-                   unattended_option = unattended_options$create_datamart)) {
+        unattended_option = unattended_options$create_datamart)) {
       cli::cli_alert_info("Création du datamart en cours...")
       # the file path will be created when the first file is uploaded with it in its key
     } else {
@@ -490,11 +498,12 @@ ellipse_publish <- function(
     # où la GLUE job n'a pas roulé
     danger("La table demandée existe déjà! 😅")
 
-    choice <- ask_1_2(paste("Voulez-vous",
-                            "  1. ajouter des données à la table existante?",
-                            "  2. écraser la table existante?",
-                            "  Votre choix:", sep = "\n"),
-                      unattended_option = unattended_options$addto_or_replace_table)
+    choice <- ask_1_2(
+      paste("Voulez-vous",
+        "  1. ajouter des données à la table existante?",
+        "  2. écraser la table existante?",
+        "  Votre choix:", sep = "\n"),
+      unattended_option = unattended_options$addto_or_replace_table)
 
     if (choice == 1) {
       info("Ajout des données à la table existante en cours...")
@@ -553,7 +562,7 @@ ellipse_publish <- function(
   } else {
     danger("La table demandée n'existe pas")
     if (ask_yes_no("Voulez-vous créer la table?",
-                   unattended_option = unattended_options$create_table)) {
+        unattended_option = unattended_options$create_table)) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
@@ -579,10 +588,10 @@ ellipse_publish <- function(
   # The glue job will move the files from unprocessed to processed
   # The glue job will also create the table in the datamart database
   if (ask_yes_no(paste("Voulez-vous traiter les données maintenant pour les rendre ",
-                       "disponibles immédiatement?  Si vous ne le faites pas maintenant, ",
-                       "le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
-                       "  Votre choix", sep = "\n"),
-                 unattended_option = unattended_options$process_data)) {
+        "disponibles immédiatement?  Si vous ne le faites pas maintenant, ",
+        "le traitement sers déclenché automatiquement dans les 6 prochaines heures.",
+        "  Votre choix", sep = "\n"),
+      unattended_option = unattended_options$process_data)) {
     glue_job <- list_glue_jobs(creds)
     run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
     success("Le traitement des données a été déclenché avec succès.")
@@ -611,7 +620,8 @@ ellipse_unpublish <- function(con, datamart, table) {
 
   # Protect datawarehouse from unpublishing
   if (grepl("datawarehouse", schema)) {
-    cli::cli_alert_danger("L'opération ellipse_unpublish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
+    cli::cli_alert_danger(
+      "L'opération ellipse_unpublish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
     return(invisible(FALSE))
   }
 
@@ -670,8 +680,10 @@ ellipse_unpublish <- function(con, datamart, table) {
 #' 
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param table Le nom de la table à modifier.
-#' @param new_table_tags Les nouveaux tags à ajouter à la table pour la catégoriser dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
-#' @param new_table_desc La nouvelle description de la table à ajouter dans le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param new_table_tags Les nouveaux tags à ajouter à la table pour la catégoriser dans
+#' le datamart pour faciliter la découvrabilité des données dans le catalogue de données
+#' @param new_table_desc La nouvelle description de la table à ajouter dans le datamart 
+#' pour faciliter la découvrabilité des données dans le catalogue de données
 #' 
 #' @returns TRUE si la table a été modifiée avec succès, FALSE sinon.
 #' @export
@@ -685,7 +697,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
     cli::cli_alert_danger("L'opération ellipse_describe n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
     return(invisible(FALSE))
   }
-  
+
   if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_desc)) {
     return(invisible(FALSE))
   }
@@ -709,13 +721,14 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 
   # add x-amz-meta- prefix to the tags if not already present
   new_table_tags <- setNames(new_table_tags, 
-                       ifelse(
-                        !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
-                        paste0("x-amz-meta-", names(new_table_tags)), 
-                        names(new_table_tags)))
+    ifelse(
+      !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+      paste0("x-amz-meta-", names(new_table_tags)), 
+      names(new_table_tags)))
 
   # if there are new tags in new_table_tags that are not in the current table tags, we add them
-  # if there are tags in new_table_tags that are also in the current table tags and have diffrent values, we update them 
+  # if there are tags in new_table_tags that are also in the current table tags and have diffrent
+  # values, we update them 
   current_table_tags <- unlist(table_props$table_tags)
 
   if (!is.null(new_table_tags) && length(new_table_tags) > 0) {
@@ -727,12 +740,12 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
     new_tags <- NULL
   }
 
-    # add x-amz-meta- prefix to the tags if not already present
-  new_tags <- setNames(new_tags, 
-                       ifelse(
-                        !sapply(grepl("x-amz-meta-", names(new_tags)), \(x) x),
-                        paste0("x-amz-meta-", names(new_tags)), 
-                        names(new_tags)))
+  # add x-amz-meta- prefix to the tags if not already present
+  new_tags <- setNames(new_tags,
+    ifelse(
+      !sapply(grepl("x-amz-meta-", names(new_tags)), \(x) x),
+      paste0("x-amz-meta-", names(new_tags)),
+      names(new_tags)))
 
   change_tags <- FALSE
   change_desc <- FALSE
@@ -747,8 +760,9 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   }
 
   cli::cli_text("")
-  
-  if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 && (is.na(table_props$description) || table_props$description != new_table_desc)) {
+
+  if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 && 
+      (is.na(table_props$description) || table_props$description != new_table_desc)) {
     cli::cli_alert_info("La nouvelle description de la table sera:")
     cli::cli_alert_info(cli::col_cyan(new_table_desc))
     change_desc <- TRUE
@@ -840,7 +854,9 @@ ellipse_process <- function(con, table) {
     return(invisible(FALSE))
   }
 
-  logger::log_debug(paste("[ellipse_process] about to run glue job on database = ", database, " schema = ", schema, " table = ", table))
+  logger::log_debug(paste("[ellipse_process] about to run glue job on database = ",
+      database, " schema = ", schema, " table = ", table))
+
   r <- run_glue_job(creds, glue_job, database, table, NULL, NULL)
 
   if (r) {
@@ -849,7 +865,8 @@ ellipse_process <- function(con, table) {
     } else  {
       cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
       cli::cli_alert_info("Les données seront disponibles dans les prochaines minutes\n")
-      cli::cli_alert_info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+      cli::cli_alert_info(
+        "N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
     }
     return(invisible(TRUE))
   } else {
