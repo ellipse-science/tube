@@ -11,7 +11,8 @@ ellipse_publish(
   table,
   data_tag = NULL,
   table_tags = NULL,
-  table_description = NULL
+  table_description = NULL,
+  unattended_options = NULL
 )
 }
 \arguments{
@@ -31,6 +32,17 @@ pour faciliter la découvrabilité des données dans le catalogue de données}
 
 \item{table_description}{La description de la table à ajouter dans le datamart pour
 faciliter la découvrabilité des données dans le catalogue de données}
+
+\item{unattended_options}{une liste nommée contenant les options de la commande de
+publication pour l'exécution de la tâche de publication de façon automatisée
+(pour les raffineurs de données)
+\itemize{
+\item create_datamart: "oui" si on doit créer un nouveau datamart si celui spécifié n'existe pas, "non" sinon
+\item addto_or_replace_table: 1 pour ajouter des données à la table existante, 2 pour écraser la table existante
+\item are_you_sure: "oui" si on est certain de vouloir écraser la table existante, "non" sinon
+\item create_table: "oui" si on doit créer la table si elle n'existe pas, "non" sinon
+\item process_data: "oui" si on doit traiter les données maintenant, "non" sinon
+}}
 }
 \value{
 TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.

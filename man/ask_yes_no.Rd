@@ -4,7 +4,7 @@
 \alias{ask_yes_no}
 \title{Fonction pour interagir avec l'utilisateur}
 \usage{
-ask_yes_no(question)
+ask_yes_no(question, unattended_option = NULL)
 }
 \arguments{
 \item{question}{La question à poser}

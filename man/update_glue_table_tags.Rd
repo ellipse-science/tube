@@ -24,6 +24,8 @@ successfully
 Update the custom tags (advanced properties) of a glue table
 }
 \examples{
-update_glue_table_tags(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", list(tag1 = "value1", tag2 = "value2"))
-
+update_glue_table_tags(credentials,
+                       DBI::dbGetInfo(con)$dbms.name,
+                       "my_table",
+                       list(tag1 = "value1", tag2 = "value2"))
 }

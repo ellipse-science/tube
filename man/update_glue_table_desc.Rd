@@ -25,5 +25,4 @@ Update the description of a glue table
 }
 \examples{
 update_glue_table_desc(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", "new description of my_table")
-
 }

@@ -4,7 +4,7 @@
 \alias{ask_1_2}
 \title{Fonction pour interagir avec l'utilisateur}
 \usage{
-ask_1_2(question)
+ask_1_2(question, unattended_option = NULL)
 }
 \arguments{
 \item{question}{La question à poser}
