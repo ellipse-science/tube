@@ -28,10 +28,17 @@ get_aws_credentials <- function(env) {
     cli::cli_alert_danger("Oups, l'environnement que vous avez spécifié n'est pas valide! 😅")
     logger::log_error("[get_aws_credentials] invalid environment")
     return(NULL)
-  }  
+  }
 
   aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
   aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
+
+  if (aws_access_key_id == "" || aws_secret_access_key == "") {
+    # try the default credentials for refiners running automatically
+    # in ECR on AWS
+    aws_access_key_id <- Sys.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY")
+  }
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
