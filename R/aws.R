@@ -35,8 +35,9 @@ get_aws_credentials <- function(env) {
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
-      paste("Nous n'avons pas trouvé vos clés d'accès AWS\n\n",
-            "N'oubliez pas de vous connecter avec tube::ellipse_connect()\n\n")
+      paste(
+        "Nous n'avons pas trouvé vos clés d'accès AWS\n\n",
+        "N'oubliez pas de vous connecter avec tube::ellipse_connect()\n\n")
     cli::cli_alert_danger(usage)
     logger::log_error("[get_aws_credentials] missing aws credentials in env variables")
     return(NULL)
@@ -46,8 +47,7 @@ get_aws_credentials <- function(env) {
     credentials = list(
       creds = list(
         access_key_id = aws_access_key_id,
-        secret_access_key = aws_secret_access_key,
-        session_token = Sys.getenv("AWS_SESSION_TOKEN")
+        secret_access_key = aws_secret_access_key
       )
     )
   )
