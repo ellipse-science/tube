@@ -3,17 +3,20 @@
 #' Les types de colonne supportés sont: string, int, decimal et date
 #' @return Le type de colonne
 get_column_type <- function(column) {
-  if (is.character(column)) {
+  # Remove NA values temporarily
+  non_na_column <- na.omit(column)
+
+  if (is.character(non_na_column)) {
     return("character")
-  } else if (inherits(column, "Date")) {
+  } else if (inherits(non_na_column, "Date")) {
     return("date")
-  } else if (is.numeric(column)) {
-    if (all(column == as.integer(column))) {
+  } else if (is.numeric(non_na_column)) {
+    if (all(non_na_column == as.integer(non_na_column))) {
       return("integer")
     } else {
       return("decimal")
     }
   } else {
-    return(class(column))
+    return("unsupported")
   }
 }
