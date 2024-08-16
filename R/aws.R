@@ -34,13 +34,6 @@ get_aws_credentials <- function(env) {
   aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
-    # try the default credentials for refiners running automatically
-    # in ECR on AWS
-    aws_access_key_id <- Sys.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret_access_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY")
-  }
-
-  if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
       paste("Nous n'avons pas trouvé vos clés d'accès AWS\n\n",
             "N'oubliez pas de vous connecter avec tube::ellipse_connect()\n\n")

@@ -42,14 +42,6 @@ ellipse_connect <- function(
     Sys.getenv()
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
-    # try the default credentials for refiners running automatically
-    # in ECR on AWS
-    aws_access_key_id <- Sys.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret_access_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY")
-  }
-  
-
-  if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-
       paste("On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
         "Dans le fichier ~/.Renviron, ajoutez les lignes:\n\n",
