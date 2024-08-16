@@ -284,16 +284,22 @@ ellipse_discover <- function(con, table = NULL) {
 #'   `dplyr`.
 #' @export
 ellipse_query <- function(con, table) {
+  logger::log_debug(paste("[ellipse_query] entering function with table = ", table))
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
+  logger::log_debug(paste("[ellipse_query] about to dbGetQuery on schema_name = ", schema_name))
   tables <- DBI::dbGetQuery(
     con, paste0("SHOW TABLES IN ", schema_name)
   )$tab_name
 
+  logger::log_debug("[ellipse_query] got tables")
+
   if (!table %in% tables) {
+    logger::log_debug("[ellipse_query] table not in tables")
     cli::cli_alert_danger("La table demandée est inconnue.")
     return(NULL)
   }
+  logger::log_debug("[ellipse_query] returning results")
   dplyr::tbl(con, table)
 }
 
