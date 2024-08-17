@@ -47,7 +47,8 @@ get_aws_credentials <- function(env) {
     credentials = list(
       creds = list(
         access_key_id = aws_access_key_id,
-        secret_access_key = aws_secret_access_key
+        secret_access_key = aws_secret_access_key,
+        session_token = Sys.getenv("AWS_SESSION_TOKEN")
       )
     )
   )
