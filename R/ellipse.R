@@ -73,10 +73,14 @@ ellipse_connect <- function(
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
 
+  aws_session_token <- Sys.getenv("AWS_SESSION_TOKEN")
+
+
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
   con <- DBI::dbConnect(noctua::athena(),
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
+    aws_session_token = aws_session_token,
     schema_name = schema_name,
     profile_name = env,
     work_group = "ellipse-work-group",
