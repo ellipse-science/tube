@@ -78,7 +78,7 @@ ellipse_connect <- function(
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
     schema_name = schema_name,
-    # profile_name = env,
+    profile_name = env,
     work_group = "ellipse-work-group",
     s3_staging_dir = paste0("s3://", athena_staging_bucket))
 
