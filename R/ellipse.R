@@ -77,14 +77,24 @@ ellipse_connect <- function(
 
 
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
-  con <- DBI::dbConnect(noctua::athena(),
-    aws_access_key_id = aws_access_key_id,
-    aws_secret_access_key = aws_secret_access_key,
-    aws_session_token = aws_session_token,
-    schema_name = schema_name,
-    profile_name = env,
-    work_group = "ellipse-work-group",
-    s3_staging_dir = paste0("s3://", athena_staging_bucket))
+
+  if (Sys.getenv("_HANDLER") == "lambda_handler") {
+    con <- DBI::dbConnect(noctua::athena(),
+      schema_name = schema_name,
+      profile_name = env,
+      work_group = "ellipse-work-group",
+      s3_staging_dir = paste0("s3://", athena_staging_bucket))
+  } else {
+    cli::cli_alert_info("Connexion en cours...")
+    con <- DBI::dbConnect(noctua::athena(),
+      aws_access_key_id = aws_access_key_id,
+      aws_secret_access_key = aws_secret_access_key,
+      schema_name = schema_name,
+      profile_name = env,
+      work_group = "ellipse-work-group",
+      s3_staging_dir = paste0("s3://", athena_staging_bucket))
+  }
+
 
   schema <- DBI::dbGetInfo(con)$dbms.name
 
