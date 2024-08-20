@@ -23,6 +23,8 @@
 get_aws_credentials <- function(env) {
   logger::log_debug("[get_aws_credentials] entering function")
 
+  env <- toupper(env)
+  
   # Check if the environment is valid
   if (!check_env(env)) {
     cli::cli_alert_danger("Oups, l'environnement que vous avez spécifié n'est pas valide! 😅")

@@ -81,7 +81,7 @@ ellipse_connect <- function(
   if (Sys.getenv("_HANDLER") == "lambda_handler") {
     con <- DBI::dbConnect(noctua::athena(),
       schema_name = schema_name,
-      profile_name = env,
+      profile_name = tolower(env),
       work_group = "ellipse-work-group",
       s3_staging_dir = paste0("s3://", athena_staging_bucket))
   } else {
