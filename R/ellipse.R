@@ -8,10 +8,11 @@
 #'
 #' @returns Un object de connexion `DBI`.
 #' @export
-ellipse_connect <- function(
-  env = NULL,
-  database  = "datawarehouse"
-) {
+ellipse_connect <- function(env = NULL, database  = "datawarehouse") {
+
+  if (!is.null(env) && is.character(env)) {
+    env <- tolower(env)
+  }
 
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
