@@ -314,7 +314,16 @@ ellipse_query <- function(con, table) {
     return(NULL)
   }
   logger::log_debug("[ellipse_query] returning results")
-  dplyr::tbl(con, table)
+
+  r <- tryCatch({
+    dplyr::tbl(con, table)
+  }, error = function(e) {
+    cli::cli_alert_danger("Oups, il semble que la table n'a pas pu être lue! 😅")
+    logger::log_error(paste("[ellipse_query] error in dplyr::tbl", e$message))
+    return(NULL)
+  })
+
+  return(r)
 }
 
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
