@@ -3,7 +3,7 @@
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datalakebucket`
 #' 
-#' In our infrastructure, there is only one per AWS account (DEV/PROD)
+#' In our infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #'
 #' @param credentials A list of AWS credentials in the format compliant

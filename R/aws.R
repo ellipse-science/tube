@@ -8,8 +8,8 @@
 #' AWS_ACCESS_KEY_ID_DEV=<the access key id for the DEV account>
 #' AWS_SECRET_ACCESS_KEY_DEV=<the secret access key for the DEV account >
 #' #prod
-#' AWS_ACCESS_KEY_ID_PROD=<the access key id for the PROD account>
-#' AWS_SECRET_ACCESS_KEY_PROD=<the access key id for the PROD account>
+#' AWS_ACCESS_KEY_ID_PROD=<the access key id for the prod account>
+#' AWS_SECRET_ACCESS_KEY_PROD=<the access key id for the prod account>
 #' 
 #' The function checks if the credentials are valid by trying to list the buckets
 #' in the account. If the credentials are not valid, the function returns NULL
@@ -17,14 +17,12 @@
 #' 
 #' The value returned must be passed to all functions that use paws functions
 #'
-#' @param env The environnement ("DEV" or "PROD")
+#' @param env The environnement ("dev" or "prod")
 #' @returns a list structure compliant with the paws functions calls containing the AWS credentials
 #' for the specified environment
 get_aws_credentials <- function(env) {
   logger::log_debug("[get_aws_credentials] entering function")
 
-  env <- toupper(env)
-  
   # Check if the environment is valid
   if (!check_env(env)) {
     cli::cli_alert_danger("Oups, l'environnement que vous avez spécifié n'est pas valide! 😅")
@@ -32,8 +30,8 @@ get_aws_credentials <- function(env) {
     return(NULL)
   }
 
-  aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
-  aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
+  aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", toupper(env)))
+  aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", toupper(env)))
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
     usage <-

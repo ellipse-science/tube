@@ -2,7 +2,7 @@
 #'
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datawarehousebucket` but in our
-#' infrastructure, there is only one per AWS account (DEV/PROD)
+#' infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #' Currently the function is not used in the package but it is
 #' kept for future use
@@ -23,7 +23,7 @@ list_datawarehouse_bucket <- function(credentials) {
 #'
 #' Technically the function returns all the databases of which
 #' the name contains the string `datamart` but in our 
-#' infrastructure, there is only one per AWS account (DEV/PROD)
+#' infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #' It is used mainly by the ellipse_connect function to retrieve the
 #' schema with wich to instanciate the DBI connection

@@ -3,7 +3,7 @@
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datamartbucket`
 #' 
-#' In our infrastructure, there is only one per AWS account (DEV/PROD)
+#' In our infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #' It is used mainly by the ellipse_publish function to store R dataframes
 #' in a datamart in the form of CSV files, which in turn, are converted into
@@ -25,7 +25,7 @@ list_datamarts_bucket <- function(credentials) {
 #'
 #' Technically the function returns all the databases of which
 #' the name contains the string `datamart` but in our 
-#' infrastructure, there is only one per AWS account (DEV/PROD)
+#' infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #' It is used mainly by the ellipse_connect function to retrieve the
 #' schema with wich to instanciate the DBI connection

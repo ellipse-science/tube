@@ -2,7 +2,7 @@
 #'
 #' Technically the function returns all the buckets for which
 #' the name contains the string `athenaqueryresults`
-#' In our infrastructure, there is only one per AWS account (DEV/PROD)
+#' In our infrastructure, there is only one per AWS account (dev/prod)
 #' 
 #' This is used to get the name of the bucket where the results of the
 #' athena queries are stored.  More specifically, it is used to create

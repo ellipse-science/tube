@@ -1,10 +1,10 @@
 #' @title Check the env parameter provided to a function
-#' @description Check if the env parameter is valid: either DEV or PROD
+#' @description Check if the env parameter is valid: either dev or prod
 #' @param env The environment to check
 #' @return TRUE if the env parameter is valid, FALSE otherwise
 #' 
 check_env <- function(env) {
-  if (is.null(env) || !env %in% c("DEV", "PROD")) {
+  if (is.null(env) || !env %in% c("dev", "prod")) {
     return(FALSE)
   }
   return(TRUE)
@@ -101,7 +101,7 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   logger::log_debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      "Le paramètre `env` peut être \"prod\" ou \"dev\"",
       sep = ""))
     return(FALSE)
   }
@@ -184,7 +184,7 @@ check_params_before_unpublish <- function(env, datamart, table) {
   logger::log_debug("[tube::check_params_before_unpublish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      "Le paramètre `env` peut être \"prod\" ou \"dev\"",
       sep = ""))
     return(FALSE)
   }
@@ -220,7 +220,7 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
   # Check env
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      "Le paramètre `env` peut être \"prod\" ou \"dev\"",
       sep = ""))
     return(FALSE)
   }
