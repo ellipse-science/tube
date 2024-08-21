@@ -73,9 +73,6 @@ ellipse_connect <- function(
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
 
-  aws_session_token <- Sys.getenv("AWS_SESSION_TOKEN")
-
-
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
 
   if (Sys.getenv("_HANDLER") == "lambda_handler") {
@@ -95,6 +92,7 @@ ellipse_connect <- function(
       s3_staging_dir = paste0("s3://", athena_staging_bucket))
   }
 
+  attr(con, "profile_name") <- env
 
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -179,8 +177,12 @@ ellipse_partitions <- function(con, table) {
 #'
 #' @export
 ellipse_discover <- function(con, table = NULL) {
+  env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
   schema <- DBI::dbGetInfo(con)$dbms.name
-  creds <- get_aws_credentials(DBI::dbGetInfo(con)$profile_name)
+  creds <- get_aws_credentials(env)
 
   if (length(schema) == 0) {
     cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
@@ -347,6 +349,9 @@ ellipse_query <- function(con, table) {
 #' @export
 ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
 
   if (!check_env(env)) {
     cli::cli_alert_danger(
@@ -443,6 +448,9 @@ ellipse_publish <- function(
   unattended_options = NULL
 ) {
   env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
   schema <- DBI::dbGetInfo(con)$dbms.name
 
   danger <- function(msg) {
@@ -645,6 +653,9 @@ ellipse_publish <- function(
 #' @export
 ellipse_unpublish <- function(con, datamart, table) {
   env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
   schema <- DBI::dbGetInfo(con)$dbms.name
 
   # Protect datawarehouse from unpublishing
@@ -718,6 +729,9 @@ ellipse_unpublish <- function(con, datamart, table) {
 #' @export
 ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
@@ -856,6 +870,9 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 #' @export
 ellipse_process <- function(con, table) {
   env <- DBI::dbGetInfo(con)$profile_name
+  if (is.null(env)) {
+    env <- attr(con, "profile_name")
+  }
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
