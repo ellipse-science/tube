@@ -3,20 +3,19 @@
 #' Cette fonction utilise les clés d'accès AWS configurées dans le fichier
 #' `.Renviron` pour se connecter à la plateforme de données.
 #'
-#' @param env The environment to connect to on ellipse-science. Accepted values are "prod" and "dev".
+#' @param env The environment to connect to on ellipse-science. Accepted values are "PROD" and "DEV".
 #' @param database The Glue/Athena database to connect to. Default to "datawarehouse"
 #'
 #' @returns Un object de connexion `DBI`.
 #' @export
-ellipse_connect <- function(env = NULL, database  = "datawarehouse") {
-
-  if (!is.null(env) && is.character(env)) {
-    env <- tolower(env)
-  }
+ellipse_connect <- function(
+  env = NULL,
+  database  = "datawarehouse"
+) {
 
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"prod\" ou \"dev\"",
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
         sep = ""))
     return(invisible(NULL))
   }
@@ -32,14 +31,14 @@ ellipse_connect <- function(env = NULL, database  = "datawarehouse") {
 
   aws_access_key_id <-
     switch(env,
-      "prod" = "AWS_ACCESS_KEY_ID_PROD",
-      "dev"  = "AWS_ACCESS_KEY_ID_DEV") |>
+      "PROD" = "AWS_ACCESS_KEY_ID_PROD",
+      "DEV"  = "AWS_ACCESS_KEY_ID_DEV") |>
     Sys.getenv()
 
   aws_secret_access_key <-
     switch(env,
-      "prod" = "AWS_SECRET_ACCESS_KEY_PROD",
-      "dev"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
+      "PROD" = "AWS_SECRET_ACCESS_KEY_PROD",
+      "DEV"  = "AWS_SECRET_ACCESS_KEY_DEV") |>
     Sys.getenv()
 
   if (aws_access_key_id == "" || aws_secret_access_key == "") {
@@ -73,6 +72,9 @@ ellipse_connect <- function(env = NULL, database  = "datawarehouse") {
   logger::log_debug(paste("[ellipse_connect] datamarts_database = ", datamarts_database))
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
+
+  aws_session_token <- Sys.getenv("AWS_SESSION_TOKEN")
+
 
   cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
 
@@ -349,7 +351,7 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
   if (!check_env(env)) {
     cli::cli_alert_danger(
       paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"prod\" ou \"dev\"",
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
         sep = ""))
     return(invisible(NULL))
   }

@@ -2,7 +2,7 @@
 #'
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datalakebucket` but in our infrastructure, 
-#' there is only one per AWS account (dev/prod)
+#' there is only one per AWS account (DEV/PROD)
 #' 
 #' The landing zone is used by ellipse_ingest to allow users
 #' to ingest raw data into the dataplatform so that it gets
