@@ -175,9 +175,6 @@ ellipse_partitions <- function(con, table) {
 #' @export
 ellipse_discover <- function(con, table = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
@@ -346,9 +343,6 @@ ellipse_query <- function(con, table) {
 #' @export
 ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
 
   if (!check_env(env)) {
     cli::cli_alert_danger(
@@ -445,9 +439,6 @@ ellipse_publish <- function(
   unattended_options = NULL
 ) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
   schema <- DBI::dbGetInfo(con)$dbms.name
 
   danger <- function(msg) {
@@ -650,9 +641,6 @@ ellipse_publish <- function(
 #' @export
 ellipse_unpublish <- function(con, datamart, table) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
   schema <- DBI::dbGetInfo(con)$dbms.name
 
   # Protect datawarehouse from unpublishing
@@ -726,9 +714,6 @@ ellipse_unpublish <- function(con, datamart, table) {
 #' @export
 ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
@@ -867,9 +852,6 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 #' @export
 ellipse_process <- function(con, table) {
   env <- DBI::dbGetInfo(con)$profile_name
-  if (is.null(env)) {
-    env <- attr(con, "profile_name")
-  }
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
 
