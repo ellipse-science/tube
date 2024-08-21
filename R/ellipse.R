@@ -56,8 +56,8 @@ ellipse_connect <- function(
 
   creds <- get_aws_credentials(env)
 
-  aws_access_key_id <- creds$credentials$creds$access_key_id
-  aws_secret_access_key <- creds$credentials$creds$secret_access_key
+  # aws_access_key_id <- creds$credentials$creds$access_key_id
+  # aws_secret_access_key <- creds$credentials$creds$secret_access_key
 
   datawarehouse_database <- list_datawarehouse_database(creds)
   datamarts_database <- list_datamarts_database(creds)
@@ -86,6 +86,7 @@ ellipse_connect <- function(
   con <- DBI::dbConnect(noctua::athena(),
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
+    aws_token = NULL,
     schema_name = schema_name,
     work_group = "ellipse-work-group",
     s3_staging_dir = paste0("s3://", athena_staging_bucket))
@@ -97,12 +98,18 @@ ellipse_connect <- function(
 
   logger::log_debug(paste("[ellipse_connect] schema = ", schema))
 
+  if (length(athena_staging_bucket) > 0) {
+    cli::cli_alert_info(paste("Compartiment:", athena_staging_bucket))
+  } else {
+    cli::cli_alert_danger("Oups, cette connexion n'a pas de compartiment de requêtes! 😅")
+  }
+
   if (length(schema) > 0) {
     cli::cli_alert_info(paste("Base de données:", schema))
     cli::cli_alert_success("Connexion établie avec succès! 👍")
     return(con)
   } else {
-    cli::cli_alert_danger("Oups, cette connection n'a pas de base de données! 😅")
+    cli::cli_alert_danger("Oups, cette connexion n'a pas de base de données! 😅")
     return(invisible(NULL))
   }
 }
