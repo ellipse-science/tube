@@ -86,12 +86,11 @@ ellipse_connect <- function(
   con <- DBI::dbConnect(noctua::athena(),
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
+    profile_name = env,
     schema_name = schema_name,
     work_group = "ellipse-work-group",
     s3_staging_dir = paste0("s3://", athena_staging_bucket))
   # }
-
-  attr(con, "profile_name") <- env
 
   schema <- DBI::dbGetInfo(con)$dbms.name
 
