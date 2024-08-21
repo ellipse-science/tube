@@ -73,16 +73,8 @@ ellipse_connect <- function(
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
 
-  cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
-
-  # if (Sys.getenv("_HANDLER") == "lambda_handler") {
-  #   con <- DBI::dbConnect(noctua::athena(),
-  #     schema_name = schema_name,
-  #     profile_name = env,
-  #     work_group = "ellipse-work-group",
-  #     s3_staging_dir = paste0("s3://", athena_staging_bucket))
-  # } else {
   cli::cli_alert_info("Connexion en cours...")
+
   con <- DBI::dbConnect(noctua::athena(),
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
@@ -104,6 +96,7 @@ ellipse_connect <- function(
 
   if (length(schema) > 0) {
     cli::cli_alert_info(paste("Base de données:", schema))
+    cli::cli_alert_info("Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)")
     cli::cli_alert_success("Connexion établie avec succès! 👍")
     return(con)
   } else {
@@ -566,7 +559,7 @@ ellipse_publish <- function(
     if (choice == 2) {
       # confirm by the user
       if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?",
-                      unattended_option = unattended_options$are_you_sure)) {
+          unattended_option = unattended_options$are_you_sure)) {
         info("Publication des données abandonnée.")
         return(invisible(FALSE))
       }
