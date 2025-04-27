@@ -77,9 +77,6 @@ RUN mkdir -p /home/devuser/.config/code-server && \
     echo 'bind-addr: 0.0.0.0:8080\nauth: none\ncert: false' > /home/devuser/.config/code-server/config.yaml && \
     chown -R devuser:devuser /home/devuser/.config
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 EXPOSE 8080
 
 # Switch to the non-root user
@@ -112,4 +109,3 @@ RUN mkdir -p /home/devuser/.local/bin \
 
 # Set the default shell to bash
 ENV SHELL=/bin/bash
-CMD ["/usr/local/bin/entrypoint.sh"]
