@@ -139,5 +139,8 @@ USER vscode
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
 
+COPY bashrc-addons /home/vscode/.bashrc-addons
+RUN echo "source /home/vscode/.bashrc-addons" >> /home/vscode/.bashrc
+
 # Default command to keep container running
 CMD [ "sleep", "infinity" ]
