@@ -4,7 +4,7 @@
 test_that("ellipse_connect function exists and responds to parameters", {
   # Test that ellipse_connect function exists and processes parameters
   # (it doesn't throw errors but shows user-friendly messages)
-  
+
   # The function should return something (not crash) with invalid parameters
   expect_no_error(
     result <- ellipse_connect(env = "INVALID", database = "datawarehouse")
@@ -46,7 +46,7 @@ test_that("ellipse_discover validates connection parameter", {
 test_that("ellipse_process function exists and has correct parameters", {
   # Check that the function exists and get its parameters
   expect_true(exists("ellipse_process", mode = "function"))
-  
+
   # Get function arguments to understand the actual signature
   args_list <- formals(ellipse_process)
   expect_true(length(args_list) > 0)

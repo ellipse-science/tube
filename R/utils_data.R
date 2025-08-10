@@ -2,7 +2,7 @@
 #' @param column La colonne à analyser
 #' Les types de colonne supportés sont: string, int, decimal et date
 #' @return Le type de colonne
-#get_column_type <- function(column) {
+# get_column_type <- function(column) {
 #  # Remove NA values temporarily
 #  non_na_column <- na.omit(column)
 #
@@ -19,7 +19,7 @@
 #  } else {
 #    return("unsupported")
 #  }
-#}
+# }
 
 get_column_type <- function(column) {
   # Remove NA values temporarily

@@ -16,7 +16,7 @@ setup_mock_aws_env <- function() {
 cleanup_aws_env <- function() {
   Sys.unsetenv(c(
     "AWS_ACCESS_KEY_ID_DEV",
-    "AWS_SECRET_ACCESS_KEY_DEV", 
+    "AWS_SECRET_ACCESS_KEY_DEV",
     "AWS_ACCESS_KEY_ID_PROD",
     "AWS_SECRET_ACCESS_KEY_PROD",
     "AWS_REGION"

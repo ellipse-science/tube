@@ -4,8 +4,8 @@
 #'
 #' @examples
 #' \dontrun{
-#'   r <- convert_url_to_key(url)
-#'   print(r)
+#' r <- convert_url_to_key(url)
+#' print(r)
 #' }
 #'
 #' @export
@@ -15,4 +15,3 @@ convert_url_to_key <- function(url) {
   r <- gsub("_$", "", r)
   return(r)
 }
-

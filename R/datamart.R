@@ -2,9 +2,9 @@
 #'
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datamartbucket`
-#' 
+#'
 #' In our infrastructure, there is only one per AWS account (DEV/PROD)
-#' 
+#'
 #' It is used mainly by the ellipse_publish function to store R dataframes
 #' in a datamart in the form of CSV files, which in turn, are converted into
 #' GLUE tables by the glue job.
@@ -24,9 +24,9 @@ list_datamarts_bucket <- function(credentials) {
 #' Returns the datamarts GLUE database name
 #'
 #' Technically the function returns all the databases of which
-#' the name contains the string `datamart` but in our 
+#' the name contains the string `datamart` but in our
 #' infrastructure, there is only one per AWS account (DEV/PROD)
-#' 
+#'
 #' It is used mainly by the ellipse_connect function to retrieve the
 #' schema with wich to instanciate the DBI connection
 #'
@@ -43,7 +43,7 @@ list_datamarts_database <- function(credentials) {
 }
 
 #' Returns the datamarts GLUE tables names
-#' 
+#'
 #' It is currently not used as the ellipse_discover function
 #' does the job through the list_glue_tables function
 #' We're keeping it for now just in case we need it later
@@ -61,13 +61,13 @@ list_datamarts_database <- function(credentials) {
 list_datamart_tables <- function(credentials, datamart_name, simplify = TRUE) {
   logger::log_debug("[tube::list_datamart_tables] entering function")
 
-  #datamart_tables <- list_glue_tables(type = "datamart", datamart = datamart_name,
+  # datamart_tables <- list_glue_tables(type = "datamart", datamart = datamart_name,
   #                                           credentials = credentials)
 
   logger::log_debug("[tube::list_datamart_tables] returning results")
 
-  #if (simplify) return(glue_table_list_to_tibble(datamart_tables))
-  #return(datamart_tables)
+  # if (simplify) return(glue_table_list_to_tibble(datamart_tables))
+  # return(datamart_tables)
   return(NULL)
 }
 
@@ -81,8 +81,7 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
   col_names <- colnames(dataframe)
   for (i in 1:length(col_names)) {
     dataframe_col_type <- get_column_type(dataframe[[i]])
-    glue_col_type <- switch(
-      dataframe_col_type,
+    glue_col_type <- switch(dataframe_col_type,
       "character" = "string",
       "integer" = "int",
       "decimal" = "double",

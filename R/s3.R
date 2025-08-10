@@ -11,13 +11,14 @@ list_s3_buckets <- function(credentials, type) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_buckets] listing buckets")
   r <- s3_client$list_buckets()
 
-  #TODO: error management if no bucket is returned
+  # TODO: error management if no bucket is returned
 
   logger::log_debug("[tube::list_s3_buckets] wrangling result")
   list <- unlist(r$Buckets)
@@ -43,7 +44,8 @@ list_s3_partitions <- function(credentials, bucket) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_partitions] listing partitions")
@@ -74,7 +76,8 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_folders] listing folders")
@@ -106,14 +109,15 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
   # Check that the file exists
   if (!file.exists(file)) {
     logger::log_error("[tube::upload_file_to_s3] file does not exist")
-    return(FALSE)
+    FALSE
   }
 
   logger::log_debug("[tube::upload_file_to_s3] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   tryCatch(
@@ -128,12 +132,12 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
     error = function(e) {
       logger::log_error("[tube::upload_file_to_s3] error uploading file")
       logger::log_error(e$message)
-      return(FALSE)
+      FALSE
     }
   )
 
   logger::log_debug("[tube::upload_file_to_s3] returning results")
-  return(TRUE)
+  TRUE
 }
 
 #' Delete s3 folder
@@ -154,7 +158,8 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug(paste("[tube::delete_s3_folder] listing objects in bucket", bucket, "prefix", prefix))
@@ -164,9 +169,9 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
     Prefix = prefix,
     MaxKeys = 1000
   )
-  
+
   object_list <- r$Contents
-  
+
   while (!is.null(r$NextContinuationToken) && length(r$NextContinuationToken) > 0) {
     pass <- pass + 1
     logger::log_debug(paste("[tube::delete_s3_folder] more objects to list in pass", pass))
@@ -182,7 +187,7 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   # Check if the folder is empty
   if (length(object_list) > 0) {
     logger::log_debug(paste("[tube::delete_s3_folder] folder contains", length(object_list), "objects"))
-    
+
     # Loop through each object and delete it
     for (object in object_list) {
       if (startsWith(object$Key, prefix)) {
@@ -190,19 +195,19 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
           {
             logger::log_debug("[tube::delete_s3_folder] deleting object")
             s3_client$delete_object(
-             Bucket = bucket,
-             Key = object$Key
+              Bucket = bucket,
+              Key = object$Key
             )
           },
           error = function(e) {
             logger::log_error("[tube::delete_s3_folder] error deleting object")
             logger::log_error(e$message)
-            return(FALSE)
+            FALSE
           }
         )
       }
     }
-  } else  {
+  } else {
     logger::log_debug("[tube::delete_s3_folder] folder is empty : deleting folder only")
     # Delete the folder
     tryCatch(
@@ -216,11 +221,11 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
       error = function(e) {
         logger::log_error("[tube::delete_s3_folder] error deleting folder")
         logger::log_error(e$message)
-        return(FALSE)
+        FALSE
       }
     )
   }
 
   logger::log_debug("[tube::delete_s3_folder] returning results")
-  return(TRUE)
+  TRUE
 }

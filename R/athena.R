@@ -3,7 +3,7 @@
 #' Technically the function returns all the buckets for which
 #' the name contains the string `athenaqueryresults`
 #' In our infrastructure, there is only one per AWS account (DEV/PROD)
-#' 
+#'
 #' This is used to get the name of the bucket where the results of the
 #' athena queries are stored.  More specifically, it is used to create
 #' the `s3_staging_dir` parameter in the `DBI::dbConnect` function call

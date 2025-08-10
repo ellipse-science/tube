@@ -36,23 +36,29 @@ ask_1_2 <- function(question, unattended_option = NULL) {
 suppress_console_output <- function(expr) {
   temp_file <- tempfile()
   temp_conn <- file(temp_file, open = "wt")
-  
+
   sink(temp_conn, type = "output")
   sink(temp_conn, type = "message", append = TRUE)
-  
-  on.exit({
-    sink(type = "message")
-    sink(type = "output")
-    close(temp_conn)
-    file.remove(temp_file)
-  }, add = TRUE)
-  
-  result <- tryCatch({
-    force(expr)
-  }, error = function(e) {
-    stop(e) # Re-throw the caught error
-  })
-  
+
+  on.exit(
+    {
+      sink(type = "message")
+      sink(type = "output")
+      close(temp_conn)
+      file.remove(temp_file)
+    },
+    add = TRUE
+  )
+
+  result <- tryCatch(
+    {
+      force(expr)
+    },
+    error = function(e) {
+      stop(e) # Re-throw the caught error
+    }
+  )
+
   result
 }
 

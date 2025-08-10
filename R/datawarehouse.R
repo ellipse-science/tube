@@ -3,7 +3,7 @@
 #' Technically the function returns all the buckets for which
 #' the name contains the string `datawarehousebucket` but in our
 #' infrastructure, there is only one per AWS account (DEV/PROD)
-#' 
+#'
 #' Currently the function is not used in the package but it is
 #' kept for future use
 #'
@@ -22,9 +22,9 @@ list_datawarehouse_bucket <- function(credentials) {
 #' Returns the datawarehouse GLUE database name
 #'
 #' Technically the function returns all the databases of which
-#' the name contains the string `datamart` but in our 
+#' the name contains the string `datamart` but in our
 #' infrastructure, there is only one per AWS account (DEV/PROD)
-#' 
+#'
 #' It is used mainly by the ellipse_connect function to retrieve the
 #' schema with wich to instanciate the DBI connection
 #'
@@ -41,7 +41,7 @@ list_datawarehouse_database <- function(credentials) {
 }
 
 #' Returns the datawarehouse GLUE tables names
-#' 
+#'
 #' It is currently not used as the ellipse_discover function
 #' does the job through the list_glue_tables function
 #' We're keeping it for now just in case we need it later
@@ -63,6 +63,8 @@ list_datawarehouse_tables <- function(credentials, simplify = TRUE) {
 
   logger::log_debug("[tube::list_datawarehouse_tables] returning results")
 
-  if (simplify) return(glue_table_list_to_tibble(datawarehouse_database))
+  if (simplify) {
+    return(glue_table_list_to_tibble(datawarehouse_database))
+  }
   return(datawarehouse_database)
 }
