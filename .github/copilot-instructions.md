@@ -510,6 +510,41 @@ devtools::check()
 covr::package_coverage()
 ```
 
+### Running R Scripts with Consistent Output
+**IMPORTANT:** When testing R code or functions, always use `Rscript` for consistent output visibility:
+
+```bash
+# ✅ CORRECT - Use Rscript for visible output
+Rscript -e "source('dev-qa-scripts.R'); lint_and_check()"
+
+# ✅ CORRECT - Test specific functions
+Rscript -e "source('dev-qa-scripts.R'); precommit_check()"
+
+# ✅ CORRECT - Run package checks
+Rscript -e "devtools::test()"
+
+# ❌ INCORRECT - R interactive mode doesn't show output consistently in tools
+R -e "lintr::lint_package()"
+```
+
+**Development Workflow Commands:**
+```bash
+# Load and test dev scripts
+Rscript -e "source('dev-qa-scripts.R'); cat('✅ Dev scripts loaded\n')"
+
+# Run enhanced linting
+Rscript -e "source('dev-qa-scripts.R'); lint_interactive()"
+
+# Pre-commit workflow
+Rscript -e "source('dev-qa-scripts.R'); precommit_check()"
+
+# Quick development check
+Rscript -e "source('dev-qa-scripts.R'); quick_check()"
+
+# Full QA pipeline
+Rscript -e "source('dev-qa-scripts.R'); qa_pipeline()"
+```
+
 ### Linting Requirements
 - **ALWAYS check `.lintr` file** in project root for linting rules
 - **ALL code must pass linting** before any commits or pull requests

@@ -56,14 +56,45 @@ jobs:
         echo "AWS_REGION=ca-central-1" >> $GITHUB_ENV
       shell: bash
     
-    - name: Lint package (MUST PASS)
+    - name: Enhanced Linting Check (MUST PASS)
       run: |
+        # Source dev QA scripts
+        source("dev-qa-scripts.R")
+        
+        cat("🔍 Running enhanced linting check...\n")
+        
+        # Run comprehensive linting check using dev scripts
         lints <- lintr::lint_package()
+        
         if (length(lints) > 0) {
+          cat("❌ Linting failed!\n")
+          cat("Found", length(lints), "linting issues\n\n")
+          
+          # Use our enhanced analysis from dev scripts
+          issue_summary <- .analyze_linting_issues(lints)
+          .display_linting_summary(issue_summary, lints)
+          
+          cat("\n� To fix locally, run:\n")
+          cat("  source('dev-qa-scripts.R')\n")
+          cat("  lint_interactive()  # For guided fixing\n")
+          cat("  precommit_check()   # Before committing\n")
+          cat("  styler::style_pkg() # For auto-fixes\n")
+          
+          # Print first 10 issues for immediate action
+          cat("\n🚨 First 10 issues to fix:\n")
+          for (i in 1:min(10, length(lints))) {
+            lint <- lints[[i]]
+            cat(sprintf("  %s:%d - %s\n", 
+                basename(lint$filename), 
+                lint$line_number, 
+                lint$message))
+          }
+          
           print(lints)
           stop("Linting failed. Fix all linting issues before merging.")
+        } else {
+          cat("✅ Enhanced linting passed - no issues found!\n")
         }
-        cat("✅ Linting passed\n")
       shell: Rscript {0}
     
     - name: Run tests (MUST PASS)
