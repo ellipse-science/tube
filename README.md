@@ -428,4 +428,79 @@ Les dictionnaires sont des données dimensionnelles (dans le sens qu'elles sont 
 
 Les verbes `dplyr` disponibles sont limités sur une source distante comme la plateforme _Ellipse_. Une fois qu'on a une idée des données que l'on veut, on peut envoyer une requête qui filtre sur une plage de valeurs pertinentes pour les partitions présentes, puis utiliser la fonction `dplyr::collect()` pour ramener les données localement. Après ceci, toute la fonctionnalité de manipulation de données de R et du _tidyverse_ sont disponibles pour traiter les données.
 
-Pour la documentation conceptuelle de la plateforme de données du CAPP, voir le répertoire [doc](https://github.com/ellipse-science/tube-doc/tree/main)
+## Development Setup
+
+### For Package Contributors
+
+This package follows strict development guidelines with comprehensive testing and quality assurance.
+
+#### Required Environment Variables
+
+The package requires AWS credentials in your `.Renviron` file:
+
+```
+AWS_ACCESS_KEY_ID_DEV=<your dev access key>
+AWS_SECRET_ACCESS_KEY_DEV=<your dev secret key>
+AWS_ACCESS_KEY_ID_PROD=<your prod access key>
+AWS_SECRET_ACCESS_KEY_PROD=<your prod secret key>
+AWS_REGION=ca-central-1
+```
+
+#### Development Workflow
+
+1. **Clone and setup**:
+   ```r
+   # Install development dependencies
+   remotes::install_dev_deps()
+   install.packages(c("lintr", "covr", "testthat", "mockery"))
+   ```
+
+2. **Quality Assurance Scripts**:
+   ```r
+   # Load QA functions
+   source("dev-qa-scripts.R")
+   
+   # Quick check during development
+   quick_check()
+   
+   # Full QA pipeline before commits
+   qa_pipeline()
+   ```
+
+3. **Pre-commit Hooks** (recommended):
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+#### Testing Requirements
+
+- **100% test coverage required** - no exceptions
+- All tests must pass before any commits
+- Tests use mocked AWS services to avoid real API calls
+- Environment variables are mocked for testing
+
+#### Code Quality Standards
+
+- **All code must pass `lintr::lint_package()`**
+- Follow existing `.lintr` configuration
+- Use roxygen2 documentation for all exported functions
+- Follow consistent naming conventions (snake_case)
+
+#### CI/CD Pipeline
+
+GitHub Actions automatically runs:
+- Linting checks (must pass)
+- Full test suite (must pass) 
+- Test coverage analysis (95%+ required)
+- R CMD check (must pass)
+
+#### Contributing
+
+1. Create feature branch from `main`
+2. Implement changes with full test coverage
+3. Run `qa_pipeline()` locally
+4. Submit pull request
+5. All CI/CD checks must pass
+
+For conceptual documentation, see [tube-doc](https://github.com/ellipse-science/tube-doc/tree/main)

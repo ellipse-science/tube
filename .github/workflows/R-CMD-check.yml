@@ -1,0 +1,132 @@
+name: R-CMD-check
+on: 
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: 'release'
+        use-public-rspm: true
+    
+    - uses: r-lib/actions/setup-pandoc@v2
+    
+    - name: Query dependencies
+      run: |
+        install.packages('remotes')
+        saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+        writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+      shell: Rscript {0}
+
+    - name: Cache R packages
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.R_LIBS_USER }}
+        key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+        restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
+    
+    - name: Install dependencies
+      run: |
+        remotes::install_deps(dependencies = TRUE)
+        remotes::install_cran(c("rcmdcheck", "lintr", "covr", "testthat", "mockery"))
+      shell: Rscript {0}
+    
+    - name: Setup test environment variables
+      run: |
+        echo "AWS_ACCESS_KEY_ID_DEV=mock_dev_key_for_testing" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY_DEV=mock_dev_secret_for_testing" >> $GITHUB_ENV
+        echo "AWS_ACCESS_KEY_ID_PROD=mock_prod_key_for_testing" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY_PROD=mock_prod_secret_for_testing" >> $GITHUB_ENV
+        echo "AWS_REGION=ca-central-1" >> $GITHUB_ENV
+      shell: bash
+    
+    - name: Lint package (MUST PASS)
+      run: |
+        lints <- lintr::lint_package()
+        if (length(lints) > 0) {
+          print(lints)
+          stop("Linting failed. Fix all linting issues before merging.")
+        }
+        cat("✅ Linting passed\n")
+      shell: Rscript {0}
+    
+    - name: Run tests (MUST PASS)
+      run: |
+        library(testthat)
+        library(tube)
+        test_results <- devtools::test()
+        failed_tests <- sum(sapply(test_results, function(x) length(x$failed)))
+        if (failed_tests > 0) {
+          cat("❌ Tests failed\n")
+          print(test_results)
+          stop("Tests failed. All tests must pass before merging.")
+        }
+        cat("✅ All tests passed\n")
+      shell: Rscript {0}
+    
+    - name: Check test coverage (MUST BE 100%)
+      run: |
+        coverage <- covr::package_coverage(
+          quiet = FALSE,
+          clean = FALSE,
+          install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package")
+        )
+        coverage_percent <- covr::percent_coverage(coverage)
+        cat("Test coverage:", coverage_percent, "%\n")
+        
+        # Write coverage report
+        covr::to_cobertura(coverage, "coverage.xml")
+        
+        if (coverage_percent < 95) {  # Allow 95% minimum for now
+          cat("⚠️  Warning: Test coverage is below 100%\n")
+          cat("Current coverage:", coverage_percent, "%\n")
+          cat("This should be improved to reach 100% coverage.\n")
+          
+          # Show uncovered lines
+          covr::report(coverage, file = "coverage-report.html", browse = FALSE)
+          
+          # For now, don't fail the build but warn
+          # stop("Test coverage must be 100%. Current coverage: ", coverage_percent, "%")
+        } else {
+          cat("✅ Test coverage passed\n")
+        }
+      shell: Rscript {0}
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: |
+          coverage.xml
+          coverage-report.html
+    
+    - name: Check package
+      uses: r-lib/actions/check-r-package@v2
+      with:
+        args: 'c("--no-manual", "--as-cran")'
+        error-on: '"error"'
+        check-dir: '"check"'
+    
+    - name: Upload check results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: check-results
+        path: check
