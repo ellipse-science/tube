@@ -53,7 +53,7 @@ get_aws_credentials <- function(env) {
     )
   )
 
-  tryCatch(
+  validation_result <- tryCatch(
     {
       paws.storage::s3(
         config = c(
@@ -61,14 +61,19 @@ get_aws_credentials <- function(env) {
           close_connection = TRUE
         )
       )$list_buckets()
+      TRUE  # Return TRUE if successful
     },
     error = function(e) {
       cli::cli_alert_danger("Oups, il semble que vos clés d'accès ne sont pas valides! 😅")
       logger::log_error("[get_aws_credentials] invalid aws credentials")
-      return(NULL)
+      FALSE  # Return FALSE if failed
     }
   )
 
+  if (!validation_result) {
+    return(NULL)
+  }
+
   logger::log_debug("[get_aws_credentials] successful connection to aws")
-  return(creds)
+  creds
 }
