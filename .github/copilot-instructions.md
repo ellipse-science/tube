@@ -527,8 +527,57 @@ Rscript -e "devtools::test()"
 R -e "lintr::lint_package()"
 ```
 
+**MOST RELIABLE R TESTING METHOD:**
+**✅ CREATE AND RUN DEDICATED TEST RUNNER SCRIPTS**
+
+When R output is not visible through direct terminal execution, create standalone test runner scripts:
+
+```r
+# Create test_runner.R file with this pattern:
+#!/usr/bin/env Rscript
+
+cat("=== Testing Implementation ===\n")
+
+# Load environment
+readRenviron('.Renviron')
+
+# Test steps with clear output
+cat("\n1. Environment Check:\n")
+# ... test code with cat() statements
+
+cat("\n2. Function Testing:\n") 
+# ... test code with tryCatch() and cat()
+
+cat("\n=== Testing Complete ===\n")
+```
+
+Then run with: `Rscript test_runner.R` or `./test_runner.R`
+
+**This method provides:**
+- ✅ Reliable, visible output every time
+- ✅ Step-by-step debugging capability  
+- ✅ Clear success/failure indicators
+- ✅ Standalone reproducible tests
+- ✅ Works when other R execution methods fail
+
+**Use this pattern for:**
+- Testing new implementations
+- Debugging package functions
+- Verifying environment setup
+- Integration testing with real AWS/DB connections
+- Any R code where output visibility is critical
+
 **Development Workflow Commands:**
 ```bash
+# Use existing test runners in tests/testthat/
+Rscript tests/testthat/run_all_tests.R
+Rscript tests/testthat/run_basic_tests.R
+Rscript tests/testthat/run_aws_tests.R
+Rscript tests/testthat/run_ellipse_tests.R
+
+# For ad-hoc R operations, ALWAYS use the same file.  Do not use adhoc.R to run unit tests
+Rscript adhoc.R
+
 # Load and test dev scripts
 Rscript -e "source('dev-qa-scripts.R'); cat('✅ Dev scripts loaded\n')"
 
@@ -544,6 +593,11 @@ Rscript -e "source('dev-qa-scripts.R'); quick_check()"
 # Full QA pipeline
 Rscript -e "source('dev-qa-scripts.R'); qa_pipeline()"
 ```
+
+**CRITICAL RULE: Ad-hoc R Scripts**
+- **NEVER create new R scripts at project root**
+- **ALWAYS edit and reuse `adhoc.R` for any temporary R operations**
+- **Use existing test runners in `tests/testthat/` for testing**
 
 ### Linting Requirements
 - **ALWAYS check `.lintr` file** in project root for linting rules

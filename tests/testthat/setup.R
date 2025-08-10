@@ -1,27 +1,20 @@
 # Setup file for tests - run before all tests
+# Following requirement: "use real life connections and data... Do not mock everything"
 
-# Register S3 methods for mock DBI connection when DBI is loaded
-if (requireNamespace("DBI", quietly = TRUE)) {
-  # Register dbGetInfo method for MockConnection
-  dbGetInfo.MockConnection <- function(dbObj, ...) {
-    list(
-      profile_name = dbObj$profile_name,
-      dbms.name = dbObj$dbms.name
-    )
+# Load environment variables for real testing
+if (file.exists(".Renviron")) {
+  readRenviron(".Renviron")
+}
+
+# Verify real testing environment is available
+if (requireNamespace("testthat", quietly = TRUE)) {
+  # Check if real AWS credentials are available
+  aws_dev_key <- Sys.getenv("AWS_ACCESS_KEY_ID_DEV")
+  aws_region <- Sys.getenv("AWS_REGION")
+  
+  if (nzchar(aws_dev_key) && nzchar(aws_region)) {
+    message("✅ Real AWS testing environment available")
+  } else {
+    message("⚠️  Real AWS credentials not found - some tests may be skipped")
   }
-
-  # Register dbIsValid method for MockConnection
-  dbIsValid.MockConnection <- function(dbObj, ...) {
-    TRUE
-  }
-
-  # Register dbDisconnect method for MockConnection
-  dbDisconnect.MockConnection <- function(conn, ...) {
-    TRUE
-  }
-
-  # Manually register the S3 methods since we can't use the :: syntax in tests
-  .GlobalEnv$dbGetInfo.MockConnection <- dbGetInfo.MockConnection
-  .GlobalEnv$dbIsValid.MockConnection <- dbIsValid.MockConnection
-  .GlobalEnv$dbDisconnect.MockConnection <- dbDisconnect.MockConnection
 }
