@@ -818,7 +818,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   } else {
     new_tags <- NULL
   }
-  
+
   # add x-amz-meta- prefix to the tags if not already present
   if (!is.null(new_tags) && length(new_tags) > 0) {
     new_tags <- setNames(
@@ -860,14 +860,14 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 
     if (!confirm_change) {
       cli::cli_alert_info("Les changements ont été abandonnés.")
-      invisible(FALSE)
+      return(invisible(FALSE))
     }
   } else {
     cli::cli_alert_info("Aucun changement n'est requis.")
-    invisible(TRUE)
+    return(invisible(TRUE))
   }
 
-  if (confirm_change) {
+  if (change_tags || change_desc) {
     # update the table tags and description
     if (change_tags) {
       cli::cli_alert_info("Mise à jour des tags de la table en cours...")
