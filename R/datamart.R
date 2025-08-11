@@ -18,7 +18,7 @@ list_datamarts_bucket <- function(credentials) {
   datamart_list <- list_s3_buckets(credentials, "datamartbucket")
 
   logger::log_debug("[tube::list_datamarts_bucket] returning results")
-  return(datamart_list)
+  datamart_list
 }
 
 #' Returns the datamarts GLUE database name
@@ -39,7 +39,7 @@ list_datamarts_database <- function(credentials) {
   datamart_database <- list_glue_databases(credentials, "datamart")
 
   logger::log_debug("[tube::list_datamarts_database] returning results")
-  return(datamart_database)
+  datamart_database
 }
 
 #' Returns the datamarts GLUE tables names
@@ -61,6 +61,19 @@ list_datamarts_database <- function(credentials) {
 list_datamart_tables <- function(credentials, datamart_name, simplify = TRUE) {
   logger::log_debug("[tube::list_datamart_tables] entering function")
 
+  # Input validation
+  if (is.null(credentials)) {
+    stop("credentials cannot be NULL", call. = FALSE)
+  }
+
+  if (is.null(datamart_name)) {
+    stop("datamart_name cannot be NULL", call. = FALSE)
+  }
+
+  if (!is.character(datamart_name) || length(datamart_name) == 0 || nzchar(datamart_name) == 0) {
+    stop("datamart_name must be a non-empty character string", call. = FALSE)
+  }
+
   # datamart_tables <- list_glue_tables(type = "datamart", datamart = datamart_name,
   #                                           credentials = credentials)
 
@@ -74,12 +87,37 @@ list_datamart_tables <- function(credentials, datamart_name, simplify = TRUE) {
 upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix, partition) {
   logger::log_debug("[tube::upload_dataframe_to_datamart] entering function")
 
+  # Input validation
+  if (is.null(credentials)) {
+    stop("credentials cannot be NULL", call. = FALSE)
+  }
+
+  if (is.null(dataframe)) {
+    stop("dataframe cannot be NULL", call. = FALSE)
+  }
+
+  if (!is.data.frame(dataframe)) {
+    stop("dataframe must be a data.frame", call. = FALSE)
+  }
+
+  if (nrow(dataframe) == 0 || ncol(dataframe) == 0) {
+    stop("dataframe cannot be empty", call. = FALSE)
+  }
+
+  if (is.null(bucket)) {
+    stop("bucket cannot be NULL", call. = FALSE)
+  }
+
+  if (!is.character(bucket) || length(bucket) == 0 || nzchar(bucket) == 0) {
+    stop("bucket must be a non-empty character string", call. = FALSE)
+  }
+
   # Convert the dataframe to a CSV file by appending the variable type to the column header
   # such as: `column_name:variable_type`
   # Convert the column names of the dataframe to include the variable type
   # supported types are: string, int and date
   col_names <- colnames(dataframe)
-  for (i in 1:length(col_names)) {
+  for (i in seq_along(col_names)) {
     dataframe_col_type <- get_column_type(dataframe[[i]])
     glue_col_type <- switch(dataframe_col_type,
       "character" = "string",
@@ -100,14 +138,6 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
   csv_file <- tempfile(fileext = ".csv")
   write.csv(dataframe, csv_file, row.names = FALSE)
 
-  # Instantiate the S3 client
-  s3_client <- paws.storage::s3(
-    config = c(
-      credentials,
-      close_connection = TRUE
-    )
-  )
-
   current_time <- Sys.time()
   current_time_utc <- as.POSIXct(current_time, tz = "UTC")
   formatted_time <- format(current_time_utc, "%Y-%m-%dT%H:%M:%OS3Z")
@@ -118,5 +148,5 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
   r <- upload_file_to_s3(credentials, csv_file, bucket, s3_key)
 
   logger::log_debug("[tube::upload_dataframe_to_datamart] returning results")
-  return(r)
+  r
 }

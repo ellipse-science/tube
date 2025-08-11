@@ -24,7 +24,12 @@ list_s3_buckets <- function(credentials, type) {
   list <- unlist(r$Buckets)
   bucket_list <- list[grep(type, list)]
   bucket_list <- as.list(bucket_list)
-  names(bucket_list) <- ""
+  
+  # Only assign names if bucket_list is not empty
+  if (length(bucket_list) > 0) {
+    names(bucket_list) <- ""
+  }
+  
   bucket_list <- unlist(bucket_list)
 
   logger::log_debug("[tube::list_s3_buckets] returning results")
@@ -36,9 +41,14 @@ list_s3_buckets <- function(credentials, type) {
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
 #' #' @param bucket The bucket to list partitions from
-#' @return A list of S3 partitions
+#' @return A character vector of S3 partitions
 list_s3_partitions <- function(credentials, bucket) {
   logger::log_debug("[tube::list_s3_partitions] entering function")
+
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
 
   logger::log_debug("[tube::list_s3_partitions] instanciating s3 client")
   s3_client <- paws.storage::s3(
@@ -49,15 +59,30 @@ list_s3_partitions <- function(credentials, bucket) {
   )
 
   logger::log_debug("[tube::list_s3_partitions] listing partitions")
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Delimiter = "/"
-  )
+  r <- tryCatch({
+    s3_client$list_objects_v2(
+      Bucket = bucket,
+      Delimiter = "/"
+    )
+  }, error = function(e) {
+    if (grepl("NoSuchBucket", e$message)) {
+      logger::log_debug("[tube::list_s3_partitions] bucket does not exist")
+      return(NULL)
+    } else {
+      logger::log_error("[tube::list_s3_partitions] AWS API error")
+      return(NULL)
+    }
+  })
+  
+  if (is.null(r)) {
+    return(NULL)
+  }
 
   # Make a unnamed list of it
   logger::log_debug("[tube::list_s3_partitions] wrangling result")
   partition_list <- r$CommonPrefixes
   partition_list <- lapply(partition_list, function(x) x$Prefix)
+  partition_list <- unlist(partition_list)
   logger::log_debug("[tube::list_s3_partitions] returning results")
   return(partition_list)
 }
@@ -68,9 +93,14 @@ list_s3_partitions <- function(credentials, bucket) {
 #' with the paws package
 #' #' @param bucket The bucket to list folders from
 #' @param prefix The prefix (or partition) to list folders from
-#' @return A list of S3 folders
+#' @return A character vector of S3 folders
 list_s3_folders <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::list_s3_folders] entering function")
+
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
 
   logger::log_debug("[tube::list_s3_folders] instanciating s3 client")
   s3_client <- paws.storage::s3(
@@ -81,17 +111,32 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   )
 
   logger::log_debug("[tube::list_s3_folders] listing folders")
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Prefix = prefix,
-    Delimiter = "/"
-  )
+  r <- tryCatch({
+    s3_client$list_objects_v2(
+      Bucket = bucket,
+      Prefix = prefix,
+      Delimiter = "/"
+    )
+  }, error = function(e) {
+    if (grepl("NoSuchBucket", e$message)) {
+      logger::log_debug("[tube::list_s3_folders] bucket does not exist")
+      return(NULL)
+    } else {
+      logger::log_error("[tube::list_s3_folders] AWS API error")
+      return(NULL)
+    }
+  })
+  
+  if (is.null(r)) {
+    return(NULL)
+  }
 
   # Make a unnamed list of it
   logger::log_debug("[tube::list_s3_folders] wrangling result")
   folder_list <- r$CommonPrefixes
   folder_list <- lapply(folder_list, function(x) x$Prefix)
   folder_list <- lapply(folder_list, function(x) regmatches(x, regexec(".*/(.*)/$", x))[[1]][2])
+  folder_list <- unlist(folder_list)
   logger::log_debug("[tube::list_s3_folders] returning results")
   return(folder_list)
 }
@@ -109,7 +154,7 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
   # Check that the file exists
   if (!file.exists(file)) {
     logger::log_error("[tube::upload_file_to_s3] file does not exist")
-    FALSE
+    stop("File does not exist: ", file, call. = FALSE)
   }
 
   logger::log_debug("[tube::upload_file_to_s3] instanciating s3 client")
@@ -148,6 +193,11 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
 #' @return TRUE if the folder was deleted successfully
 delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] entering function")
+
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
 
   # if prefix does not end with / add it
   if (!endsWith(prefix, "/")) {

@@ -5,6 +5,39 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 test_that("Glue functions can be loaded and have proper signatures", {
+  cat("\n=== TESTING GLUE FUNCTION SIGNATURES ===\n")
+  
+  cat("PRODUCTION CODE BEING TESTED:\n")
+  cat("1. list_glue_databases <- function(credentials, type) {\n")
+  cat("     glue_client <- paws.analytics::glue(config = credentials)\n")
+  cat("     r <- glue_client$get_databases()\n")
+  cat("     list <- unlist(r$DatabaseList)\n")
+  cat("     database_list <- list[grep(type, list)]\n")
+  cat("     return(unlist(database_list))\n")
+  cat("   }\n\n")
+  
+  cat("2. list_glue_tables <- function(credentials, schema, tablename_filter, simplify) {\n")
+  cat("     glue_client <- paws.analytics::glue(config = credentials)\n")
+  cat("     tables <- glue_client$get_tables(\"\", schema)\n")
+  cat("     if (simplify) {\n")
+  cat("       return(glue_table_list_to_tibble(tables))\n")
+  cat("     }\n")
+  cat("     return(tables)\n")
+  cat("   }\n\n")
+  
+  cat("3. glue_table_list_to_tibble <- function(glue_response) {\n")
+  cat("     # Converts AWS Glue API response to structured tibble\n")
+  cat("     # Columns: table_name, col_name, col_type, is_partition\n")
+  cat("     # Processes both regular columns and partition keys\n")
+  cat("   }\n\n")
+  
+  cat("DATA TRANSFORMATION CHAIN:\n")
+  cat("AWS Glue API → list → grep() filter → unlist() → character vector\n")
+  cat("           ↓ (if simplify=TRUE)\n")
+  cat("glue_table_list_to_tibble() → structured tibble\n\n")
+  
+  cat("TESTING: Function existence and signatures...\n")
+  
   # Check that all Glue functions exist
   expect_true(exists("list_glue_databases", mode = "function"))
   expect_true(exists("list_glue_tables", mode = "function"))
@@ -26,6 +59,8 @@ test_that("Glue functions can be loaded and have proper signatures", {
   expect_equal(length(formals(glue_table_list_to_tibble)), 1)   # glue_response
   expect_equal(length(formals(update_glue_table_tags)), 4)      # creds, schema, table, new_table_tags
   expect_equal(length(formals(update_glue_table_desc)), 4)      # creds, schema, table, desc
+  
+  cat("✅ All Glue function signatures verified!\n")
 })
 
 # Tests for list_glue_databases function
@@ -49,23 +84,43 @@ test_that("list_glue_databases validates input parameters", {
 test_that("list_glue_databases works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
   
+  cat("\n=== TESTING GLUE DATABASE LISTING ===\n")
+  
+  cat("PRODUCTION CODE FLOW:\n")
+  cat("list_glue_databases(creds, \"datawarehouse\")\n")
+  cat("  └─> paws.analytics::glue(config = credentials)\n")
+  cat("  └─> glue_client$get_databases()\n")
+  cat("  └─> unlist(r$DatabaseList) -> all database names\n")
+  cat("  └─> grep(\"datawarehouse\", list) -> filter matching\n")
+  cat("  └─> unlist(database_list) -> character vector\n\n")
+  
   creds <- get_real_aws_credentials_dev()
+  
+  cat("TESTING: Different database type filters...\n")
   
   # Test listing databases for different types
   datawarehouse_dbs <- list_glue_databases(creds, "datawarehouse")
   expect_true(is.character(datawarehouse_dbs) || is.null(datawarehouse_dbs))
   
+  cat("Datawarehouse databases:", if(is.null(datawarehouse_dbs)) "NULL" else paste(datawarehouse_dbs, collapse=", "), "\n")
+  
   datamart_dbs <- list_glue_databases(creds, "datamart")
   expect_true(is.character(datamart_dbs) || is.null(datamart_dbs))
+  
+  cat("Datamart databases:", if(is.null(datamart_dbs)) "NULL" else paste(datamart_dbs, collapse=", "), "\n")
   
   # If databases exist, verify they contain the expected type in name
   if (!is.null(datawarehouse_dbs) && length(datawarehouse_dbs) > 0) {
     expect_true(any(grepl("datawarehouse", datawarehouse_dbs, ignore.case = TRUE)))
+    cat("✅ Datawarehouse database filtering works correctly!\n")
   }
   
   if (!is.null(datamart_dbs) && length(datamart_dbs) > 0) {
     expect_true(any(grepl("datamart", datamart_dbs, ignore.case = TRUE)))
+    cat("✅ Datamart database filtering works correctly!\n")
   }
+  
+  cat("✅ Glue database listing completed!\n")
 })
 
 # Tests for list_glue_tables function
@@ -88,6 +143,29 @@ test_that("list_glue_tables validates input parameters", {
 
 test_that("list_glue_tables works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
+  
+  cat("\n=== TESTING GLUE TABLE LISTING ===\n")
+  
+  cat("PRODUCTION CODE FLOW:\n")
+  cat("list_glue_tables(creds, schema, tablename_filter, simplify)\n")
+  cat("  └─> paws.analytics::glue(config = credentials)\n")
+  cat("  └─> glue_client$get_tables(\"\", schema)\n")
+  cat("  └─> tables$TableList[grep(filter, names)] -> filtered tables\n")
+  cat("  └─> if (simplify) glue_table_list_to_tibble(tables)\n")
+  cat("      else return(tables) -> raw AWS response\n\n")
+  
+  cat("TABLE STRUCTURE CONVERSION:\n")
+  cat("AWS Glue Table Object:\n")
+  cat("  Name: table_name\n")
+  cat("  StorageDescriptor$Columns: [{Name, Type}, ...]\n")
+  cat("  PartitionKeys: [{Name, Type}, ...]\n")
+  cat("  ↓ glue_table_list_to_tibble()\n")
+  cat("Tibble Output:\n")
+  cat("  table_name | col_name | col_type | is_partition\n")
+  cat("  ---------- | -------- | -------- | ------------\n")
+  cat("  my_table   | id       | bigint   | FALSE\n")
+  cat("  my_table   | name     | string   | FALSE\n")
+  cat("  my_table   | year     | string   | TRUE\n\n")
   
   creds <- get_real_aws_credentials_dev()
   

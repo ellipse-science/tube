@@ -4,6 +4,37 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 test_that("bucket functions can be loaded and have proper signatures", {
+  cat("\n=== TESTING BUCKET FUNCTION SIGNATURES ===\n")
+  
+  cat("PRODUCTION CODE BEING TESTED:\n")
+  cat("1. list_athena_staging_bucket <- function(credentials) {\n")
+  cat("     list_s3_buckets(credentials, \"athenaqueryresults\")\n")
+  cat("   }\n\n")
+  
+  cat("2. list_datalake_bucket <- function(credentials) {\n")
+  cat("     list_s3_buckets(credentials, \"datalakebucket\")\n")
+  cat("   }\n\n")
+  
+  cat("3. list_datamarts_bucket <- function(credentials) {\n")
+  cat("     list_s3_buckets(credentials, \"datamartsbucket\")\n")
+  cat("   }\n\n")
+  
+  cat("4. list_datawarehouse_bucket <- function(credentials) {\n")
+  cat("     list_s3_buckets(credentials, \"datawarehousebucket\")\n")
+  cat("   }\n\n")
+  
+  cat("5. list_landing_zone_bucket <- function(credentials) {\n")
+  cat("     list_s3_buckets(credentials, \"landingzone\")\n")
+  cat("   }\n\n")
+  
+  cat("6. list_landing_zone_partitions <- function(credentials) {\n")
+  cat("     bucket <- list_landing_zone_bucket(credentials)\n")
+  cat("     list_s3_partitions(credentials, bucket)\n")
+  cat("   }\n\n")
+  
+  cat("DEPENDENCY CHAIN: All bucket functions → list_s3_buckets() → paws.storage::s3\n\n")
+  cat("TESTING: Function existence and signatures...\n")
+  
   # Check that all bucket functions exist
   expect_true(exists("list_athena_staging_bucket", mode = "function"))
   expect_true(exists("list_datalake_bucket", mode = "function"))
@@ -19,6 +50,8 @@ test_that("bucket functions can be loaded and have proper signatures", {
   expect_equal(length(formals(list_datawarehouse_bucket)), 1)   # credentials
   expect_equal(length(formals(list_landing_zone_bucket)), 1)    # credentials
   expect_equal(length(formals(list_landing_zone_partitions)), 1) # credentials
+  
+  cat("✅ All bucket function signatures verified!\n")
 })
 
 test_that("list_athena_staging_bucket validates input parameters", {
@@ -32,15 +65,34 @@ test_that("list_athena_staging_bucket validates input parameters", {
 test_that("list_athena_staging_bucket works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
   
+  cat("\n=== TESTING ATHENA STAGING BUCKET ===\n")
+  
+  cat("PRODUCTION CODE FLOW:\n")
+  cat("list_athena_staging_bucket(creds)\n")
+  cat("  └─> list_s3_buckets(creds, \"athenaqueryresults\")\n")
+  cat("      └─> paws.storage::s3(config = creds)\n")
+  cat("      └─> s3_client$list_buckets()\n")
+  cat("      └─> filter buckets containing \"athenaqueryresults\"\n")
+  cat("      └─> return character vector or NULL\n\n")
+  
   creds <- get_real_aws_credentials_dev()
+  
+  cat("TESTING: Real AWS Athena bucket listing...\n")
   
   # Test listing Athena staging bucket
   result <- list_athena_staging_bucket(creds)
   expect_true(is.character(result) || is.null(result))
   
+  cat("Result type:", class(result), "\n")
+  cat("Result length:", if(is.null(result)) "NULL" else length(result), "\n")
+  
   # If bucket exists, verify it contains "athenaqueryresults" in name
   if (!is.null(result) && length(result) > 0) {
+    cat("Found buckets:", paste(result, collapse = ", "), "\n")
     expect_true(any(grepl("athenaqueryresults", result, ignore.case = TRUE)))
+    cat("✅ Athena bucket filtering works correctly!\n")
+  } else {
+    cat("ℹ️ No Athena staging buckets found in this environment\n")
   }
 })
 

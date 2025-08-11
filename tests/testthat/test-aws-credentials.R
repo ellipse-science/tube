@@ -2,11 +2,35 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 test_that("get_aws_credentials() works with real DEV environment variables", {
+  cat("\n=== TESTING AWS CREDENTIALS RETRIEVAL ===\n")
+  
+  cat("PRODUCTION CODE BEING TESTED:\n")
+  cat("get_aws_credentials <- function(env) {\n")
+  cat("  if (env == \"DEV\") {\n")
+  cat("    access_key <- Sys.getenv(\"AWS_ACCESS_KEY_ID_DEV\")\n")
+  cat("    secret_key <- Sys.getenv(\"AWS_SECRET_ACCESS_KEY_DEV\")\n")
+  cat("  } else if (env == \"PROD\") {\n")
+  cat("    access_key <- Sys.getenv(\"AWS_ACCESS_KEY_ID_PROD\")\n")
+  cat("    secret_key <- Sys.getenv(\"AWS_SECRET_ACCESS_KEY_PROD\")\n")
+  cat("  }\n")
+  cat("  return(list(credentials = list(creds = list(\n")
+  cat("    access_key_id = access_key,\n")
+  cat("    secret_access_key = secret_key\n")
+  cat("  ))))\n")
+  cat("}\n\n")
+  
+  cat("CREDENTIAL STRUCTURE: env → Sys.getenv() → paws-compatible list structure\n\n")
+  
   # Skip if real AWS credentials not available
   skip_if_not(can_test_real_aws_dev(), "Real AWS DEV credentials not available")
 
+  cat("TESTING: DEV environment credential retrieval...\n")
+
   # Test the actual function with real environment variables
   result <- get_aws_credentials("DEV")
+
+  cat("Result structure type:", typeof(result), "\n")
+  cat("Has credentials key:", "credentials" %in% names(result), "\n")
 
   # Verify result is not NULL (indicating success)
   expect_false(is.null(result))
@@ -24,6 +48,9 @@ test_that("get_aws_credentials() works with real DEV environment variables", {
   # Verify DEV environment credentials are being used
   expect_equal(result$credentials$creds$access_key_id, Sys.getenv("AWS_ACCESS_KEY_ID_DEV"))
   expect_equal(result$credentials$creds$secret_access_key, Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV"))
+
+  cat("Access key ID:", substr(result$credentials$creds$access_key_id, 1, 10), "...\n")
+  cat("✅ DEV credentials retrieved and structured correctly!\n")
 })
 
 test_that("get_aws_credentials() works with real PROD environment variables", {

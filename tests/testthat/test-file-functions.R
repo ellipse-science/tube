@@ -3,6 +3,37 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 test_that("file processing functions can be loaded and have proper signatures", {
+  cat("\n=== TESTING FILE PROCESSING FUNCTION SIGNATURES ===\n")
+  
+  cat("PRODUCTION CODE BEING TESTED:\n")
+  cat("1. is_csv_file <- function(filename) {\n")
+  cat("     # Attempts to read CSV file with read.csv()\n")
+  cat("     # Returns TRUE if successful, FALSE if parsing fails\n")
+  cat("     tryCatch({\n")
+  cat("       read.csv(filename, header = TRUE)\n")
+  cat("       return(TRUE)\n")
+  cat("     }, error = function(e) return(FALSE))\n")
+  cat("   }\n\n")
+  
+  cat("2. is_rtf_file <- function(filename) {\n")
+  cat("     # Checks RTF file format and readability\n")
+  cat("     # Returns TRUE if valid RTF, FALSE otherwise\n")
+  cat("   }\n\n")
+  
+  cat("3. parse_landing_zone_input <- function(file_or_folder, folder_content) {\n")
+  cat("     # Validates landing zone data structure\n")
+  cat("     # Checks file types, data integrity, folder structure\n")
+  cat("     # Returns validation results and file information\n")
+  cat("   }\n\n")
+  
+  cat("4. get_column_type <- function(column) {\n")
+  cat("     # Analyzes column data to determine appropriate AWS Glue type\n")
+  cat("     # Maps R data types to Glue/Athena compatible types\n")
+  cat("   }\n\n")
+  
+  cat("DATA VALIDATION PATTERN: File → read/parse → validate structure → return boolean/info\n\n")
+  cat("TESTING: Function existence and signatures...\n")
+  
   # Check that all file processing functions exist
   expect_true(exists("is_csv_file", mode = "function"))
   expect_true(exists("is_rtf_file", mode = "function"))
@@ -14,10 +45,23 @@ test_that("file processing functions can be loaded and have proper signatures", 
   expect_equal(length(formals(is_rtf_file)), 1)         # filename
   expect_equal(length(formals(parse_landing_zone_input)), 2)  # file_or_folder, folder_content
   expect_equal(length(formals(get_column_type)), 1)     # column
+  
+  cat("✅ File processing function signatures verified!\n")
 })
 
 # Tests for is_csv_file function
 test_that("is_csv_file validates CSV files correctly", {
+  cat("\n=== TESTING CSV FILE VALIDATION ===\n")
+  
+  cat("PRODUCTION CODE FLOW:\n")
+  cat("is_csv_file(filename)\n")
+  cat("  └─> tryCatch({\n")
+  cat("      └─> read.csv(filename, header = TRUE)\n")
+  cat("      └─> return(TRUE) if successful\n")
+  cat("  }, error = function(e) return(FALSE))\n\n")
+  
+  cat("TESTING: Valid CSV file creation and validation...\n")
+  
   # Create a valid CSV file
   temp_csv <- tempfile(fileext = ".csv")
   test_data <- data.frame(
@@ -28,8 +72,14 @@ test_that("is_csv_file validates CSV files correctly", {
   )
   write.csv(test_data, temp_csv, row.names = FALSE)
   
+  cat("Created test CSV with", nrow(test_data), "rows and", ncol(test_data), "columns\n")
+  
   # Test valid CSV file
-  expect_true(is_csv_file(temp_csv))
+  result <- is_csv_file(temp_csv)
+  expect_true(result)
+  
+  cat("CSV validation result:", result, "\n")
+  cat("✅ Valid CSV file correctly identified!\n")
   
   # Clean up
   unlink(temp_csv)

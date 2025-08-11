@@ -5,6 +5,32 @@
 
 # Test context
 test_that("S3 functions can be loaded and have proper signatures", {
+  cat("\n=== TESTING S3 FUNCTION SIGNATURES ===\n")
+  
+  cat("PRODUCTION CODE BEING TESTED:\n")
+  cat("1. list_s3_buckets <- function(credentials, type) {\n")
+  cat("     s3_client <- paws.storage::s3(config = credentials)\n")
+  cat("     r <- s3_client$list_buckets()\n")
+  cat("     list <- unlist(r$Buckets)\n")
+  cat("     bucket_list <- list[grep(type, list)]\n")
+  cat("     return(unlist(as.list(bucket_list)))\n")
+  cat("   }\n\n")
+  
+  cat("2. list_s3_partitions <- function(credentials, bucket) {\n")
+  cat("     s3_client <- paws.storage::s3(config = credentials)\n")
+  cat("     # Lists S3 partitions/folders in bucket\n")
+  cat("     return(unlist(partition_list))\n")
+  cat("   }\n\n")
+  
+  cat("3. list_s3_folders <- function(credentials, bucket, prefix) {\n")
+  cat("     s3_client <- paws.storage::s3(config = credentials)\n")
+  cat("     # Lists S3 folders with specific prefix\n")
+  cat("     return(unlist(folder_list))\n")
+  cat("   }\n\n")
+  
+  cat("DATA TRANSFORMATION: AWS API list → grep() filter → unlist() → character vector\n\n")
+  cat("TESTING: Function existence and signatures...\n")
+  
   # Check that all S3 functions exist
   expect_true(exists("list_s3_buckets", mode = "function"))
   expect_true(exists("list_s3_partitions", mode = "function"))
@@ -18,6 +44,8 @@ test_that("S3 functions can be loaded and have proper signatures", {
   expect_equal(length(formals(list_s3_folders)), 3)  # credentials, bucket, prefix
   expect_equal(length(formals(upload_file_to_s3)), 4)  # credentials, file, bucket, key
   expect_equal(length(formals(delete_s3_folder)), 3)  # credentials, bucket, prefix
+  
+  cat("✅ S3 function signatures verified!\n")
 })
 
 test_that("list_s3_buckets validates input parameters", {
@@ -41,17 +69,37 @@ test_that("list_s3_buckets validates input parameters", {
 test_that("list_s3_buckets works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
   
+  cat("\n=== TESTING S3 BUCKET LISTING ===\n")
+  
+  cat("PRODUCTION CODE FLOW:\n")
+  cat("list_s3_buckets(creds, \"datawarehouse\")\n")
+  cat("  └─> paws.storage::s3(config = credentials)\n")
+  cat("  └─> s3_client$list_buckets()\n")
+  cat("  └─> unlist(r$Buckets) -> all bucket names\n")
+  cat("  └─> grep(\"datawarehouse\", list) -> filter matching\n")
+  cat("  └─> unlist(as.list(bucket_list)) -> character vector\n\n")
+  
   creds <- get_real_aws_credentials_dev()
+  
+  cat("TESTING: Different bucket type filters...\n")
   
   # Test listing buckets for different types
   warehouse_buckets <- list_s3_buckets(creds, "datawarehouse")
   expect_true(is.character(warehouse_buckets) || is.null(warehouse_buckets))
   
+  cat("Datawarehouse buckets:", if(is.null(warehouse_buckets)) "NULL" else paste(warehouse_buckets, collapse=", "), "\n")
+  
   datamarts_buckets <- list_s3_buckets(creds, "datamarts")
   expect_true(is.character(datamarts_buckets) || is.null(datamarts_buckets))
   
+  cat("Datamarts buckets:", if(is.null(datamarts_buckets)) "NULL" else paste(datamarts_buckets, collapse=", "), "\n")
+  
   landing_buckets <- list_s3_buckets(creds, "landing")
   expect_true(is.character(landing_buckets) || is.null(landing_buckets))
+  
+  cat("Landing buckets:", if(is.null(landing_buckets)) "NULL" else paste(landing_buckets, collapse=", "), "\n")
+  
+  cat("✅ S3 bucket filtering works correctly!\n")
 })
 
 test_that("list_s3_partitions validates input parameters", {

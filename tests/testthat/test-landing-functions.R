@@ -10,8 +10,8 @@ test_that("landing zone functions can be loaded and have proper signatures", {
   
   # Check function signatures
   expect_equal(length(formals(list_landing_zone_bucket)), 1)     # credentials
-  expect_equal(length(formals(upload_file_to_landing_zone)), 3)  # file_path, credentials, key
-  expect_equal(length(formals(parse_landing_zone_input)), 1)     # user_input
+  expect_equal(length(formals(upload_file_to_landing_zone)), 5)  # credentials, filepath, pipeline_name, file_batch, file_version  
+  expect_equal(length(formals(parse_landing_zone_input)), 2)     # file_or_folder, folder_content
 })
 
 # Tests for list_landing_zone_bucket function
@@ -123,33 +123,28 @@ test_that("parse_landing_zone_input normalizes path formats", {
 
 # Tests for upload_file_to_landing_zone function
 test_that("upload_file_to_landing_zone validates input parameters", {
-  # Test with NULL file_path
-  expect_error(
-    upload_file_to_landing_zone(file_path = NULL, credentials = list(), key = "test"),
-    class = "error"
-  )
-  
   # Test with NULL credentials
   expect_error(
-    upload_file_to_landing_zone(file_path = "test.txt", credentials = NULL, key = "test"),
+    upload_file_to_landing_zone(credentials = NULL, filepath = "test.txt", pipeline_name = "test", file_batch = "batch1"),
     class = "error"
   )
   
-  # Test with NULL key
+  # Test with non-existent file
   expect_error(
-    upload_file_to_landing_zone(file_path = "test.txt", credentials = list(), key = NULL),
+    upload_file_to_landing_zone(credentials = list(), filepath = "/non/existent/file.txt", pipeline_name = "test", file_batch = "batch1"),
     class = "error"
   )
   
-  # Test with empty strings
+  # Test with NULL pipeline_name
   expect_error(
-    upload_file_to_landing_zone(file_path = "", credentials = list(), key = "test"),
+    upload_file_to_landing_zone(credentials = list(), filepath = "test.txt", pipeline_name = NULL, file_batch = "batch1"),
     class = "error"
   )
   
+  # Test with neither batch nor version specified
   expect_error(
-    upload_file_to_landing_zone(file_path = "test.txt", credentials = list(), key = ""),
-    class = "error"
+    upload_file_to_landing_zone(credentials = list(), filepath = "test.txt", pipeline_name = "test"),
+    "Either file_batch or version must be specified"
   )
 })
 
@@ -157,16 +152,19 @@ test_that("upload_file_to_landing_zone handles non-existent files", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
   
   creds <- get_real_aws_credentials_dev()
-  
-  # Test with non-existent file
-  expect_error(
-    upload_file_to_landing_zone(
-      file_path = "/path/to/nonexistent/file.txt",
-      credentials = creds,
-      key = "test/nonexistent.txt"
-    ),
-    class = "error"
-  )
+  # Additional validation test with real credentials if available
+  creds <- get_real_aws_credentials_dev()
+  if (!is.null(creds)) {
+    expect_error(
+      upload_file_to_landing_zone(
+        credentials = creds,
+        filepath = "/path/to/nonexistent/file.txt", 
+        pipeline_name = "test",
+        file_batch = "batch1"
+      ),
+      class = "error"
+    )
+  }
 })
 
 test_that("upload_file_to_landing_zone works with real AWS credentials and files", {
@@ -272,7 +270,7 @@ test_that("landing zone functions work with S3 integration", {
   
   # Test integration between landing zone and general S3 functions
   landing_bucket <- list_landing_zone_bucket(creds)
-  all_buckets <- list_s3_buckets(creds)
+  all_buckets <- list_s3_buckets(creds, "landing")  # Add required type parameter
   
   if (!is.null(landing_bucket) && !is.null(all_buckets)) {
     expect_true(is.character(landing_bucket))
