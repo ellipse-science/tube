@@ -59,7 +59,18 @@ list_datawarehouse_database <- function(credentials) {
 list_datawarehouse_tables <- function(credentials, simplify = TRUE) {
   logger::log_debug("[tube::list_datawarehouse_tables] entering function")
 
-  datawarehouse_database <- list_glue_tables(credentials, "datawarehouse")
+  # Get the actual database name dynamically instead of hardcoding "datawarehouse"
+  database_name <- list_datawarehouse_database(credentials)
+  if (is.null(database_name) || length(database_name) == 0) {
+    logger::log_warn("[tube::list_datawarehouse_tables] No datawarehouse database found")
+    return(NULL)
+  }
+  
+  # Use the first database if multiple are returned
+  database_name <- database_name[1]
+  
+  # Get raw data (simplify = FALSE) so we can handle simplification here
+  datawarehouse_database <- list_glue_tables(credentials, database_name, NULL, simplify = FALSE)
 
   logger::log_debug("[tube::list_datawarehouse_tables] returning results")
 

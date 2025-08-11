@@ -108,7 +108,8 @@ test_that("ellipse_describe validates parameters and describes resources", {
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       describe_result <- ellipse_describe(conn, table = "nonexistent_table")
-      expect_true(is.list(describe_result) || is.data.frame(describe_result) || is.null(describe_result))
+      # ellipse_describe should return FALSE for datawarehouse operations
+      expect_equal(describe_result, FALSE)
     }
   })
 })

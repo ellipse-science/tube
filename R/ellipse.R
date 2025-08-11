@@ -763,16 +763,17 @@ ellipse_unpublish <- function(con, datamart, table) {
 ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
-  creds <- get_aws_credentials(env)
-
-  # If schema contains datawarehouse, exit the function
+  
+  # If schema contains datawarehouse, exit the function BEFORE any AWS calls
   if (grepl("datawarehouse", schema)) {
     cli::cli_alert_danger("L'opération ellipse_describe n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
+  
+  creds <- get_aws_credentials(env)
 
   if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_desc)) {
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   table_props <- list_glue_table_properties(creds, schema, table)
@@ -793,14 +794,16 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   cli::cli_rule()
 
   # add x-amz-meta- prefix to the tags if not already present
-  new_table_tags <- setNames(
-    new_table_tags,
-    ifelse(
-      !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
-      paste0("x-amz-meta-", names(new_table_tags)),
-      names(new_table_tags)
+  if (!is.null(new_table_tags) && length(new_table_tags) > 0) {
+    new_table_tags <- setNames(
+      new_table_tags,
+      ifelse(
+        !sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+        paste0("x-amz-meta-", names(new_table_tags)),
+        names(new_table_tags)
+      )
     )
-  )
+  }
 
   # if there are new tags in new_table_tags that are not in the current table tags, we add them
   # if there are tags in new_table_tags that are also in the current table tags and have diffrent
@@ -815,16 +818,18 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   } else {
     new_tags <- NULL
   }
-
+  
   # add x-amz-meta- prefix to the tags if not already present
-  new_tags <- setNames(
-    new_tags,
-    ifelse(
-      !sapply(grepl("x-amz-meta-", names(new_tags)), \(x) x),
-      paste0("x-amz-meta-", names(new_tags)),
-      names(new_tags)
+  if (!is.null(new_tags) && length(new_tags) > 0) {
+    new_tags <- setNames(
+      new_tags,
+      ifelse(
+        !sapply(grepl("x-amz-meta-", names(new_tags)), \(x) x),
+        paste0("x-amz-meta-", names(new_tags)),
+        names(new_tags)
+      )
     )
-  )
+  }
 
   change_tags <- FALSE
   change_desc <- FALSE

@@ -88,27 +88,28 @@ test_that("check_database handles edge cases", {
 
 # Tests for check_pipeline_before_ingest function
 test_that("check_pipeline_before_ingest validates pipeline parameters", {
-  # Create mock landing zone partitions for testing
-  mock_partitions <- c("pipeline1/", "pipeline2/", "test-pipeline/")
+  # Create mock landing zone partitions for testing with valid pipeline names
+  mock_partitions <- c("a-pipeline1/", "r-pipeline2/", "dict-test-pipeline/")
   
-  # Test valid pipeline that exists in partitions
-  expect_true(check_pipeline_before_ingest("pipeline1", mock_partitions, NULL, NULL))
-  expect_true(check_pipeline_before_ingest("pipeline2", mock_partitions, NULL, NULL))
+  # Test valid pipeline that exists in partitions and follows naming convention
+  # a- and r- pipelines need file_batch, dict- pipelines need file_version
+  expect_true(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", NULL))
+  expect_true(check_pipeline_before_ingest("r-pipeline2", mock_partitions, "batch2", NULL))
   
   # Test invalid pipeline that doesn't exist in partitions
-  expect_false(check_pipeline_before_ingest("nonexistent", mock_partitions, NULL, NULL))
+  expect_false(check_pipeline_before_ingest("a-nonexistent", mock_partitions, "batch1", NULL))
   expect_false(check_pipeline_before_ingest("", mock_partitions, NULL, NULL))
   expect_false(check_pipeline_before_ingest(NULL, mock_partitions, NULL, NULL))
 })
 
 test_that("check_pipeline_before_ingest handles file versioning scenarios", {
-  mock_partitions <- c("pipeline1/", "pipeline2/")
+  mock_partitions <- c("a-pipeline1/", "r-pipeline2/")
   
   # Test with file_batch and file_version combinations
-  expect_no_error(check_pipeline_before_ingest("pipeline1", mock_partitions, "batch1", "v1.0"))
-  expect_no_error(check_pipeline_before_ingest("pipeline1", mock_partitions, "batch1", NULL))
-  expect_no_error(check_pipeline_before_ingest("pipeline1", mock_partitions, NULL, "v1.0"))
-  expect_no_error(check_pipeline_before_ingest("pipeline1", mock_partitions, NULL, NULL))
+  expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", "v1.0"))
+  expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", NULL))
+  expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, NULL, "v1.0"))
+  expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, NULL, NULL))
 })
 
 # Tests for check_file_versioning_before_ingest function

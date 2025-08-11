@@ -5,7 +5,7 @@
 #' @return La réponse de l'utilisateur
 ask_yes_no <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
-    return(unattended_option %in% c("oui", "o"))
+    return(tolower(unattended_option) %in% c("oui", "o"))
   }
   answer <- readline(prompt = paste0(cli::symbol$fancy_question_mark, question, " (oui/non) "))
   return(invisible(tolower(answer) %in% c("oui", "o")))
