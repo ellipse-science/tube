@@ -14,8 +14,8 @@ convert a url into a string
 }
 \examples{
 \dontrun{
-  r <- convert_url_to_key(url)
-  print(r)
+r <- convert_url_to_key(url)
+print(r)
 }
 
 }

@@ -32,7 +32,7 @@ to the landing zone bucket so that it gets processed by the pipeline (extractor 
 }
 \examples{
 \dontrun{
- r <- upload_file_to_landing_zone(get_aws_credentials(), "my_folder", "my_pipeline", NULL, TRUE)
+r <- upload_file_to_landing_zone(get_aws_credentials(), "my_folder", "my_pipeline", NULL, TRUE)
 print(r)
 }
 }

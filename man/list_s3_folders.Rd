@@ -14,7 +14,7 @@ with the paws package
 \item{prefix}{The prefix (or partition) to list folders from}
 }
 \value{
-A list of S3 folders
+A character vector of S3 folders
 }
 \description{
 List all the S3 folders within a particular prefix (or partition) in a bucket

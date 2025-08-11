@@ -12,7 +12,7 @@ with the paws package
 #' @param bucket The bucket to list partitions from}
 }
 \value{
-A list of S3 partitions
+A character vector of S3 partitions
 }
 \description{
 List all the S3 partitions in a bucket even the empty ones (containing no object)
