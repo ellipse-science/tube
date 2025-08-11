@@ -1,3 +1,6 @@
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("convert_url_to_key works with HTTP URLs", {
   cat("\n=== TESTING URL CONVERSION UTILITY ===\n")
   

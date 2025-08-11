@@ -2,6 +2,9 @@
 # Tests for: list_datamarts_database, list_datamart_tables, upload_dataframe_to_datamart
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("datamart functions can be loaded and have proper signatures", {
   cat("\n=== TESTING DATAMART FUNCTION SIGNATURES ===\n")
   

@@ -3,6 +3,9 @@
 #           upload_file_to_s3, delete_s3_folder
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 # Test context
 test_that("S3 functions can be loaded and have proper signatures", {
   cat("\n=== TESTING S3 FUNCTION SIGNATURES ===\n")

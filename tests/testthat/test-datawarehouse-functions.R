@@ -2,6 +2,9 @@
 # Tests for: list_datawarehouse_database, list_datawarehouse_tables
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("DATAWAREHOUSE: function signatures are correct", {
   cat("\n=== TESTING FUNCTION SIGNATURES ===\n")
   

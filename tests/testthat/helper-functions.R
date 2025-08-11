@@ -6,16 +6,16 @@
 #' Uses actual environment variables from .Renviron
 #' @return Named list with AWS credentials in production-compatible format or NULL if not available
 get_real_aws_credentials_dev <- function() {
-  cat("🔍 [TEST HELPER] get_real_aws_credentials_dev() called\n")
+  #cat("🔍 [TEST HELPER] get_real_aws_credentials_dev() called\n")
   
   access_key <- Sys.getenv("AWS_ACCESS_KEY_ID_DEV")
   secret_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV")
   region <- Sys.getenv("AWS_REGION")
   
-  cat("    Environment variables retrieved:\n")
-  cat("    AWS_ACCESS_KEY_ID_DEV: ", substr(access_key, 1, 10), "...\n")
-  cat("    AWS_SECRET_ACCESS_KEY_DEV: [HIDDEN]\n")
-  cat("    AWS_REGION: ", region, "\n")
+  #cat("    Environment variables retrieved:\n")
+  #cat("    AWS_ACCESS_KEY_ID_DEV: ", substr(access_key, 1, 10), "...\n")
+  #cat("    AWS_SECRET_ACCESS_KEY_DEV: [HIDDEN]\n")
+  #cat("    AWS_REGION: ", region, "\n")
 
   if (nzchar(access_key) && nzchar(secret_key) && nzchar(region)) {
     # Return structure that matches production get_aws_credentials() format
@@ -27,12 +27,12 @@ get_real_aws_credentials_dev <- function() {
         )
       )
     )
-    cat("✅ [TEST HELPER] Returning production-compatible nested credential structure:\n")
-    cat("    Type: ", typeof(result), ", Length: ", length(result), "\n")
-    cat("    Names: ", paste(names(result), collapse = ", "), "\n")
+    #cat("✅ [TEST HELPER] Returning production-compatible nested credential structure:\n")
+    #cat("    Type: ", typeof(result), ", Length: ", length(result), "\n")
+    #cat("    Names: ", paste(names(result), collapse = ", "), "\n")
     return(result)
   } else {
-    cat("❌ [TEST HELPER] Missing credentials, returning NULL\n")
+    #cat("❌ [TEST HELPER] Missing credentials, returning NULL\n")
     return(NULL)
   }
 }
@@ -40,7 +40,7 @@ get_real_aws_credentials_dev <- function() {
 #' Check if real AWS DEV credentials are available for testing
 #' @return Logical indicating if real AWS testing is possible
 can_test_real_aws_dev <- function() {
-  cat("🔍 [TEST HELPER] can_test_real_aws_dev() called\n")
+  #cat("🔍 [TEST HELPER] can_test_real_aws_dev() called\n")
   creds <- get_real_aws_credentials_dev()
   result <- !is.null(creds)
   cat("    Result: ", result, "\n")

@@ -3,6 +3,9 @@
 #           list_datawarehouse_bucket, list_landing_zone_bucket, list_landing_zone_partitions
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("bucket functions can be loaded and have proper signatures", {
   cat("\n=== TESTING BUCKET FUNCTION SIGNATURES ===\n")
   

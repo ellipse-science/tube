@@ -3,6 +3,9 @@
 #           convert_url_to_key, %>% (pipe operator)
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("utility functions can be loaded and have proper signatures", {
   # Check that all utility functions exist
   expect_true(exists("ask_yes_no", mode = "function"))

@@ -1,6 +1,9 @@
 # Unit tests for get_aws_credentials() function with REAL AWS connections
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("get_aws_credentials() works with real DEV environment variables", {
   cat("\n=== TESTING AWS CREDENTIALS RETRIEVAL ===\n")
   

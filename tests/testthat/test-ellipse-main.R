@@ -4,6 +4,9 @@
 #           ellipse_unpublish, ellipse_partitions
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("ellipse main functions can be loaded and have proper signatures", {
   # Check that all ellipse main functions exist
   expect_true(exists("ellipse_connect", mode = "function"))

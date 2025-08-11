@@ -5,6 +5,9 @@
 #           check_params_before_refresh
 # Following requirement: "use real life connections and data... Do not mock everything"
 
+# Load current source code (not published package)
+devtools::load_all(".")
+
 test_that("validation functions can be loaded and have proper signatures", {
   # Check that all validation functions exist
   expect_true(exists("check_env", mode = "function"))

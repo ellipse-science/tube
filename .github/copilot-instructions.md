@@ -341,6 +341,11 @@ tests/
 ```
 
 ### **MANDATORY TESTING RULE**
+**YOU MUST TEST AGAINST SOURCE CODE RATHER THAN PUBLISHED PACKAGE**
+- **ALWAYS run tests against the source code** in the `R/` directory
+- **NEVER run tests against the installed package** - this can lead to false positives
+- **Tests must be run with `devtools::test()`** to ensure they are executed
+- **Tests must be run with `Rscript`** to ensure consistent output visibility
 **NO CODE CAN BE PUSHED WITHOUT COMPLETE UNIT TESTS**
 - Every function must have tests before it can be committed
 - **IF COPILOT CREATES A NEW FUNCTION, COPILOT MUST IMMEDIATELY CREATE THE ASSOCIATED TESTS**
