@@ -180,17 +180,23 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   # Basic information
   cli::cli_h3("📋 Overview")
   cli::cli_text("")
+
   table_name <- result[1, "table_name"]
   unique_tags <- unique(result$tag)
   tags_count <- length(unique_tags)
   tags_list <- paste(unique_tags, collapse = ", ")
   total_files <- as.integer(result[1, "total_files"])
 
-  cli::cli_ul()
-  cli::cli_li(sprintf("📋 Dataset:     %s", table_name))
-  cli::cli_li(sprintf("🏷️ Tags:        %d (%s)", tags_count, tags_list))
-  cli::cli_li(sprintf("📄 Total files: %d", total_files))
-  cli::cli_end()
+  # Create overview data frame
+  overview_data <- data.frame(
+    Property = c("📋 Dataset", "🏷️ Tags", "📄 Total files"),
+    Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+  # Print the overview table
+  print(overview_data, row.names = FALSE, right = FALSE)
   cli::cli_text("")
 
   # Tags details
