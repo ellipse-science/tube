@@ -54,7 +54,7 @@ format_public_datalake_all_datasets <- function(con) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   # Print the data frame as a simple table
   print(display_summary, row.names = FALSE, right = FALSE)
 
@@ -75,7 +75,7 @@ format_public_datalake_all_datasets <- function(con) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   # Print the data frame as a simple table
   print(display_details, row.names = FALSE, right = FALSE)
 
@@ -119,7 +119,7 @@ format_public_datalake_pattern_search <- function(con, pattern) {
   truncated_tags <- sapply(result$tags_list, function(x) {
     if (nchar(x) > 50) paste0(substr(x, 1, 47), "...") else x
   })
-  
+
   display_pattern <- data.frame(
     Dataset = paste("📁", result$table_name),
     Tags = result$tags_count,
@@ -128,7 +128,7 @@ format_public_datalake_pattern_search <- function(con, pattern) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   # Print the data frame as a simple table
   print(display_pattern, row.names = FALSE, right = FALSE)
 
@@ -159,6 +159,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       ethical_stamp,
       regexp_extract(user_metadata_json, \'"([^"]+)"\', 1) as user_metadata_fields,
       regexp_extract(user_metadata_json, \':\\\\s*"([^"]+)"\', 1) as user_metadata_values,
+      substr(user_metadata_json, 1, 50) || \'...\' as user_metadata_preview,
       regexp_replace(file_paths, \'s3://[^/]+/\', \'\') as file_paths,
       COUNT(*) OVER () as total_rows,
       SUM(CAST(file_count AS INTEGER)) OVER () as total_files
@@ -196,7 +197,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   # Tags details
   cli::cli_h3("🏷️  Tag Details")
   cli::cli_text("")
-  
+
   # Create a clean data frame with icons integrated into values for tag details
   display_tag_details <- data.frame(
     Tag = paste("🏷️", result$tag),
@@ -209,7 +210,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   # Add file paths column if any exist
   if (any(!is.na(result$file_paths) & nzchar(result$file_paths))) {
     display_tag_details$`File Paths` <- ifelse(
@@ -218,10 +219,10 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       ""
     )
   }
-  
+
   # Print the data frame as a simple table
   print(display_tag_details, row.names = FALSE, right = FALSE)
-  
+
   cli::cli_text("")
   cli::cli_rule()
 
@@ -315,7 +316,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   # Basic information
   cli::cli_h3("📋 Overview")
-  
+
   # Create overview data frame
   overview_data <- data.frame(
     Property = c("📄 Total files", "📅 Creation date", "🔒 Sensitivity level", "✅ Ethical stamp"),
@@ -323,7 +324,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   # Print the overview table
   print(overview_data, row.names = FALSE, right = FALSE)
   cli::cli_text("")
@@ -335,7 +336,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-  
+
   if (!is.na(consent_expiry_date) && nzchar(consent_expiry_date)) {
     dates_info <- rbind(dates_info, data.frame(
       Property = "⏰ Consent expiry",
@@ -344,7 +345,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       check.names = FALSE
     ))
   }
-  
+
   if (!is.na(data_destruction_date) && nzchar(data_destruction_date)) {
     dates_info <- rbind(dates_info, data.frame(
       Property = "🗑️  Data destruction",
@@ -353,7 +354,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       check.names = FALSE
     ))
   }
-  
+
   if (nrow(dates_info) > 0) {
     cli::cli_h3("📅 Important Dates")
     print(dates_info, row.names = FALSE, right = FALSE)
@@ -363,16 +364,44 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   # Custom metadata (if any)
   if (!is.null(user_metadata) && length(user_metadata) > 0) {
     cli::cli_h3("🏷️  Custom Metadata")
-    
-    metadata_data <- data.frame(
-      Field = paste("🏷️", names(user_metadata)),
-      Value = sapply(user_metadata, as.character),
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
-    
-    print(metadata_data, row.names = FALSE, right = FALSE)
-    cli::cli_text("")
+
+    # Safely handle nested or complex metadata structures
+    tryCatch({
+      metadata_fields <- names(user_metadata)
+      metadata_values <- character(length(metadata_fields))
+
+      for (i in seq_along(metadata_fields)) {
+        field_value <- user_metadata[[metadata_fields[i]]]
+        # Convert complex structures to string safely
+        if (is.list(field_value) || length(field_value) > 1) {
+          metadata_values[i] <- paste(as.character(field_value), collapse = ", ")
+        } else {
+          metadata_values[i] <- as.character(field_value)
+        }
+      }
+
+      metadata_data <- data.frame(
+        Field = paste("🏷️", metadata_fields),
+        Value = metadata_values,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+
+      print(metadata_data, row.names = FALSE, right = FALSE)
+      cli::cli_text("")
+    }, error = function(e) {
+      # Fallback to simple display if data frame creation fails
+      cli::cli_ul()
+      for (field_name in names(user_metadata)) {
+        field_value <- user_metadata[[field_name]]
+        if (is.list(field_value) || length(field_value) > 1) {
+          field_value <- paste(as.character(field_value), collapse = ", ")
+        }
+        cli::cli_li(glue::glue("🏷️ {field_name}: {field_value}"))
+      }
+      cli::cli_end()
+      cli::cli_text("")
+    })
   }
 
   # File information
