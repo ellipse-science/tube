@@ -17,27 +17,70 @@ format_public_datalake_all_datasets <- function(con) {
     return(invisible(NULL))
   }
 
-  # Create nice output with icons
+  # Create tabular output with proper formatting
   cli::cli_h2("🗂️  Public Datalake - All Datasets")
   cli::cli_text("")
 
-  # Group by dataset name for better display
-  datasets <- unique(result$table_name)
+  # Create a summary table first
+  dataset_names <- unique(result$table_name)
+  dataset_summary <- data.frame(
+    table_name = character(0),
+    tags_count = integer(0),
+    total_files = numeric(0),
+    first_created = character(0),
+    stringsAsFactors = FALSE
+  )
 
-  for (dataset in datasets) {
+  for (dataset in dataset_names) {
     dataset_rows <- result[result$table_name == dataset, ]
-    cli::cli_h3(glue::glue("📁 {dataset}"))
-    cli::cli_ul()
-    for (i in seq_len(nrow(dataset_rows))) {
-      tag <- dataset_rows[i, "tag"]
-      file_count <- dataset_rows[i, "file_count"]
-      creation_date <- dataset_rows[i, "creation_date"]
-      cli::cli_li(glue::glue("🏷️  Tag: {tag} | 📄 Files: {file_count} | 📅 Created: {creation_date}"))
-    }
-    cli::cli_end()
-    cli::cli_text("")
+    dataset_summary <- rbind(dataset_summary, data.frame(
+      table_name = dataset,
+      tags_count = nrow(dataset_rows),
+      total_files = sum(as.numeric(dataset_rows$file_count), na.rm = TRUE),
+      first_created = min(dataset_rows$creation_date, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    ))
   }
 
+  cli::cli_h3("📋 Dataset Summary")
+  cli::cli_text("")
+
+  # Create a clean data frame with icons integrated into values
+  display_summary <- data.frame(
+    Dataset = paste("📁", dataset_summary$table_name),
+    Tags = dataset_summary$tags_count,
+    Files = dataset_summary$total_files,
+    `First Created` = dataset_summary$first_created,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Print the data frame as a simple table
+  print(display_summary, row.names = FALSE, right = FALSE)
+
+  cli::cli_text("")
+  cli::cli_rule()
+
+  # Detailed table with all tags
+  cli::cli_h3("🏷️  Detailed Tag Information")
+  cli::cli_text("")
+
+  # Create a clean data frame with icons integrated into values
+  display_details <- data.frame(
+    Dataset = paste("📁", result$table_name),
+    Tag = paste("🏷️", result$tag),
+    Files = result$file_count,
+    Created = result$creation_date,
+    Sensitivity = paste("Level", result$sensitivity_level),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Print the data frame as a simple table
+  print(display_details, row.names = FALSE, right = FALSE)
+
+  cli::cli_text("")
+  cli::cli_rule()
   cli::cli_alert_info("💡 Use ellipse_discover(con, 'dataset_name') for detailed information")
   invisible(result)
 }
@@ -65,25 +108,32 @@ format_public_datalake_pattern_search <- function(con, pattern) {
     return(invisible(NULL))
   }
 
-  # Create nice output with icons
+  # Create tabular output with proper formatting
   cli::cli_h2(glue::glue("🔍 Search Results for: {pattern}"))
   cli::cli_text("")
   cli::cli_alert_success(glue::glue("Found {nrow(result)} dataset(s) matching pattern"))
   cli::cli_text("")
 
-  for (i in seq_len(nrow(result))) {
-    table_name <- result[i, "table_name"]
-    tags_count <- result[i, "tags_count"]
-    tags_list <- result[i, "tags_list"]
-    total_files <- result[i, "total_files"]
+  # Create a clean data frame with icons integrated into values
+  # Truncate long tag lists for better display
+  truncated_tags <- sapply(result$tags_list, function(x) {
+    if (nchar(x) > 50) paste0(substr(x, 1, 47), "...") else x
+  })
+  
+  display_pattern <- data.frame(
+    Dataset = paste("📁", result$table_name),
+    Tags = result$tags_count,
+    `Total Files` = result$total_files,
+    `Available Tags` = truncated_tags,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Print the data frame as a simple table
+  print(display_pattern, row.names = FALSE, right = FALSE)
 
-    cli::cli_h3(glue::glue("📁 {table_name}"))
-    cli::cli_ul()
-    cli::cli_li(glue::glue("🏷️  Tags: {tags_count} ({tags_list})"))
-    cli::cli_li(glue::glue("📄 Total files: {total_files}"))
-    cli::cli_end()
-    cli::cli_text("")
-  }
+  cli::cli_text("")
+  cli::cli_rule()
 
   cli::cli_alert_info("💡 Use ellipse_discover(con, 'exact_dataset_name') for detailed information")
   invisible(result)
@@ -145,30 +195,35 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Tags details
   cli::cli_h3("🏷️  Tag Details")
-  for (i in seq_len(nrow(result))) {
-    tag <- result[i, "tag"]
-    file_count <- result[i, "file_count"]
-    creation_date <- result[i, "creation_date"]
-    sensitivity_level <- result[i, "sensitivity_level"]
-    consent_expiry_date <- result[i, "consent_expiry_date"]
-    data_destruction_date <- result[i, "data_destruction_date"]
-    ethical_stamp <- result[i, "ethical_stamp"]
-    file_paths <- result[i, "file_paths"]
-
-    cli::cli_h4(glue::glue("Tag: {tag}"))
-    cli::cli_ul()
-    cli::cli_li(glue::glue("📄 Files: {file_count}"))
-    cli::cli_li(glue::glue("📅 Created: {creation_date}"))
-    cli::cli_li(glue::glue("⚠️  Sensitivity: Level {sensitivity_level}"))
-    cli::cli_li(glue::glue("🔒 Consent expires: {consent_expiry_date}"))
-    cli::cli_li(glue::glue("🗑️  Data destruction: {data_destruction_date}"))
-    cli::cli_li(glue::glue("✅ Ethical stamp: {ethical_stamp}"))
-    if (!is.na(file_paths) && nzchar(file_paths)) {
-      cli::cli_li(glue::glue("📂 Files: {file_paths}"))
-    }
-    cli::cli_end()
-    cli::cli_text("")
+  cli::cli_text("")
+  
+  # Create a clean data frame with icons integrated into values for tag details
+  display_tag_details <- data.frame(
+    Tag = paste("🏷️", result$tag),
+    Files = paste("📄", result$file_count),
+    Created = paste("📅", result$creation_date),
+    Sensitivity = paste("⚠️ Level", result$sensitivity_level),
+    `Consent Expires` = paste("🔒", result$consent_expiry_date),
+    `Data Destruction` = paste("🗑️", result$data_destruction_date),
+    `Ethical Stamp` = paste("✅", result$ethical_stamp),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Add file paths column if any exist
+  if (any(!is.na(result$file_paths) & nzchar(result$file_paths))) {
+    display_tag_details$`File Paths` <- ifelse(
+      !is.na(result$file_paths) & nzchar(result$file_paths),
+      paste("📂", result$file_paths),
+      ""
+    )
   }
+  
+  # Print the data frame as a simple table
+  print(display_tag_details, row.names = FALSE, right = FALSE)
+  
+  cli::cli_text("")
+  cli::cli_rule()
 
   cli::cli_alert_info(glue::glue("💡 Use ellipse_discover(con, '{dataset_name}', 'tag_name') for specific tag details"))
   invisible(result)
@@ -260,35 +315,63 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   # Basic information
   cli::cli_h3("📋 Overview")
-  cli::cli_ul()
-  cli::cli_li(glue::glue("📄 Total files: {file_count}"))
-  cli::cli_li(glue::glue("📅 Creation date: {creation_date}"))
-  cli::cli_li(glue::glue("🔒 Sensitivity level: {sensitivity_level}"))
-  cli::cli_li(glue::glue("✅ Ethical stamp: {ethical_stamp}"))
-  cli::cli_end()
+  
+  # Create overview data frame
+  overview_data <- data.frame(
+    Property = c("📄 Total files", "📅 Creation date", "🔒 Sensitivity level", "✅ Ethical stamp"),
+    Value = c(file_count, creation_date, paste("Level", sensitivity_level), ethical_stamp),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Print the overview table
+  print(overview_data, row.names = FALSE, right = FALSE)
   cli::cli_text("")
 
-  # Dates information
-  cli::cli_h3("📅 Important Dates")
-  cli::cli_ul()
+  # Dates information  
+  dates_info <- data.frame(
+    Property = character(0),
+    Value = character(0),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
   if (!is.na(consent_expiry_date) && nzchar(consent_expiry_date)) {
-    cli::cli_li(glue::glue("⏰ Consent expiry: {consent_expiry_date}"))
+    dates_info <- rbind(dates_info, data.frame(
+      Property = "⏰ Consent expiry",
+      Value = consent_expiry_date,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    ))
   }
+  
   if (!is.na(data_destruction_date) && nzchar(data_destruction_date)) {
-    cli::cli_li(glue::glue("🗑️  Data destruction: {data_destruction_date}"))
+    dates_info <- rbind(dates_info, data.frame(
+      Property = "🗑️  Data destruction",
+      Value = data_destruction_date,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    ))
   }
-  cli::cli_end()
-  cli::cli_text("")
+  
+  if (nrow(dates_info) > 0) {
+    cli::cli_h3("📅 Important Dates")
+    print(dates_info, row.names = FALSE, right = FALSE)
+    cli::cli_text("")
+  }
 
   # Custom metadata (if any)
   if (!is.null(user_metadata) && length(user_metadata) > 0) {
     cli::cli_h3("🏷️  Custom Metadata")
-    cli::cli_ul()
-    for (field_name in names(user_metadata)) {
-      field_value <- user_metadata[[field_name]]
-      cli::cli_li(glue::glue("{field_name}: {field_value}"))
-    }
-    cli::cli_end()
+    
+    metadata_data <- data.frame(
+      Field = paste("🏷️", names(user_metadata)),
+      Value = sapply(user_metadata, as.character),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    print(metadata_data, row.names = FALSE, right = FALSE)
     cli::cli_text("")
   }
 
