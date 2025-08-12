@@ -59,20 +59,23 @@ list_s3_partitions <- function(credentials, bucket) {
   )
 
   logger::log_debug("[tube::list_s3_partitions] listing partitions")
-  r <- tryCatch({
-    s3_client$list_objects_v2(
-      Bucket = bucket,
-      Delimiter = "/"
-    )
-  }, error = function(e) {
-    if (grepl("NoSuchBucket", e$message)) {
-      logger::log_debug("[tube::list_s3_partitions] bucket does not exist")
-      NULL
-    } else {
-      logger::log_error("[tube::list_s3_partitions] AWS API error")
-      NULL
+  r <- tryCatch(
+    {
+      s3_client$list_objects_v2(
+        Bucket = bucket,
+        Delimiter = "/"
+      )
+    },
+    error = function(e) {
+      if (grepl("NoSuchBucket", e$message)) {
+        logger::log_debug("[tube::list_s3_partitions] bucket does not exist")
+        NULL
+      } else {
+        logger::log_error("[tube::list_s3_partitions] AWS API error")
+        NULL
+      }
     }
-  })
+  )
 
   if (is.null(r)) {
     return(NULL)
@@ -111,21 +114,24 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   )
 
   logger::log_debug("[tube::list_s3_folders] listing folders")
-  r <- tryCatch({
-    s3_client$list_objects_v2(
-      Bucket = bucket,
-      Prefix = prefix,
-      Delimiter = "/"
-    )
-  }, error = function(e) {
-    if (grepl("NoSuchBucket", e$message)) {
-      logger::log_debug("[tube::list_s3_folders] bucket does not exist")
-      NULL
-    } else {
-      logger::log_error("[tube::list_s3_folders] AWS API error")
-      NULL
+  r <- tryCatch(
+    {
+      s3_client$list_objects_v2(
+        Bucket = bucket,
+        Prefix = prefix,
+        Delimiter = "/"
+      )
+    },
+    error = function(e) {
+      if (grepl("NoSuchBucket", e$message)) {
+        logger::log_debug("[tube::list_s3_folders] bucket does not exist")
+        NULL
+      } else {
+        logger::log_error("[tube::list_s3_folders] AWS API error")
+        NULL
+      }
     }
-  })
+  )
 
   if (is.null(r)) {
     return(NULL)

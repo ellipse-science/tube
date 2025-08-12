@@ -21,16 +21,16 @@ test_that("ellipse main functions can be loaded and have proper signatures", {
   expect_true(exists("ellipse_partitions", mode = "function"))
 
   # Check function signatures (get actual parameter counts)
-  expect_gte(length(formals(ellipse_connect)), 0)     # Connection parameters
-  expect_gte(length(formals(ellipse_disconnect)), 0)  # Connection object
-  expect_gte(length(formals(ellipse_discover)), 1)    # Connection + parameters
-  expect_gte(length(formals(ellipse_describe)), 2)    # Connection + table info
-  expect_gte(length(formals(ellipse_query)), 2)       # Connection + query
-  expect_gte(length(formals(ellipse_ingest)), 3)      # Connection + data + options
-  expect_gte(length(formals(ellipse_process)), 2)     # Connection + processing options
-  expect_gte(length(formals(ellipse_publish)), 3)     # Connection + table + options
-  expect_gte(length(formals(ellipse_unpublish)), 3)   # Connection + table + options
-  expect_gte(length(formals(ellipse_partitions)), 2)  # Connection + table info
+  expect_gte(length(formals(ellipse_connect)), 0) # Connection parameters
+  expect_gte(length(formals(ellipse_disconnect)), 0) # Connection object
+  expect_gte(length(formals(ellipse_discover)), 1) # Connection + parameters
+  expect_gte(length(formals(ellipse_describe)), 2) # Connection + table info
+  expect_gte(length(formals(ellipse_query)), 2) # Connection + query
+  expect_gte(length(formals(ellipse_ingest)), 3) # Connection + data + options
+  expect_gte(length(formals(ellipse_process)), 2) # Connection + processing options
+  expect_gte(length(formals(ellipse_publish)), 3) # Connection + table + options
+  expect_gte(length(formals(ellipse_unpublish)), 3) # Connection + table + options
+  expect_gte(length(formals(ellipse_partitions)), 2) # Connection + table info
 })
 
 # Tests for ellipse_connect function
@@ -173,13 +173,16 @@ test_that("ellipse_process validates parameters and handles data processing", {
   expect_no_error({
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
-      process_result <- tryCatch({
-        ellipse_process(conn)
-      }, error = function(e) {
-        # Function might require specific parameters
-        expect_true(inherits(e, "error"))
-        NULL
-      })
+      process_result <- tryCatch(
+        {
+          ellipse_process(conn)
+        },
+        error = function(e) {
+          # Function might require specific parameters
+          expect_true(inherits(e, "error"))
+          NULL
+        }
+      )
     }
   })
 })
@@ -198,13 +201,16 @@ test_that("ellipse_publish validates parameters and handles publishing", {
   expect_no_error({
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
-      publish_result <- tryCatch({
-        ellipse_publish(conn, table = "test_table")
-      }, error = function(e) {
-        # Function might require table to exist
-        expect_true(inherits(e, "error"))
-        NULL
-      })
+      publish_result <- tryCatch(
+        {
+          ellipse_publish(conn, table = "test_table")
+        },
+        error = function(e) {
+          # Function might require table to exist
+          expect_true(inherits(e, "error"))
+          NULL
+        }
+      )
     }
   })
 })
@@ -223,13 +229,16 @@ test_that("ellipse_unpublish validates parameters and handles unpublishing", {
   expect_no_error({
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
-      unpublish_result <- tryCatch({
-        ellipse_unpublish(conn, datamart = "test_dm", table = "test_table")
-      }, error = function(e) {
-        # Function might require table to exist
-        expect_true(inherits(e, "error"))
-        NULL
-      })
+      unpublish_result <- tryCatch(
+        {
+          ellipse_unpublish(conn, datamart = "test_dm", table = "test_table")
+        },
+        error = function(e) {
+          # Function might require table to exist
+          expect_true(inherits(e, "error"))
+          NULL
+        }
+      )
     }
   })
 })
@@ -248,13 +257,16 @@ test_that("ellipse_partitions validates parameters and handles partition operati
   expect_no_error({
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
-      partitions_result <- tryCatch({
-        ellipse_partitions(conn, table = "test_table")
-      }, error = function(e) {
-        # Function might require table to exist
-        expect_true(inherits(e, "error"))
-        NULL
-      })
+      partitions_result <- tryCatch(
+        {
+          ellipse_partitions(conn, table = "test_table")
+        },
+        error = function(e) {
+          # Function might require table to exist
+          expect_true(inherits(e, "error"))
+          NULL
+        }
+      )
     }
   })
 })
@@ -271,19 +283,28 @@ test_that("ellipse functions can work together in a typical workflow", {
     # If we got a valid connection, try other operations
     if (!is.null(connection) && !inherits(connection, "error")) {
       # Step 2: Discover
-      discovery <- tryCatch({
-        ellipse_discover(connection, database = "datawarehouse")
-      }, error = function(e) NULL)
+      discovery <- tryCatch(
+        {
+          ellipse_discover(connection, database = "datawarehouse")
+        },
+        error = function(e) NULL
+      )
 
       # Step 3: Describe
-      description <- tryCatch({
-        ellipse_describe(connection, database = "datawarehouse")
-      }, error = function(e) NULL)
+      description <- tryCatch(
+        {
+          ellipse_describe(connection, database = "datawarehouse")
+        },
+        error = function(e) NULL
+      )
 
       # Step 4: Query
-      query_result <- tryCatch({
-        ellipse_query(connection, query = "SHOW TABLES")
-      }, error = function(e) NULL)
+      query_result <- tryCatch(
+        {
+          ellipse_query(connection, query = "SHOW TABLES")
+        },
+        error = function(e) NULL
+      )
 
       # Step 5: Disconnect
       ellipse_disconnect(connection)
@@ -327,9 +348,12 @@ test_that("ellipse functions handle real data processing workflows", {
       write.csv(test_data, temp_csv, row.names = FALSE)
 
       if (file.exists(temp_csv)) {
-        ingest_attempt <- tryCatch({
-          ellipse_ingest(conn, file_or_folder = temp_csv, pipeline = "test_pipeline")
-        }, error = function(e) NULL)
+        ingest_attempt <- tryCatch(
+          {
+            ellipse_ingest(conn, file_or_folder = temp_csv, pipeline = "test_pipeline")
+          },
+          error = function(e) NULL
+        )
 
         unlink(temp_csv)
       }
@@ -337,7 +361,7 @@ test_that("ellipse functions handle real data processing workflows", {
       ellipse_disconnect(conn)
     }
 
-    expect_true(TRUE)  # No unexpected errors
+    expect_true(TRUE) # No unexpected errors
   })
 })
 

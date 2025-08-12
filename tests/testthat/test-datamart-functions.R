@@ -39,8 +39,8 @@ test_that("datamart functions can be loaded and have proper signatures", {
   expect_true(exists("upload_dataframe_to_datamart", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(list_datamarts_database)), 1)      # credentials
-  expect_equal(length(formals(list_datamart_tables)), 3)        # credentials, datamart_name, simplify
+  expect_equal(length(formals(list_datamarts_database)), 1) # credentials
+  expect_equal(length(formals(list_datamart_tables)), 3) # credentials, datamart_name, simplify
   expect_equal(length(formals(upload_dataframe_to_datamart)), 5) # credentials, dataframe, bucket, prefix, partition
 
   cat("✅ Datamart function signatures verified!\n")
@@ -334,7 +334,7 @@ test_that("datamart functions integrate with each other properly", {
 
     # If we have tables in both formats, they should be related
     if (!is.null(tables) && !is.null(detailed_tables) &&
-        length(tables) > 0 && length(detailed_tables) > 0) {
+      length(tables) > 0 && length(detailed_tables) > 0) {
       # Both should represent the same underlying data
       expect_true(is.character(tables))
       expect_true(is.list(detailed_tables))

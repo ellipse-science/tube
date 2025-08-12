@@ -21,7 +21,7 @@ check_env <- function(env) {
 }
 
 #' @title Check the database parameter provided to a function
-#' @description Check if the database parameter is valid : either datawarehouse or datamarts
+#' @description Check if the database parameter is valid : either datawarehouse, datamarts, or datalake
 #' @param database The database to check
 #' @return TRUE if the database parameter is valid, FALSE otherwise
 check_database <- function(database) {
@@ -30,8 +30,8 @@ check_database <- function(database) {
     return(FALSE)
   }
 
-  # Content validation: must be exactly "datawarehouse" or "datamarts"
-  if (is.na(database) || !database %in% c("datawarehouse", "datamarts")) {
+  # Content validation: must be exactly "datawarehouse", "datamarts", or "datalake"
+  if (is.na(database) || !database %in% c("datawarehouse", "datamarts", "datalake")) {
     return(FALSE)
   }
 
@@ -136,9 +136,9 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   logger::log_debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-        sep = ""
-      ))
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""
+    ))
     return(FALSE)
   }
 
@@ -167,7 +167,9 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
         FALSE
       }
     )
-    if (!valid_json) return(FALSE)
+    if (!valid_json) {
+      return(FALSE)
+    }
   }
 
   logger::log_debug("[tube::check_params_before_publish] Checking the table description parameter")
@@ -223,9 +225,9 @@ check_params_before_unpublish <- function(env, datamart, table) {
   logger::log_debug("[tube::check_params_before_unpublish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-        sep = ""
-      ))
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""
+    ))
     return(FALSE)
   }
 
@@ -262,9 +264,9 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
   # Check env
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-        sep = ""
-      ))
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""
+    ))
     return(FALSE)
   }
 
@@ -301,7 +303,9 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
         FALSE
       }
     )
-    if (!valid_json) return(FALSE)
+    if (!valid_json) {
+      return(FALSE)
+    }
   }
 
   # Check description
@@ -371,15 +375,18 @@ check_params_before_refresh <- function(con, schema, table) {
 
   # check that the table exists
   logger::log_debug("[tube::check_params_before_describe] Checking that the table exists")
-  tryCatch({
-    if (!DBI::dbExistsTable(con, table)) {
-      cli::cli_alert_danger("Oups, la table n'existe pas! 😅")
-      return(FALSE)
+  tryCatch(
+    {
+      if (!DBI::dbExistsTable(con, table)) {
+        cli::cli_alert_danger("Oups, la table n'existe pas! 😅")
+        return(FALSE)
+      }
+    },
+    error = function(e) {
+      # If we can't check the table (e.g., mock connection), skip this validation
+      logger::log_debug("[tube::check_params_before_refresh] Cannot check table existence, skipping")
     }
-  }, error = function(e) {
-    # If we can't check the table (e.g., mock connection), skip this validation
-    logger::log_debug("[tube::check_params_before_refresh] Cannot check table existence, skipping")
-  })
+  )
 
   logger::log_debug("[tube::check_params_before_describe] Exiting function")
   TRUE

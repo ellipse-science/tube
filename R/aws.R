@@ -61,12 +61,12 @@ get_aws_credentials <- function(env) {
           close_connection = TRUE
         )
       )$list_buckets()
-      TRUE  # Return TRUE if successful
+      TRUE # Return TRUE if successful
     },
     error = function(e) {
       cli::cli_alert_danger("Oups, il semble que vos clés d'accès ne sont pas valides! 😅")
       logger::log_error("[get_aws_credentials] invalid aws credentials")
-      FALSE  # Return FALSE if failed
+      FALSE # Return FALSE if failed
     }
   )
 

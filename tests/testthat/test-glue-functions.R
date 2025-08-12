@@ -53,16 +53,16 @@ test_that("Glue functions can be loaded and have proper signatures", {
   expect_true(exists("update_glue_table_desc", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(list_glue_databases)), 2)         # credentials, type
-  expect_equal(length(formals(list_glue_tables)), 4)            # credentials, schema, tablename_filter, simplify
-  expect_equal(length(formals(list_glue_table_properties)), 3)  # credentials, schema, table
-  expect_equal(length(formals(delete_glue_table)), 3)           # credentials, database_name, table_name
-  expect_equal(length(formals(list_glue_jobs)), 1)              # credentials
+  expect_equal(length(formals(list_glue_databases)), 2) # credentials, type
+  expect_equal(length(formals(list_glue_tables)), 4) # credentials, schema, tablename_filter, simplify
+  expect_equal(length(formals(list_glue_table_properties)), 3) # credentials, schema, table
+  expect_equal(length(formals(delete_glue_table)), 3) # credentials, database_name, table_name
+  expect_equal(length(formals(list_glue_jobs)), 1) # credentials
   # credentials, job_name, database, prefix, table_tags, table_description
   expect_equal(length(formals(run_glue_job)), 6)
-  expect_equal(length(formals(glue_table_list_to_tibble)), 1)   # glue_response
-  expect_equal(length(formals(update_glue_table_tags)), 4)      # creds, schema, table, new_table_tags
-  expect_equal(length(formals(update_glue_table_desc)), 4)      # creds, schema, table, desc
+  expect_equal(length(formals(glue_table_list_to_tibble)), 1) # glue_response
+  expect_equal(length(formals(update_glue_table_tags)), 4) # creds, schema, table, new_table_tags
+  expect_equal(length(formals(update_glue_table_desc)), 4) # creds, schema, table, desc
 
   cat("✅ All Glue function signatures verified!\n")
 })
@@ -106,14 +106,20 @@ test_that("list_glue_databases works with real AWS credentials", {
   datawarehouse_dbs <- list_glue_databases(creds, "datawarehouse")
   expect_true(is.character(datawarehouse_dbs) || is.null(datawarehouse_dbs))
 
-  cat("Datawarehouse databases:", if (is.null(datawarehouse_dbs)) "NULL" else
-      paste(datawarehouse_dbs, collapse = ", "), "\n")
+  cat("Datawarehouse databases:", if (is.null(datawarehouse_dbs)) {
+    "NULL"
+  } else {
+    paste(datawarehouse_dbs, collapse = ", ")
+  }, "\n")
 
   datamart_dbs <- list_glue_databases(creds, "datamart")
   expect_true(is.character(datamart_dbs) || is.null(datamart_dbs))
 
-  cat("Datamart databases:", if (is.null(datamart_dbs)) "NULL" else
-      paste(datamart_dbs, collapse = ", "), "\n")
+  cat("Datamart databases:", if (is.null(datamart_dbs)) {
+    "NULL"
+  } else {
+    paste(datamart_dbs, collapse = ", ")
+  }, "\n")
 
   # If databases exist, verify they contain the expected type in name
   if (!is.null(datawarehouse_dbs) && length(datawarehouse_dbs) > 0) {
@@ -234,20 +240,23 @@ test_that("list_glue_table_properties works with real AWS credentials", {
 
     if (!is.null(tables) && length(tables) > 0) {
       # Test getting table properties (may fail with condition length errors)
-      result <- tryCatch({
-        properties <- list_glue_table_properties(creds, databases[1], tables[1])
-        expect_true(is.list(properties) || is.null(properties))
+      result <- tryCatch(
+        {
+          properties <- list_glue_table_properties(creds, databases[1], tables[1])
+          expect_true(is.list(properties) || is.null(properties))
 
-        # If properties exist, they should contain expected structure
-        if (!is.null(properties)) {
-          expect_true(is.list(properties))
+          # If properties exist, they should contain expected structure
+          if (!is.null(properties)) {
+            expect_true(is.list(properties))
+          }
+          "SUCCESS"
+        },
+        error = function(e) {
+          # Function may have internal condition length > 1 errors
+          expect_true(grepl("condition has length", e$message) || grepl("Error", e$message))
+          "ERROR_HANDLED"
         }
-        "SUCCESS"
-      }, error = function(e) {
-        # Function may have internal condition length > 1 errors
-        expect_true(grepl("condition has length", e$message) || grepl("Error", e$message))
-        "ERROR_HANDLED"
-      })
+      )
       expect_true(result %in% c("SUCCESS", "ERROR_HANDLED"))
     } else {
       skip("No Glue tables available for testing")
@@ -452,8 +461,10 @@ test_that("delete_glue_table validates input parameters", {
 test_that("run_glue_job validates input parameters", {
   # Test with NULL credentials
   expect_error(
-    run_glue_job(credentials = NULL, job_name = "test_job", database = "test_db",
-      prefix = "test/", table_tags = NULL, table_description = NULL),
+    run_glue_job(
+      credentials = NULL, job_name = "test_job", database = "test_db",
+      prefix = "test/", table_tags = NULL, table_description = NULL
+    ),
     class = "error"
   )
 
@@ -461,8 +472,10 @@ test_that("run_glue_job validates input parameters", {
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
     expect_error(
-      run_glue_job(creds, job_name = NULL, database = "test_db",
-        prefix = "test/", table_tags = NULL, table_description = NULL),
+      run_glue_job(creds,
+        job_name = NULL, database = "test_db",
+        prefix = "test/", table_tags = NULL, table_description = NULL
+      ),
       class = "error"
     )
   }
@@ -479,8 +492,10 @@ test_that("run_glue_job validates table tags format", {
 
     # Test with invalid table tags format
     expect_error(
-      run_glue_job(creds, job_name = "test_job", database = "test_db",
-        prefix = "test/", table_tags = "not_a_list", table_description = NULL),
+      run_glue_job(creds,
+        job_name = "test_job", database = "test_db",
+        prefix = "test/", table_tags = "not_a_list", table_description = NULL
+      ),
       class = "error"
     )
   }
@@ -498,9 +513,12 @@ test_that("Glue functions handle AWS API errors gracefully", {
   })
 
   # Test with non-existent table - should return AWS error
-  expect_error({
-    result <- list_glue_tables(creds, "nonexistent-database-12345", NULL, TRUE)
-  }, class = "paws_error")
+  expect_error(
+    {
+      result <- list_glue_tables(creds, "nonexistent-database-12345", NULL, TRUE)
+    },
+    class = "paws_error"
+  )
 })
 
 test_that("Glue functions integrate properly with each other", {
@@ -514,13 +532,16 @@ test_that("Glue functions integrate properly with each other", {
     tables <- list_glue_tables(creds, databases[1], NULL, TRUE)
     if (!is.null(tables) && length(tables) > 0) {
       # If we have tables, test properties function (may have condition length errors)
-      result <- tryCatch({
-        properties <- list_glue_table_properties(creds, databases[1], tables[1])
-        "SUCCESS"
-      }, error = function(e) {
-        # Function may have condition length > 1 errors, which is acceptable
-        "ERROR_EXPECTED"
-      })
+      result <- tryCatch(
+        {
+          properties <- list_glue_table_properties(creds, databases[1], tables[1])
+          "SUCCESS"
+        },
+        error = function(e) {
+          # Function may have condition length > 1 errors, which is acceptable
+          "ERROR_EXPECTED"
+        }
+      )
       expect_true(result %in% c("SUCCESS", "ERROR_EXPECTED"))
     }
   }

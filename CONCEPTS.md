@@ -239,20 +239,65 @@ The **Data Warehouse** contains structured, processed data optimized for analyti
 
 ## Future Concepts (Feature 007)
 
-### **Public Datalake (Planned)**
-A new concept will be introduced to handle user-uploaded files with metadata:
+### **Public Datalake (Implemented)**
+A new concept introduced to handle user-uploaded files with rich metadata:
 
-#### **Planned Purpose**
+#### **Business Definition**
+The **Public Datalake** is a user-accessible data storage system that complements the private datalake by allowing direct user uploads with comprehensive metadata management for enhanced discovery and filtering.
+
+#### **Technical Implementation**
+- **Bucket Pattern**: `"publicdatalakebucket"`
+- **Function Naming**: `*_public_datalake_*`
+- **Connection**: `ellipse_connect("DEV", "datalake")`
+- **Database Pattern**: Contains `"publicdatalake"` in name
+- **Primary Functions**:
+  - `list_public_datalake_bucket()` - Returns public datalake bucket name
+  - `list_public_datalake_database()` - Returns public datalake Glue database name
+  - `ellipse_discover()` - Enhanced with public datalake support
+
+#### **Business Purpose**
 - **User File Storage**: Direct user uploads with rich metadata
 - **Discovery Integration**: Feed `ellipse_discover()` with user-contributed data
-- **Query Filtering**: Enable metadata-based filtering in `ellipse_query()`
+- **Metadata-Rich Discovery**: Enhanced metadata for discovery and filtering
 - **Hybrid Architecture**: Complement private datalake for automated extractions
 
 #### **Key Distinctions from Private Datalake**
-- **User-Accessible**: Direct upload capability
-- **Metadata-Rich**: Enhanced metadata for discovery and filtering
+- **User-Accessible**: Direct upload capability (future feature)
+- **Metadata-Rich**: Enhanced AWS user-defined metadata for each file
 - **Business-Oriented**: Designed for business user workflows
 - **Integration-Ready**: Built for ellipse layer consumption
+
+#### **File Structure**
+```
+s3://publicdatalakebucket/dataset_name/tag/files
+```
+- **Level 1**: `dataset_name` (e.g., "test-datagotchi", "datagotchi")
+- **Level 2**: `tag` (e.g., "elxnca2025", "elxn2025")  
+- **Level 3**: Actual data files with same format but potentially different schemas
+
+#### **Metadata Architecture**
+**AWS User-Defined Metadata Fields (attached to each file):**
+- `name` - Dataset name
+- `tag` - Dataset tag/version
+- `creation_date` - When dataset was created
+- `consent_expiry_date` - When consent expires
+- `data_destruction_date` - When data should be destroyed
+- `sensitivity_level` - Data sensitivity classification
+- `ethical_stamp` - Ethical approval status
+- `user_metadata_json` - Additional custom metadata as JSON
+
+#### **Discovery Patterns**
+The public datalake supports three discovery patterns via `ellipse_discover()`:
+1. **All Datasets**: `ellipse_discover(con)` - Returns all datasets with metadata
+2. **Pattern Search**: `ellipse_discover(con, "pattern")` - Search by name pattern
+3. **Specific Dataset**: `ellipse_discover(con, "exact_name")` - Detailed dataset info
+4. **Specific Tag**: `ellipse_discover(con, "name", "tag")` - Specific name/tag combination
+
+#### **Integration with Ellipse Layer**
+- **Seamless Connection**: Works with existing `ellipse_connect()` infrastructure
+- **Enhanced Discovery**: Rich metadata display in `ellipse_discover()` results
+- **Backward Compatibility**: Existing datawarehouse/datamarts functionality unchanged
+- **Future Ready**: Prepared for `ellipse_ingest()` and `ellipse_query()` integration
 
 ---
 

@@ -11,10 +11,10 @@ test_that("landing zone functions can be loaded and have proper signatures", {
   expect_true(exists("parse_landing_zone_input", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(list_landing_zone_bucket)), 1)     # credentials
+  expect_equal(length(formals(list_landing_zone_bucket)), 1) # credentials
   # credentials, filepath, pipeline_name, file_batch, file_version
   expect_equal(length(formals(upload_file_to_landing_zone)), 5)
-  expect_equal(length(formals(parse_landing_zone_input)), 2)     # file_or_folder, folder_content
+  expect_equal(length(formals(parse_landing_zone_input)), 2) # file_or_folder, folder_content
 })
 
 # Tests for list_landing_zone_bucket function
@@ -146,7 +146,7 @@ test_that("upload_file_to_landing_zone validates input parameters", {
       credentials = list(), filepath = "/non/existent/file.txt",
       pipeline_name = "test", file_batch = "batch1"
     ),
-    "credentials"  # Actually fails on credentials first, not file check
+    "credentials" # Actually fails on credentials first, not file check
   )
 
   # Test with NULL pipeline_name
@@ -154,7 +154,7 @@ test_that("upload_file_to_landing_zone validates input parameters", {
     upload_file_to_landing_zone(
       credentials = list(), filepath = "test.txt", pipeline_name = NULL, file_batch = "batch1"
     ),
-    "credentials"  # Actually fails on credentials first
+    "credentials" # Actually fails on credentials first
   )
 
   # Test with neither batch nor version specified
@@ -298,7 +298,7 @@ test_that("landing zone functions work with S3 integration", {
 
   # Test integration between landing zone and general S3 functions
   landing_bucket <- list_landing_zone_bucket(creds)
-  all_buckets <- list_s3_buckets(creds, "landing")  # Add required type parameter
+  all_buckets <- list_s3_buckets(creds, "landing") # Add required type parameter
 
   if (!is.null(landing_bucket) && !is.null(all_buckets)) {
     expect_true(is.character(landing_bucket))
@@ -308,7 +308,7 @@ test_that("landing zone functions work with S3 integration", {
     if (length(landing_bucket) > 0 && length(all_buckets) > 0) {
       # At least one landing bucket should exist in the general bucket list
       expect_true(any(landing_bucket %in% all_buckets) ||
-          any(grepl("landing", all_buckets, ignore.case = TRUE)))
+        any(grepl("landing", all_buckets, ignore.case = TRUE)))
     }
   }
 })
@@ -402,9 +402,11 @@ test_that("upload_file_to_landing_zone handles large file names and paths", {
 
   # Test with long key name
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-  long_key <- paste0("test_uploads/very_long_folder_name_for_testing_purposes/",
+  long_key <- paste0(
+    "test_uploads/very_long_folder_name_for_testing_purposes/",
     "subfolder_with_additional_depth/",
-    "test_file_with_very_long_name_", timestamp, ".txt")
+    "test_file_with_very_long_name_", timestamp, ".txt"
+  )
 
   expect_no_error({
     upload_file_to_landing_zone(

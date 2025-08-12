@@ -13,5 +13,5 @@ check_database(database)
 TRUE if the database parameter is valid, FALSE otherwise
 }
 \description{
-Check if the database parameter is valid : either datawarehouse or datamarts
+Check if the database parameter is valid : either datawarehouse, datamarts, or datalake
 }

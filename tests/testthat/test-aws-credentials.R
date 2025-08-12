@@ -122,9 +122,9 @@ test_that("get_aws_credentials() validates credential format with real AWS", {
   access_key <- result$credentials$creds$access_key_id
   secret_key <- result$credentials$creds$secret_access_key
 
-  expect_match(access_key, "^[A-Z0-9]+$")    # AWS access keys are alphanumeric uppercase
-  expect_true(nchar(access_key) >= 16)       # Minimum reasonable length
-  expect_true(nchar(secret_key) >= 32)       # Secret keys are longer
+  expect_match(access_key, "^[A-Z0-9]+$") # AWS access keys are alphanumeric uppercase
+  expect_true(nchar(access_key) >= 16) # Minimum reasonable length
+  expect_true(nchar(secret_key) >= 32) # Secret keys are longer
 })
 
 test_that("get_aws_credentials() actually connects to AWS (integration test)", {
@@ -159,7 +159,7 @@ test_that("get_aws_credentials() handles network/AWS API errors gracefully", {
 
   # Test error handling with invalid credentials
   result <- get_aws_credentials("DEV")
-  expect_null(result)  # Should return NULL on AWS API error
+  expect_null(result) # Should return NULL on AWS API error
 
   # Restore original environment variables
   if (nzchar(old_access)) Sys.setenv(AWS_ACCESS_KEY_ID_DEV = old_access)

@@ -16,11 +16,11 @@ test_that("utility functions can be loaded and have proper signatures", {
   expect_true(exists("%>%", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(ask_yes_no)), 2)      # question, unattended_option
-  expect_equal(length(formals(ask_1_2)), 2)         # question, unattended_option
-  expect_equal(length(formals(suppress_console_output)), 1)  # expr
-  expect_equal(length(formals(print_list_with_nulls)), 1)    # lst
-  expect_equal(length(formals(convert_url_to_key)), 1)       # url
+  expect_equal(length(formals(ask_yes_no)), 2) # question, unattended_option
+  expect_equal(length(formals(ask_1_2)), 2) # question, unattended_option
+  expect_equal(length(formals(suppress_console_output)), 1) # expr
+  expect_equal(length(formals(print_list_with_nulls)), 1) # lst
+  expect_equal(length(formals(convert_url_to_key)), 1) # url
 })
 
 # Tests for ask_yes_no function
@@ -59,14 +59,14 @@ test_that("ask_yes_no validates input parameters", {
 test_that("ask_yes_no handles edge cases", {
   # Test with case variations
   expect_true(ask_yes_no("Test?", "oui"))
-  expect_true(ask_yes_no("Test?", "OUI"))  # Should handle case
+  expect_true(ask_yes_no("Test?", "OUI")) # Should handle case
   expect_false(ask_yes_no("Test?", "non"))
 
   # Test with empty string
   expect_false(ask_yes_no("Test?", ""))
 
   # Test with whitespace
-  expect_false(ask_yes_no("Test?", " oui "))  # Should not accept with spaces
+  expect_false(ask_yes_no("Test?", " oui ")) # Should not accept with spaces
 })
 
 # Tests for ask_1_2 function
@@ -138,12 +138,15 @@ test_that("suppress_console_output suppresses output correctly", {
 
 test_that("suppress_console_output handles expressions with errors", {
   # Test that errors are still propagated
-  expect_error({
-    suppress_console_output({
-      cat("Some output\n")
-      stop("Test error")
-    })
-  }, "Test error")
+  expect_error(
+    {
+      suppress_console_output({
+        cat("Some output\n")
+        stop("Test error")
+      })
+    },
+    "Test error"
+  )
 })
 
 test_that("suppress_console_output handles different expression types", {
@@ -223,34 +226,34 @@ test_that("convert_url_to_key converts URLs correctly", {
   result1 <- convert_url_to_key(url1)
   expect_type(result1, "character")
   expect_true(nchar(result1) > 0)
-  expect_false(grepl("https://", result1))  # Should remove protocol
+  expect_false(grepl("https://", result1)) # Should remove protocol
 
   # Test HTTPS URL
   url2 <- "http://test.com/another/path"
   result2 <- convert_url_to_key(url2)
   expect_type(result2, "character")
-  expect_false(grepl("http://", result2))  # Should remove protocol
+  expect_false(grepl("http://", result2)) # Should remove protocol
 })
 
 test_that("convert_url_to_key handles special characters", {
   # Test URL with query parameters
   url_query <- "https://example.com/search?q=test&category=books"
   result_query <- convert_url_to_key(url_query)
-  expect_false(grepl("\\?", result_query))  # Should replace ?
-  expect_false(grepl("&", result_query))    # Should replace &
-  expect_false(grepl("=", result_query))    # Should replace =
+  expect_false(grepl("\\?", result_query)) # Should replace ?
+  expect_false(grepl("&", result_query)) # Should replace &
+  expect_false(grepl("=", result_query)) # Should replace =
 
   # Test URL with special characters
   url_special <- "https://example.com/path-with-dashes/file.name.ext"
   result_special <- convert_url_to_key(url_special)
-  expect_false(grepl("-", result_special))  # Should replace -
+  expect_false(grepl("-", result_special)) # Should replace -
   expect_false(grepl("\\.", result_special)) # Should replace .
 
   # Test URL with colons and slashes
   url_complex <- "https://example.com:8080/path/to/file"
   result_complex <- convert_url_to_key(url_complex)
-  expect_false(grepl(":", result_complex))  # Should replace :
-  expect_false(grepl("/", result_complex))  # Should replace /
+  expect_false(grepl(":", result_complex)) # Should replace :
+  expect_false(grepl("/", result_complex)) # Should replace /
 })
 
 test_that("convert_url_to_key handles edge cases", {
@@ -266,7 +269,7 @@ test_that("convert_url_to_key handles edge cases", {
   # Test URL ending with slash
   url_trailing_slash <- "https://example.com/path/"
   result_trailing <- convert_url_to_key(url_trailing_slash)
-  expect_false(grepl("/$", result_trailing))  # Should remove trailing _
+  expect_false(grepl("/$", result_trailing)) # Should remove trailing _
 })
 
 test_that("convert_url_to_key produces consistent results", {
@@ -318,11 +321,11 @@ test_that("pipe operator handles different data types", {
 
 test_that("utility functions handle error conditions gracefully", {
   # Test functions with invalid inputs
-  expect_error(ask_1_2("test", "invalid"))  # Should error on invalid option
+  expect_error(ask_1_2("test", "invalid")) # Should error on invalid option
 
   # Other functions should handle errors gracefully
-  expect_no_error(convert_url_to_key(NULL))  # Should handle NULL input
-  expect_no_error(print_list_with_nulls(NULL))  # Should handle NULL input
+  expect_no_error(convert_url_to_key(NULL)) # Should handle NULL input
+  expect_no_error(print_list_with_nulls(NULL)) # Should handle NULL input
 })
 
 test_that("utility functions are consistent in their behavior", {

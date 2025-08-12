@@ -44,10 +44,10 @@ test_that("file processing functions can be loaded and have proper signatures", 
   expect_true(exists("get_column_type", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(is_csv_file)), 1)         # filename
-  expect_equal(length(formals(is_rtf_file)), 1)         # filename
-  expect_equal(length(formals(parse_landing_zone_input)), 2)  # file_or_folder, folder_content
-  expect_equal(length(formals(get_column_type)), 1)     # column
+  expect_equal(length(formals(is_csv_file)), 1) # filename
+  expect_equal(length(formals(is_rtf_file)), 1) # filename
+  expect_equal(length(formals(parse_landing_zone_input)), 2) # file_or_folder, folder_content
+  expect_equal(length(formals(get_column_type)), 1) # column
 
   cat("✅ File processing function signatures verified!\n")
 })
@@ -365,7 +365,7 @@ test_that("parse_landing_zone_input validates CSV file integrity", {
   # Should return character vector even with mixed valid/invalid CSV (function is forgiving)
   result <- parse_landing_zone_input(csv_dir, NULL)
   expect_type(result, "character")
-  expect_true(length(result) >= 1)  # At least finds some CSV files
+  expect_true(length(result) >= 1) # At least finds some CSV files
 
   # Clean up
   unlink(csv_dir, recursive = TRUE)

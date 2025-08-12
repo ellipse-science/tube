@@ -1,4 +1,4 @@
-# Feature 007 Context: Public Datalake Implementation
+# Feature 007 Context: Public Datalake Connection & Discovery
 
 ## 🚨 CRITICAL PROTOCOL REMINDER 🚨
 **ITERATIVE SEQUENTIAL BRANCHING - ALWAYS FOLLOW:**
@@ -28,10 +28,10 @@
 
 ---
 
-## Feature 007 Requirements: Public Datalake
+## Feature 007 Requirements: Public Datalake Connection & Discovery
 
 ### Business Context
-Based on user requirements, Feature 007 will implement a **Public Datalake** concept to complement the existing private datalake:
+Based on user requirements, Feature 007 will implement **ONLY** the connection and discovery aspects of a **Public Datalake** to complement the existing private datalake:
 
 #### **Current State (Private Datalake)**
 - Fed by **automated lambda extractors**
@@ -39,71 +39,89 @@ Based on user requirements, Feature 007 will implement a **Public Datalake** con
 - **Private access** - not user-uploadable
 - **Raw data storage** for pipeline processing
 
-#### **New Requirement (Public Datalake)**
-- **User-uploadable files** via tube package
-- **Rich metadata application** for discovery and filtering
-- **Integration with ellipse_discover()** for data discovery
-- **Metadata-based filtering** in ellipse_query()
-- **Business user-oriented** design
+#### **New Requirement (Public Datalake - Connection & Discovery Only)**
+- **Dedicated database connection** via `ellipse_connect("DEV", "datalake")`
+- **Discovery capabilities** via `ellipse_discover()` with rich metadata
+- **S3 file structure**: `s3://publicdatalakebucket/dataset_name/tag/files`
+- **AWS user-defined metadata** attached to each file
+- **Glue table integration** for metadata-based discovery
+
+#### **Important Scope Limitation**
+**Feature 007 ONLY focuses on:**
+- ✅ `ellipse_connect()` - connecting to public datalake 
+- ✅ `ellipse_discover()` - discovering datasets with metadata
+- ❌ `ellipse_ingest()` - **NOT in this feature** (next feature)
+- ❌ `ellipse_query()` - **NOT in this feature** (next feature)
+- ❌ Upload functionality - **NOT in this feature** (next feature)
 
 ### Technical Implementation Requirements
 
-#### **Expected Function Categories**
-Based on established naming conventions from Feature 006:
+#### **Database Configuration**
+Based on the expected output from `ellipse_connect("DEV", "datalake")`:
+- **Database Name**: `gluestackpublicdatalakedbbeb173fb` (AWS-generated)
+- **Connection Type**: Standard Athena connection via `ellipse_connect()`
+- **Bucket**: `bucket-stack-publicdatalakebucket82f867fc-mw1og7tmix56` (AWS-generated)
 
-1. **Infrastructure Functions**:
-   - `list_public_datalake_bucket()` - Returns public datalake bucket name
-   - `list_public_datalake_partitions()` - Lists organized data partitions
-   - Additional infrastructure functions as needed
-
-2. **Upload Functions**:
-   - `upload_file_to_public_datalake()` - Direct user uploads with metadata
-   - Integration with existing `ellipse_ingest()` workflow
-
-3. **Metadata Functions**:
-   - Functions to apply, manage, and query metadata
-   - Integration with Glue catalog for discoverability
-
-4. **Discovery Integration**:
-   - Extend `ellipse_discover()` to include public datalake data
-   - Enable metadata-based filtering capabilities
-
-#### **Expected Bucket Pattern**
-Following established conventions:
-- **Bucket Pattern**: `"publicdatalakebucket"` or `"datalakepublicbucket"`
-- **Function Naming**: `*_public_datalake_*`
+#### **S3 File Structure**
+Files are organized as: `s3://publicdatalakebucket/dataset_name/tag/files`
+- **Level 1**: `dataset_name` (e.g., "test-datagotchi", "datagotchi")
+- **Level 2**: `tag` (e.g., "elxnca2025", "elxn2025")
+- **Level 3**: Actual data files with same format but potentially different schemas
 
 #### **Metadata Architecture**
-- **Rich metadata application** for user uploads
-- **Discovery integration** - feed ellipse_discover()
-- **Query filtering** - enable metadata-based filtering in ellipse_query()
-- **Business-oriented** metadata structure
+**AWS User-Defined Metadata Fields (attached to each file):**
+- `name` - Dataset name
+- `tag` - Dataset tag/version
+- `creation_date` - When dataset was created
+- `consent_expiry_date` - When consent expires
+- `data_destruction_date` - When data should be destroyed
+- `sensitivity_level` - Data sensitivity classification
+- `ethical_stamp` - Ethical approval status
+- `user_metadata_json` - Additional custom metadata as JSON
+
+#### **Glue Table Integration**
+- **Single Glue table** contains aggregated metadata about all files
+- **Lambda function** rebuilds this table (triggered by future `ellipse_ingest()`)
+- **Discovery data source**: `ellipse_discover()` queries this Glue table, not S3 directly
+- **No actual file content** in Glue table, only metadata about files
+
+#### **Expected Function Categories**
+Following established naming conventions:
+
+1. **Infrastructure Functions** (if needed):
+   - `list_public_datalake_bucket()` - Returns public datalake bucket name
+   - Additional infrastructure functions only if required
+
+2. **Discovery Integration** (primary focus):
+   - Extend `ellipse_discover()` to work with public datalake connection
+   - Support discovery patterns: `ellipse_discover(con)`, `ellipse_discover(con, name)`, `ellipse_discover(con, name, tag)`
+   - Display rich metadata from Glue table
 
 ### Integration Points
 
 #### **Ellipse Layer Integration**
 The public datalake must integrate with existing ellipse functions:
 
-1. **ellipse_discover()**:
-   - Include public datalake datasets in discovery results
-   - Display metadata for filtering and selection
-   - Maintain backward compatibility
+1. **ellipse_connect()**:
+   - Enable connection to public datalake via `ellipse_connect("DEV", "datalake")`
+   - Return connection object that works with existing ellipse functions
+   - Maintain backward compatibility with existing database connections
 
-2. **ellipse_query()**:
-   - Enable querying of public datalake data
-   - Support metadata-based filtering
-   - Consistent interface with existing data sources
-
-3. **ellipse_ingest()**:
-   - Potentially extend to support public datalake uploads
-   - Or create new ellipse function for public uploads
+2. **ellipse_discover()**:
+   - Include public datalake datasets in discovery results when connected to "datalake" database
+   - Display rich metadata for filtering and selection
+   - Support three discovery patterns:
+     - `ellipse_discover(con)` - All datasets
+     - `ellipse_discover(con, name)` - Datasets matching name pattern
+     - `ellipse_discover(con, name, tag)` - Specific name/tag combination
+   - Maintain backward compatibility with existing databases
 
 #### **Existing Infrastructure Reuse**
 Feature 007 should maximize reuse of existing functions:
 
-- **S3 Operations**: Reuse `list_s3_buckets()`, `upload_file_to_s3()`, etc.
-- **Glue Integration**: Extend existing Glue functions for metadata management
+- **Database Operations**: Extend existing `check_database()` function for "datalake" support
 - **AWS Credentials**: Use existing `get_aws_credentials()` infrastructure
+- **Glue Integration**: Reuse existing Glue table querying patterns
 - **Validation**: Extend existing parameter validation functions
 
 ### File Structure Expectations
@@ -113,21 +131,20 @@ Based on current package structure:
 
 ```
 R/
-├── public-datalake.R     # New file for public datalake functions
+├── public-datalake.R     # New file for public datalake functions (if needed)
 ├── ellipse.R             # Extend existing ellipse functions
-├── glue.R               # Extend for public datalake metadata
-└── utils_check_params.R  # Add validation for public datalake params
+├── utils_check_params.R  # Add validation for "datalake" database parameter
 
 tests/testthat/
-├── test-public-datalake-functions.R  # New test file
+├── test-public-datalake-functions.R  # New test file (if new functions created)
 ├── test-ellipse-main.R              # Extend existing tests
-└── run_public_datalake_tests.R      # New test runner
+└── run_public_datalake_tests.R      # New test runner (if needed)
 ```
 
 #### **Documentation Updates**
 - **CONCEPTS.md**: Add Public Datalake section
 - **README.md**: Update examples to include public datalake usage
-- **Roxygen documentation**: Complete function documentation
+- **Roxygen documentation**: Complete function documentation for any new functions
 
 ### Testing Strategy
 
@@ -139,35 +156,29 @@ Following Feature 006 standards:
 - **Integration tests** with existing ellipse functions
 
 #### **Test Categories**
-1. **Infrastructure Tests**: Bucket operations, metadata management
-2. **Upload Tests**: File upload with metadata application
-3. **Discovery Tests**: Integration with ellipse_discover()
-4. **Query Tests**: Metadata-based filtering in ellipse_query()
-5. **Error Handling**: Validation and error scenarios
+1. **Connection Tests**: `ellipse_connect("DEV", "datalake")` functionality
+2. **Discovery Tests**: Integration with ellipse_discover() for all three patterns
+3. **Infrastructure Tests**: Any new bucket or infrastructure functions (if needed)
+4. **Error Handling**: Validation and error scenarios
+5. **Integration Tests**: Compatibility with existing ellipse functions
 
 ### Development Approach
 
 #### **Incremental Implementation**
 Following Feature 006 methodology:
 
-1. **Phase 1**: Core infrastructure functions
-   - `list_public_datalake_bucket()`
-   - Basic S3 operations for public datalake
+1. **Phase 1**: Connection Support
+   - Extend `ellipse_connect()` to support "datalake" database parameter
+   - Add validation for "datalake" in `check_database()`
    - Complete testing and documentation
 
-2. **Phase 2**: Upload functionality
-   - `upload_file_to_public_datalake()`
-   - Metadata application system
-   - Integration testing
-
-3. **Phase 3**: Discovery integration
-   - Extend `ellipse_discover()`
-   - Include public datalake in results
+2. **Phase 2**: Discovery Integration
+   - Extend `ellipse_discover()` to work with public datalake connection
+   - Support all three discovery patterns with rich metadata display
    - Maintain backward compatibility
 
-4. **Phase 4**: Query integration
-   - Extend `ellipse_query()` for metadata filtering
-   - Support public datalake data queries
+3. **Phase 3**: Infrastructure Functions (if needed)
+   - `list_public_datalake_bucket()` (only if required)
    - Complete integration testing
 
 #### **Code Reuse Strategy**
@@ -198,7 +209,7 @@ Following Feature 006 methodology:
 
 ### **Sequential Branching Protocol**
 1. **Feature 006 must be completed** (commit and push)
-2. **Create feature/007-public-datalake** branch
+2. **Create feature/007-public-datalake-connection-discovery** branch
 3. **One conversation for Feature 007** implementation
 4. **No cross-feature work** in same conversation
 
@@ -222,10 +233,9 @@ Following Feature 006 methodology:
 ## Expected Deliverables for Feature 007
 
 ### **Functional Deliverables**
-- [ ] Public datalake infrastructure functions
-- [ ] User upload functionality with metadata
-- [ ] Discovery integration (ellipse_discover extension)
-- [ ] Query integration (ellipse_query extension)
+- [ ] `ellipse_connect("DEV", "datalake")` connection support
+- [ ] `ellipse_discover()` integration with public datalake metadata
+- [ ] Infrastructure functions (if needed)
 - [ ] Complete test coverage for all new functionality
 
 ### **Documentation Deliverables**
@@ -259,11 +269,142 @@ Following Feature 006 methodology:
 - What level of integration is needed with existing ellipse_ingest()?
 - Are there specific business rules for public datalake access?
 
+
+### **Expected output from ellipse_discover
+r$> con <- tube::ellipse_connect("DEV", "datalake")
+ℹ Environnement: DEV
+ℹ Database: datalake
+ℹ Connexion en cours...
+ℹ Compartiment: pipeline-stack-athenaqueryresultsbucket6f63bbe4-1hrrrojv867l3
+ℹ Base de données: gluestackpublicdatalakedbbeb173fb
+ℹ Pour déconnecter: tube::ellipse_disconnect(objet_de_connexion)
+✔ Connexion établie avec succès! 👍
+
+
+r$> tube::ellipse_discover(con)
+INFO: (Data scanned: 4.52 KB)
+                  table_name             tag file_count creation_date consent_expiry_date data_destruction_date sensitivity_level ethical_stamp user_metadata_preview
+                      <char>          <char>      <num>        <char>              <char>                <char>            <char>        <char>                <char>
+ 1:               datagotchi        elxn2025          1    2025-03-25          2026-03-25            2099-12-31                 2          TRUE    {"data_destruct...
+ 2:               datagotchi      elxnca2025          1    2025-03-05          2026-03-05            2049-03-06                 2          TRUE    {"data_destruct...
+ 3:              datagotchi2        elxn2025          1    2025-03-01          2026-03-01            2099-03-01                 2          TRUE    {"data_destruct...
+ 4:              datagotchi3   elections2025          1    2025-03-18          2026-03-18            2099-01-01                 2         FALSE    {"data_destruct...
+ 5: from_checkbox_to_textbox             c2t          1    2025-05-01          3000-10-10            3002-10-10                 1          TRUE    {"data_destruct...
+ 6:          test-datagotchi      elxnca2025          2    2025-04-01          2025-10-01            2045-04-01                 1         false    {"data_destruct...
+ 7:          test-datagotchi      elxnqc2022          1    2020-01-01          2021-03-01            2099-01-01                 4          true    {"data_destruct...
+ 8:              test-survey        test-tag          2    2025-08-01          2026-08-01            2032-08-01                 2          true    {"data_destruct...
+ 9:            testmanyfiles withdiffschemas         10    2025-01-01          2026-01-01            2027-01-01                 5         FALSE    {"data_destruct...
+10:             testmanysame      samesfiles          5    2020-01-01          2021-02-02            2022-03-03                 1          TRUE    {"data_destruct...
+
+
+
+r$> tube::ellipse_discover(con, "data")
+INFO: (Data scanned: 0 Bytes)
+INFO: (Data scanned: 6.09 KB)
+ℹ Found 4 dataset(s) matching pattern: data
+ℹ Use ellipse_discover(con, 'exact_dataset_name') to view details for a specific dataset
+$search_pattern
+[1] "data"
+
+$matching_tables
+[1] "datagotchi"      "datagotchi2"     "datagotchi3"     "test-datagotchi"
+
+$tables_summary
+# A tibble: 4 × 3
+  table_name      tags_count tags_list             
+  <chr>                <int> <chr>                 
+1 datagotchi               2 elxnca2025, elxn2025  
+2 datagotchi2              1 elxn2025              
+3 datagotchi3              1 elections2025         
+4 test-datagotchi          2 elxnca2025, elxnqc2022
+
+$note
+[1] "Found 4 table(s). Use exact table name to get detailed information."
+
+
+r$> tube::ellipse_discover(con, "test-datagotchi")
+INFO: (Data scanned: 2.12 KB)
+$name
+[1] "test-datagotchi"
+
+$tags_count
+[1] 2
+
+$tags
+[1] "elxnca2025" "elxnqc2022"
+
+$total_files
+[1] 3
+
+$tags_summary
+# A tibble: 2 × 9
+  tag        file_count creation_date consent_expiry_date data_destruction_date sensitivity_level ethical_stamp user_metadata_fields user_metadata_values           
+  <chr>           <int> <chr>         <chr>               <chr>                 <chr>             <chr>         <chr>                <chr>                          
+1 elxnca2025          2 2025-04-01    2025-10-01          2045-04-01            1                 false         title, authors, year Datagotchi, Cath, Alex..., 2025
+2 elxnqc2022          1 2020-01-01    2021-03-01          2099-01-01            4                 true          title, authors, year Datagotchi..., toto, titi, 2025
+
+$all_files
+# A tibble: 3 × 5
+  tag        file_name file_path                                                                                        file_extension file_size_bytes
+  <chr>      <chr>     <chr>                                                                                            <chr>                    <dbl>
+1 elxnca2025 test.csv  s3://bucket-stack-publicdatalakebucket82f867fc-mw1og7tmix56/test-datagotchi/elxnca2025/test.csv  csv                         66
+2 elxnca2025 test1.csv s3://bucket-stack-publicdatalakebucket82f867fc-mw1og7tmix56/test-datagotchi/elxnca2025/test1.csv csv                         58
+3 elxnqc2022 test1.csv s3://bucket-stack-publicdatalakebucket82f867fc-mw1og7tmix56/test-datagotchi/elxnqc2022/test1.csv csv                         58
+
+$note
+[1] "Table contains 2 tag(s). Use ellipse_discover(con, object, tag) to view specific tag details."
+
+
+r$> tube::ellipse_discover(con, "test-datagotchi", "elxnqc2022")
+INFO: (Data scanned: 1.01 KB)
+$name
+[1] "test-datagotchi"
+
+$tag
+[1] "elxnqc2022"
+
+$file_count
+[1] 1
+
+$creation_date
+[1] "2020-01-01"
+
+$consent_expiry_date
+[1] "2021-03-01"
+
+$data_destruction_date
+[1] "2099-01-01"
+
+$sensitivity_level
+[1] "4"
+
+$ethical_stamp
+[1] "true"
+
+$files
+# A tibble: 1 × 4
+  file_name file_path                                                                                        file_extension file_size_bytes
+  <chr>     <chr>                                                                                            <chr>                    <dbl>
+1 test1.csv s3://bucket-stack-publicdatalakebucket82f867fc-mw1og7tmix56/test-datagotchi/elxnqc2022/test1.csv csv                         58
+
+$user_metadata
+$user_metadata$title
+[1] "Datagotchi elections 2020"
+
+$user_metadata$authors
+[1] "toto, titi"
+
+$user_metadata$year
+[1] 2025
+
+
+
+
 ### **Success Criteria**
 Feature 007 will be considered complete when:
-- Users can upload files to public datalake with metadata
-- Public datalake data appears in ellipse_discover() results
-- Metadata-based filtering works in ellipse_query()
+- Users can connect to public datalake via `ellipse_connect("DEV", "datalake")`
+- Public datalake data appears in `ellipse_discover()` results with rich metadata
+- All three discovery patterns work: `ellipse_discover(con)`, `ellipse_discover(con, name)`, `ellipse_discover(con, name, tag)`
 - All quality gates pass (linting, testing, documentation)
 - Integration with existing ellipse functions is seamless
 - Backward compatibility is maintained

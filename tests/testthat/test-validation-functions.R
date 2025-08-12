@@ -20,11 +20,11 @@ test_that("validation functions can be loaded and have proper signatures", {
   expect_true(exists("check_params_before_refresh", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(check_env)), 1)  # env
-  expect_equal(length(formals(check_database)), 1)  # database
+  expect_equal(length(formals(check_env)), 1) # env
+  expect_equal(length(formals(check_database)), 1) # database
   # pipeline, landing_zone_partitions, file_batch, file_version
   expect_equal(length(formals(check_pipeline_before_ingest)), 4)
-  expect_equal(length(formals(check_file_versioning_before_ingest)), 2)  # file_batch, file_version
+  expect_equal(length(formals(check_file_versioning_before_ingest)), 2) # file_batch, file_version
 })
 
 # Tests for check_env function
@@ -35,13 +35,13 @@ test_that("check_env validates environment parameters correctly", {
 
   # Test invalid environments
   expect_false(check_env("INVALID"))
-  expect_false(check_env("dev"))  # case sensitive
+  expect_false(check_env("dev")) # case sensitive
   expect_false(check_env("prod")) # case sensitive
   expect_false(check_env(""))
   expect_false(check_env(NULL))
   expect_false(check_env(NA))
   expect_false(check_env(123))
-  expect_false(check_env(c("DEV", "PROD")))  # vector not allowed
+  expect_false(check_env(c("DEV", "PROD"))) # vector not allowed
 })
 
 test_that("check_env handles edge cases", {
@@ -64,14 +64,14 @@ test_that("check_database validates database parameters correctly", {
   expect_true(check_database("datamarts"))
 
   # Test invalid databases
-  expect_false(check_database("DATAWAREHOUSE"))  # case sensitive
-  expect_false(check_database("DATAMARTS"))      # case sensitive
+  expect_false(check_database("DATAWAREHOUSE")) # case sensitive
+  expect_false(check_database("DATAMARTS")) # case sensitive
   expect_false(check_database("invalid"))
   expect_false(check_database(""))
   expect_false(check_database(NULL))
   expect_false(check_database(NA))
   expect_false(check_database(123))
-  expect_false(check_database(c("datawarehouse", "datamarts")))  # vector not allowed
+  expect_false(check_database(c("datawarehouse", "datamarts"))) # vector not allowed
 })
 
 test_that("check_database handles edge cases", {
@@ -116,9 +116,9 @@ test_that("check_pipeline_before_ingest handles file versioning scenarios", {
 # Tests for check_file_versioning_before_ingest function
 test_that("check_file_versioning_before_ingest validates versioning logic", {
   # Test valid combinations
-  expect_true(check_file_versioning_before_ingest("batch1", "v1.0"))  # both provided
-  expect_true(check_file_versioning_before_ingest("batch1", NULL))    # only batch
-  expect_true(check_file_versioning_before_ingest(NULL, NULL))        # neither provided
+  expect_true(check_file_versioning_before_ingest("batch1", "v1.0")) # both provided
+  expect_true(check_file_versioning_before_ingest("batch1", NULL)) # only batch
+  expect_true(check_file_versioning_before_ingest(NULL, NULL)) # neither provided
 
   # Test invalid combination - version without batch should be invalid
   expect_false(check_file_versioning_before_ingest(NULL, "v1.0"))

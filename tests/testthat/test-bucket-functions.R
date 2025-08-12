@@ -47,11 +47,11 @@ test_that("bucket functions can be loaded and have proper signatures", {
   expect_true(exists("list_landing_zone_partitions", mode = "function"))
 
   # Check function signatures - all should take credentials parameter
-  expect_equal(length(formals(list_athena_staging_bucket)), 1)  # credentials
-  expect_equal(length(formals(list_datalake_bucket)), 1)        # credentials
-  expect_equal(length(formals(list_datamarts_bucket)), 1)       # credentials
-  expect_equal(length(formals(list_datawarehouse_bucket)), 1)   # credentials
-  expect_equal(length(formals(list_landing_zone_bucket)), 1)    # credentials
+  expect_equal(length(formals(list_athena_staging_bucket)), 1) # credentials
+  expect_equal(length(formals(list_datalake_bucket)), 1) # credentials
+  expect_equal(length(formals(list_datamarts_bucket)), 1) # credentials
+  expect_equal(length(formals(list_datawarehouse_bucket)), 1) # credentials
+  expect_equal(length(formals(list_landing_zone_bucket)), 1) # credentials
   expect_equal(length(formals(list_landing_zone_partitions)), 1) # credentials
 
   cat("✅ All bucket function signatures verified!\n")
@@ -262,8 +262,10 @@ test_that("bucket functions use correct underlying S3 filters", {
   landing_buckets <- list_landing_zone_bucket(creds)
 
   # Each function should return distinct results (no overlap)
-  all_results <- c(athena_buckets, datalake_buckets, datamarts_buckets,
-    datawarehouse_buckets, landing_buckets)
+  all_results <- c(
+    athena_buckets, datalake_buckets, datamarts_buckets,
+    datawarehouse_buckets, landing_buckets
+  )
 
   if (length(all_results) > 1) {
     # Check that we don't have duplicate bucket names across different types

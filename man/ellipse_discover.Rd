@@ -5,12 +5,14 @@
 \title{Découvrir les tables disponibles sur la plateforme ellipse, ainsi que leur
 contenu}
 \usage{
-ellipse_discover(con, table = NULL)
+ellipse_discover(con, table = NULL, tag = NULL)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
 \item{table}{Une table pour laquelle on veut obtenir les informations.}
+
+\item{tag}{Un tag spécifique pour la découverte dans le datalake public (optionnel).}
 }
 \value{
 Un \code{tibble} contenant les tables disponibles dans l'entrepôt de
@@ -20,4 +22,13 @@ données, ou un descriptino des colonnes pour une table en particulier.
 Si aucune table n'est passée en paramètre, un sommaire des tables disponibles
 dans l'entrepôt de données est retourné. Si un nom de \code{table} est passé en
 paramètre, une description des colonnes de cette table est retournée.
+}
+\details{
+Pour le datalake public (connexion via \code{ellipse_connect("DEV", "datalake")}),
+cette fonction supporte trois modes de découverte avec métadonnées enrichies :
+\itemize{
+\item \code{ellipse_discover(con)} : Tous les jeux de données avec métadonnées
+\item \code{ellipse_discover(con, "pattern")} : Recherche par motif avec résumé
+\item \code{ellipse_discover(con, "nom", "tag")} : Détails spécifiques nom/tag
+}
 }

@@ -1,7 +1,9 @@
 # Global variable declarations to avoid "no visible binding" warnings
 utils::globalVariables(c(
   "is_partition", "col_name", "table_name", "location", "table_tags",
-  "categorie", "datamart", "description", "create_time", "update_time"
+  "categorie", "datamart", "description", "create_time", "update_time",
+  "format_public_datalake_all_datasets", "format_public_datalake_pattern_search",
+  "format_public_datalake_dataset_details", "format_public_datalake_tag_details"
 ))
 
 #' Se connecter à la plateforme de données ellipse
@@ -15,22 +17,22 @@ utils::globalVariables(c(
 #' @returns Un object de connexion `DBI`.
 #' @export
 ellipse_connect <- function(
-  env = NULL,
-  database = "datawarehouse") {
+    env = NULL,
+    database = "datawarehouse") {
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-        sep = ""
-      ))
+      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+      sep = ""
+    ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Environnement:", env))
 
   if (!check_database(database)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir une base de données! 😅\n\n",
-        "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
-        sep = ""
-      ))
+      "Le paramètre `database` peut être \"datawarehouse\", \"datamarts\", ou \"datalake\"",
+      sep = ""
+    ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Database:", database))
@@ -71,16 +73,19 @@ ellipse_connect <- function(
 
   datawarehouse_database <- list_datawarehouse_database(creds)
   datamarts_database <- list_datamarts_database(creds)
+  public_datalake_database <- list_public_datalake_database(creds)
   athena_staging_bucket <- list_athena_staging_bucket(creds)
 
   schema_name <- switch(database,
     "datawarehouse" = paste0(datawarehouse_database),
     "datamarts" = paste0(datamarts_database),
+    "datalake" = paste0(public_datalake_database),
     database
   )
 
   logger::log_debug(paste("[ellipse_connect] datawarehouse_database = ", datawarehouse_database))
   logger::log_debug(paste("[ellipse_connect] datamarts_database = ", datamarts_database))
+  logger::log_debug(paste("[ellipse_connect] public_datalake_database = ", public_datalake_database))
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
 
@@ -181,14 +186,21 @@ ellipse_partitions <- function(con, table) {
 #' dans l'entrepôt de données est retourné. Si un nom de `table` est passé en
 #' paramètre, une description des colonnes de cette table est retournée.
 #'
+#' Pour le datalake public (connexion via `ellipse_connect("DEV", "datalake")`),
+#' cette fonction supporte trois modes de découverte avec métadonnées enrichies :
+#' - `ellipse_discover(con)` : Tous les jeux de données avec métadonnées
+#' - `ellipse_discover(con, "pattern")` : Recherche par motif avec résumé
+#' - `ellipse_discover(con, "nom", "tag")` : Détails spécifiques nom/tag
+#'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param table Une table pour laquelle on veut obtenir les informations.
+#' @param tag Un tag spécifique pour la découverte dans le datalake public (optionnel).
 #'
 #' @returns Un `tibble` contenant les tables disponibles dans l'entrepôt de
 #'   données, ou un descriptino des colonnes pour une table en particulier.
 #'
 #' @export
-ellipse_discover <- function(con, table = NULL) {
+ellipse_discover <- function(con, table = NULL, tag = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
   creds <- get_aws_credentials(env)
@@ -198,6 +210,32 @@ ellipse_discover <- function(con, table = NULL) {
     return(invisible(NULL))
   }
 
+  # Check if this is a public datalake connection
+  if (grepl("publicdatalake", schema, ignore.case = TRUE)) {
+    # Handle public datalake discovery with three patterns
+    if (is.null(table) && is.null(tag)) {
+      # Pattern 1: ellipse_discover(con) - All datasets
+      return(format_public_datalake_all_datasets(con))
+    } else if (!is.null(table) && is.null(tag)) {
+      # Check if this is an exact match or pattern search
+      exact_check_query <- paste0('SELECT COUNT(*) as count FROM "public-data-lake-content" 
+                                  WHERE name = \'', table, '\'')
+      exact_result <- DBI::dbGetQuery(con, exact_check_query)
+      
+      if (exact_result$count > 0) {
+        # Pattern 3: ellipse_discover(con, exact_name) - Specific dataset details
+        return(format_public_datalake_dataset_details(con, table))
+      } else {
+        # Pattern 2: ellipse_discover(con, pattern) - Pattern search
+        return(format_public_datalake_pattern_search(con, table))
+      }
+    } else if (!is.null(table) && !is.null(tag)) {
+      # Pattern 4: ellipse_discover(con, name, tag) - Specific name/tag combination
+      return(format_public_datalake_tag_details(con, table, tag))
+    }
+  }
+
+  # Continue with existing logic for datawarehouse and datamarts
   tables <- DBI::dbGetQuery(
     con, paste0("SHOW TABLES IN ", schema)
   )$tab_name
@@ -466,14 +504,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
 ellipse_publish <- function(
-  con,
-  dataframe,
-  datamart,
-  table,
-  data_tag = NULL,
-  table_tags = NULL,
-  table_description = NULL,
-  unattended_options = NULL) {
+    con,
+    dataframe,
+    datamart,
+    table,
+    data_tag = NULL,
+    table_tags = NULL,
+    table_description = NULL,
+    unattended_options = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -591,8 +629,8 @@ ellipse_publish <- function(
     if (choice == 2) {
       # confirm by the user
       if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?",
-          unattended_option = unattended_options$are_you_sure
-        )) {
+        unattended_option = unattended_options$are_you_sure
+      )) {
         info("Publication des données abandonnée.")
         invisible(FALSE)
       }
@@ -629,8 +667,8 @@ ellipse_publish <- function(
   } else {
     danger("La table demandée n'existe pas")
     if (ask_yes_no("Voulez-vous créer la table?",
-        unattended_option = unattended_options$create_table
-      )) {
+      unattended_option = unattended_options$create_table
+    )) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
@@ -846,7 +884,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   cli::cli_text("")
 
   if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 &&
-      (is.na(table_props$description) || table_props$description != new_table_desc)) {
+    (is.na(table_props$description) || table_props$description != new_table_desc)) {
     cli::cli_alert_info("La nouvelle description de la table sera:")
     cli::cli_alert_info(cli::col_cyan(new_table_desc))
     change_desc <- TRUE

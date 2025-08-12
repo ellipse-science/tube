@@ -6,16 +6,16 @@
 #' Uses actual environment variables from .Renviron
 #' @return Named list with AWS credentials in production-compatible format or NULL if not available
 get_real_aws_credentials_dev <- function() {
-  #cat("🔍 [TEST HELPER] get_real_aws_credentials_dev() called\n")
+  # cat("🔍 [TEST HELPER] get_real_aws_credentials_dev() called\n")
 
   access_key <- Sys.getenv("AWS_ACCESS_KEY_ID_DEV")
   secret_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV")
   region <- Sys.getenv("AWS_REGION")
 
-  #cat("    Environment variables retrieved:\n")
-  #cat("    AWS_ACCESS_KEY_ID_DEV: ", substr(access_key, 1, 10), "...\n")
-  #cat("    AWS_SECRET_ACCESS_KEY_DEV: [HIDDEN]\n")
-  #cat("    AWS_REGION: ", region, "\n")
+  # cat("    Environment variables retrieved:\n")
+  # cat("    AWS_ACCESS_KEY_ID_DEV: ", substr(access_key, 1, 10), "...\n")
+  # cat("    AWS_SECRET_ACCESS_KEY_DEV: [HIDDEN]\n")
+  # cat("    AWS_REGION: ", region, "\n")
 
   if (nzchar(access_key) && nzchar(secret_key) && nzchar(region)) {
     # Return structure that matches production get_aws_credentials() format
@@ -27,12 +27,12 @@ get_real_aws_credentials_dev <- function() {
         )
       )
     )
-    #cat("✅ [TEST HELPER] Returning production-compatible nested credential structure:\n")
-    #cat("    Type: ", typeof(result), ", Length: ", length(result), "\n")
-    #cat("    Names: ", paste(names(result), collapse = ", "), "\n")
+    # cat("✅ [TEST HELPER] Returning production-compatible nested credential structure:\n")
+    # cat("    Type: ", typeof(result), ", Length: ", length(result), "\n")
+    # cat("    Names: ", paste(names(result), collapse = ", "), "\n")
     result
   } else {
-    #cat("❌ [TEST HELPER] Missing credentials, returning NULL\n")
+    # cat("❌ [TEST HELPER] Missing credentials, returning NULL\n")
     NULL
   }
 }
@@ -40,7 +40,7 @@ get_real_aws_credentials_dev <- function() {
 #' Check if real AWS DEV credentials are available for testing
 #' @return Logical indicating if real AWS testing is possible
 can_test_real_aws_dev <- function() {
-  #cat("🔍 [TEST HELPER] can_test_real_aws_dev() called\n")
+  # cat("🔍 [TEST HELPER] can_test_real_aws_dev() called\n")
   creds <- get_real_aws_credentials_dev()
   result <- !is.null(creds)
   cat("    Result: ", result, "\n")
@@ -231,19 +231,22 @@ debug_bucket_function <- function(func_name, credentials, ...) {
   }
 
   # Call the actual function based on name
-  result <- tryCatch({
-    switch(func_name,
-      "list_athena_staging_bucket" = list_athena_staging_bucket(credentials),
-      "list_datalake_bucket" = list_datalake_bucket(credentials),
-      "list_datamarts_bucket" = list_datamarts_bucket(credentials),
-      "list_datawarehouse_bucket" = list_datawarehouse_bucket(credentials),
-      "list_landing_zone_bucket" = list_landing_zone_bucket(credentials),
-      stop("Unknown function: ", func_name)
-    )
-  }, error = function(e) {
-    cat("❌ [PRODUCTION ERROR] ", func_name, "() failed: ", e$message, "\n")
-    stop(e)
-  })
+  result <- tryCatch(
+    {
+      switch(func_name,
+        "list_athena_staging_bucket" = list_athena_staging_bucket(credentials),
+        "list_datalake_bucket" = list_datalake_bucket(credentials),
+        "list_datamarts_bucket" = list_datamarts_bucket(credentials),
+        "list_datawarehouse_bucket" = list_datawarehouse_bucket(credentials),
+        "list_landing_zone_bucket" = list_landing_zone_bucket(credentials),
+        stop("Unknown function: ", func_name)
+      )
+    },
+    error = function(e) {
+      cat("❌ [PRODUCTION ERROR] ", func_name, "() failed: ", e$message, "\n")
+      stop(e)
+    }
+  )
 
   cat("✅ [PRODUCTION RESULT] ", func_name, "() returned ", length(result), " items\n")
   result

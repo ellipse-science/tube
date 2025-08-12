@@ -30,8 +30,8 @@ test_that("DATAWAREHOUSE: function signatures are correct", {
   expect_true(exists("list_datawarehouse_tables", mode = "function"))
 
   # Check function signatures
-  expect_equal(length(formals(list_datawarehouse_database)), 1)  # credentials
-  expect_equal(length(formals(list_datawarehouse_tables)), 2)    # credentials, simplify
+  expect_equal(length(formals(list_datawarehouse_database)), 1) # credentials
+  expect_equal(length(formals(list_datawarehouse_tables)), 2) # credentials, simplify
 
   cat("✅ Function signatures verified!\n")
 })
@@ -198,8 +198,7 @@ test_that("DATAWAREHOUSE: simplify parameter changes return types correctly", {
 
   # If both have results, they should be different types but related
   if (!is.null(simple_result) && !is.null(detailed_result) &&
-      length(simple_result) > 0 && length(detailed_result) > 0) {
-
+    length(simple_result) > 0 && length(detailed_result) > 0) {
     cat("COMPARING RESULTS:\n")
     cat("- Simple format rows:", nrow(simple_result), "\n")
     cat("- Detailed format list length:", length(detailed_result), "\n")
@@ -372,15 +371,20 @@ test_that("DATAWAREHOUSE: Glue integration works correctly", {
   datawarehouse_db <- list_datawarehouse_database(creds)
   glue_databases <- list_glue_databases(creds, "datawarehouse")
 
-  cat("Datawarehouse wrapper result:", if (is.null(datawarehouse_db)) "NULL" else
-      paste(datawarehouse_db, collapse = ", "), "\n")
-  cat("Direct Glue call result:", if (is.null(glue_databases)) "NULL" else
-      paste(glue_databases, collapse = ", "), "\n")
+  cat("Datawarehouse wrapper result:", if (is.null(datawarehouse_db)) {
+    "NULL"
+  } else {
+    paste(datawarehouse_db, collapse = ", ")
+  }, "\n")
+  cat("Direct Glue call result:", if (is.null(glue_databases)) {
+    "NULL"
+  } else {
+    paste(glue_databases, collapse = ", ")
+  }, "\n")
 
   # These should be consistent if both find databases
   if (!is.null(datawarehouse_db) && !is.null(glue_databases) &&
-      length(datawarehouse_db) > 0 && length(glue_databases) > 0) {
-
+    length(datawarehouse_db) > 0 && length(glue_databases) > 0) {
     expect_true(is.character(datawarehouse_db))
     expect_true(is.character(glue_databases))
 
@@ -398,8 +402,7 @@ test_that("DATAWAREHOUSE: Glue integration works correctly", {
   datawarehouse_tables <- list_datawarehouse_tables(creds, simplify = TRUE)
 
   if (!is.null(datawarehouse_tables) && !is.null(datawarehouse_db) &&
-      length(datawarehouse_tables) > 0 && length(datawarehouse_db) > 0) {
-
+    length(datawarehouse_tables) > 0 && length(datawarehouse_db) > 0) {
     cat("TESTING: Table integration with database:", datawarehouse_db[1], "\n")
 
     # Should be able to get Glue tables for the same database
