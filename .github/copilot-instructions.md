@@ -11,6 +11,59 @@
 
 **NEVER FORGET:** One feature = One branch. Always branch sequentially!
 
+## 🔄 ONE CONVERSATION PER FEATURE/BRANCH PROTOCOL 🔄
+
+**MANDATORY WORKFLOW: Each feature gets its own conversation**
+
+### Conversation Transition Protocol:
+1. **End of Feature Conversation:**
+   - ✅ Complete current feature implementation
+   - ✅ Commit and push all changes
+   - ✅ Create comprehensive context documentation
+   - ✅ Create next feature branch
+   - ✅ Hand off to new conversation
+
+2. **Start of New Feature Conversation:**
+   - 📖 Read context documentation from previous conversation
+   - 🎯 Understand feature scope and requirements
+   - 🔍 Analyze current codebase state
+   - 📋 Present implementation plan
+   - ✅ Get approval before starting work
+
+### Context Handoff Requirements:
+**MUST create these files at conversation end:**
+- `FEATURE-XXX-CONTEXT.md` - Complete project state and feature scope
+- `CURRENT-FUNCTION-INVENTORY.md` - Function mapping and analysis
+- `HANDOFF-INSTRUCTIONS.md` - Specific next steps
+
+### Benefits of One Conversation Per Feature:
+- ✅ **Clear context boundaries** - No confusion between features
+- ✅ **Complete documentation** - Each conversation is self-contained
+- ✅ **Better focus** - Full attention on single feature
+- ✅ **Easier debugging** - Clear traceability of changes
+- ✅ **Reduced complexity** - No cross-feature interference
+- ✅ **Better planning** - Fresh analysis for each feature
+
+### Conversation Structure:
+```
+Feature N Conversation:
+├── Context Analysis (from previous conversation docs)
+├── Feature Planning and Approval
+├── Implementation Phase
+├── Testing and Validation
+├── Documentation Updates
+├── Commit and Push
+├── Create Context for Feature N+1
+└── Hand off to next conversation
+
+Feature N+1 Conversation:
+├── Read Feature N context
+├── Continue from established foundation
+└── [Repeat cycle]
+```
+
+**NEVER work on multiple features in same conversation!**
+
 ## Table of Contents
 
 1. [Core Principles](#core-principles)
@@ -19,6 +72,7 @@
 
 2. [Development Workflow](#development-workflow)
    - [Iterative Branching Strategy](#iterative-branching-strategy)
+   - [One Conversation Per Feature Protocol](#one-conversation-per-feature-protocol)
    - [Feature Development Cycle](#feature-development-cycle)
    - [Pre-Development Checklist](#pre-development-checklist)
    - [Required Questions to Ask](#required-questions-to-ask)
@@ -157,6 +211,59 @@ main
    • Create a new branch for the next feature?
    • What should the next feature be?"
    ```
+
+### One Conversation Per Feature Protocol
+
+**MANDATORY WORKFLOW: Each feature gets its own conversation**
+
+#### Conversation Transition Protocol:
+1. **End of Feature Conversation:**
+   - ✅ Complete current feature implementation
+   - ✅ Commit and push all changes
+   - ✅ Create comprehensive context documentation
+   - ✅ Create next feature branch
+   - ✅ Hand off to new conversation
+
+2. **Start of New Feature Conversation:**
+   - 📖 Read context documentation from previous conversation
+   - 🎯 Understand feature scope and requirements
+   - 🔍 Analyze current codebase state
+   - 📋 Present implementation plan
+   - ✅ Get approval before starting work
+
+#### Context Handoff Requirements:
+**MUST create these files at conversation end:**
+- `FEATURE-XXX-CONTEXT.md` - Complete project state and feature scope
+- `CURRENT-FUNCTION-INVENTORY.md` - Function mapping and analysis
+- `HANDOFF-INSTRUCTIONS.md` - Specific next steps
+
+#### Benefits of One Conversation Per Feature:
+- ✅ **Clear context boundaries** - No confusion between features
+- ✅ **Complete documentation** - Each conversation is self-contained
+- ✅ **Better focus** - Full attention on single feature
+- ✅ **Easier debugging** - Clear traceability of changes
+- ✅ **Reduced complexity** - No cross-feature interference
+- ✅ **Better planning** - Fresh analysis for each feature
+
+#### Conversation Structure:
+```
+Feature N Conversation:
+├── Context Analysis (from previous conversation docs)
+├── Feature Planning and Approval
+├── Implementation Phase
+├── Testing and Validation
+├── Documentation Updates
+├── Commit and Push
+├── Create Context for Feature N+1
+└── Hand off to next conversation
+
+Feature N+1 Conversation:
+├── Read Feature N context
+├── Continue from established foundation
+└── [Repeat cycle]
+```
+
+**NEVER work on multiple features in same conversation!**
 
 ### Feature Development Cycle
 
