@@ -208,8 +208,8 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     `Data Destruction` = paste("🗑️", result$data_destruction_date),
     `Ethical Stamp` = paste("✅", result$ethical_stamp),
     `User Metadata` = ifelse(
-      !is.na(result$user_metadata_fields) & nzchar(result$user_metadata_fields),
-      paste("🏷️", result$user_metadata_fields),
+      !is.na(result$user_metadata_preview) & nzchar(result$user_metadata_preview) & result$user_metadata_preview != "...",
+      paste("🏷️", result$user_metadata_preview),
       "None"
     ),
     stringsAsFactors = FALSE,
