@@ -177,8 +177,6 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create nice output with icons
   cli::cli_h2(glue::glue("📊 Dataset Details: {dataset_name}"))
-  cli::cli_text("")
-
   # Basic information
   cli::cli_h3("📋 Overview")
   table_name <- result[1, "table_name"]
