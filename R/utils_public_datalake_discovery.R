@@ -207,6 +207,11 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     `Consent Expires` = paste("🔒", result$consent_expiry_date),
     `Data Destruction` = paste("🗑️", result$data_destruction_date),
     `Ethical Stamp` = paste("✅", result$ethical_stamp),
+    `User Metadata` = ifelse(
+      !is.na(result$user_metadata_fields) & nzchar(result$user_metadata_fields),
+      paste("🏷️", result$user_metadata_fields),
+      "None"
+    ),
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
