@@ -7,11 +7,11 @@
 #' @return Named list with AWS credentials in production-compatible format or NULL if not available
 get_real_aws_credentials_dev <- function() {
   #cat("🔍 [TEST HELPER] get_real_aws_credentials_dev() called\n")
-  
+
   access_key <- Sys.getenv("AWS_ACCESS_KEY_ID_DEV")
   secret_key <- Sys.getenv("AWS_SECRET_ACCESS_KEY_DEV")
   region <- Sys.getenv("AWS_REGION")
-  
+
   #cat("    Environment variables retrieved:\n")
   #cat("    AWS_ACCESS_KEY_ID_DEV: ", substr(access_key, 1, 10), "...\n")
   #cat("    AWS_SECRET_ACCESS_KEY_DEV: [HIDDEN]\n")
@@ -30,10 +30,10 @@ get_real_aws_credentials_dev <- function() {
     #cat("✅ [TEST HELPER] Returning production-compatible nested credential structure:\n")
     #cat("    Type: ", typeof(result), ", Length: ", length(result), "\n")
     #cat("    Names: ", paste(names(result), collapse = ", "), "\n")
-    return(result)
+    result
   } else {
     #cat("❌ [TEST HELPER] Missing credentials, returning NULL\n")
-    return(NULL)
+    NULL
   }
 }
 
@@ -44,7 +44,7 @@ can_test_real_aws_dev <- function() {
   creds <- get_real_aws_credentials_dev()
   result <- !is.null(creds)
   cat("    Result: ", result, "\n")
-  return(result)
+  result
 }
 
 #' Get actual AWS region from environment variables
@@ -65,10 +65,10 @@ validate_aws_credential_format <- function(creds) {
   if (is.null(creds) || is.null(creds$credentials) || is.null(creds$credentials$creds)) {
     return(FALSE)
   }
-  
+
   access_key_id <- creds$credentials$creds$access_key_id
   secret_access_key <- creds$credentials$creds$secret_access_key
-  
+
   access_key_valid <- grepl("^[A-Z0-9]+$", access_key_id) && nchar(access_key_id) >= 16
   secret_key_valid <- nchar(secret_access_key) >= 32
 
@@ -144,9 +144,9 @@ safe_display_credentials <- function(creds) {
     cat("    NULL\n")
     return(invisible())
   }
-  
+
   safe_creds <- creds
-  
+
   # Handle flat structure (test helper format)
   if (!is.null(safe_creds$secret_access_key)) {
     safe_creds$secret_access_key <- "[HIDDEN]"
@@ -154,15 +154,17 @@ safe_display_credentials <- function(creds) {
   if (!is.null(safe_creds$access_key_id)) {
     safe_creds$access_key_id <- paste0(substr(safe_creds$access_key_id, 1, 10), "...")
   }
-  
+
   # Handle nested structure (production format)
   if (!is.null(safe_creds$credentials$creds$secret_access_key)) {
     safe_creds$credentials$creds$secret_access_key <- "[HIDDEN]"
   }
   if (!is.null(safe_creds$credentials$creds$access_key_id)) {
-    safe_creds$credentials$creds$access_key_id <- paste0(substr(safe_creds$credentials$creds$access_key_id, 1, 10), "...")
+    safe_creds$credentials$creds$access_key_id <- paste0(
+      substr(safe_creds$credentials$creds$access_key_id, 1, 10), "..."
+    )
   }
-  
+
   str(safe_creds, max.level = 3)
 }
 
@@ -171,9 +173,9 @@ safe_display_credentials <- function(creds) {
 #' Shows exactly what's being called and what's returned
 debug_get_aws_credentials <- function(env) {
   cat("🎯 [PRODUCTION CALL] get_aws_credentials(env = '", env, "')\n")
-  
+
   result <- get_aws_credentials(env)
-  
+
   cat("📦 [PRODUCTION RESULT] get_aws_credentials() returned:\n")
   if (is.null(result)) {
     cat("    NULL\n")
@@ -187,12 +189,14 @@ debug_get_aws_credentials <- function(env) {
       safe_result$credentials$creds$secret_access_key <- "[HIDDEN]"
     }
     if (!is.null(safe_result$credentials$creds$access_key_id)) {
-      safe_result$credentials$creds$access_key_id <- paste0(substr(safe_result$credentials$creds$access_key_id, 1, 10), "...")
+      safe_result$credentials$creds$access_key_id <- paste0(
+        substr(safe_result$credentials$creds$access_key_id, 1, 10), "..."
+      )
     }
     str(safe_result, max.level = 3)
   }
-  
-  return(result)
+
+  result
 }
 
 #' Debug wrapper for production bucket functions
@@ -205,7 +209,7 @@ debug_bucket_function <- function(func_name, credentials, ...) {
   } else {
     cat("    Type: ", typeof(credentials), ", Length: ", length(credentials), "\n")
     cat("    Names: ", paste(names(credentials), collapse = ", "), "\n")
-    
+
     # Create safe structure for display
     safe_creds <- credentials
     if (!is.null(safe_creds$secret_access_key)) {
@@ -218,12 +222,14 @@ debug_bucket_function <- function(func_name, credentials, ...) {
       safe_creds$credentials$creds$secret_access_key <- "[HIDDEN]"
     }
     if (!is.null(safe_creds$credentials$creds$access_key_id)) {
-      safe_creds$credentials$creds$access_key_id <- paste0(substr(safe_creds$credentials$creds$access_key_id, 1, 10), "...")
+      safe_creds$credentials$creds$access_key_id <- paste0(
+        substr(safe_creds$credentials$creds$access_key_id, 1, 10), "..."
+      )
     }
-    
+
     str(safe_creds, max.level = 3)
   }
-  
+
   # Call the actual function based on name
   result <- tryCatch({
     switch(func_name,
@@ -238,7 +244,7 @@ debug_bucket_function <- function(func_name, credentials, ...) {
     cat("❌ [PRODUCTION ERROR] ", func_name, "() failed: ", e$message, "\n")
     stop(e)
   })
-  
+
   cat("✅ [PRODUCTION RESULT] ", func_name, "() returned ", length(result), " items\n")
-  return(result)
+  result
 }

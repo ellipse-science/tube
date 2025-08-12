@@ -9,7 +9,7 @@ devtools::load_all(".")
 
 test_that("Glue functions can be loaded and have proper signatures", {
   cat("\n=== TESTING GLUE FUNCTION SIGNATURES ===\n")
-  
+
   cat("PRODUCTION CODE BEING TESTED:\n")
   cat("1. list_glue_databases <- function(credentials, type) {\n")
   cat("     glue_client <- paws.analytics::glue(config = credentials)\n")
@@ -18,7 +18,7 @@ test_that("Glue functions can be loaded and have proper signatures", {
   cat("     database_list <- list[grep(type, list)]\n")
   cat("     return(unlist(database_list))\n")
   cat("   }\n\n")
-  
+
   cat("2. list_glue_tables <- function(credentials, schema, tablename_filter, simplify) {\n")
   cat("     glue_client <- paws.analytics::glue(config = credentials)\n")
   cat("     tables <- glue_client$get_tables(\"\", schema)\n")
@@ -27,20 +27,20 @@ test_that("Glue functions can be loaded and have proper signatures", {
   cat("     }\n")
   cat("     return(tables)\n")
   cat("   }\n\n")
-  
+
   cat("3. glue_table_list_to_tibble <- function(glue_response) {\n")
   cat("     # Converts AWS Glue API response to structured tibble\n")
   cat("     # Columns: table_name, col_name, col_type, is_partition\n")
   cat("     # Processes both regular columns and partition keys\n")
   cat("   }\n\n")
-  
+
   cat("DATA TRANSFORMATION CHAIN:\n")
   cat("AWS Glue API → list → grep() filter → unlist() → character vector\n")
   cat("           ↓ (if simplify=TRUE)\n")
   cat("glue_table_list_to_tibble() → structured tibble\n\n")
-  
+
   cat("TESTING: Function existence and signatures...\n")
-  
+
   # Check that all Glue functions exist
   expect_true(exists("list_glue_databases", mode = "function"))
   expect_true(exists("list_glue_tables", mode = "function"))
@@ -51,18 +51,19 @@ test_that("Glue functions can be loaded and have proper signatures", {
   expect_true(exists("glue_table_list_to_tibble", mode = "function"))
   expect_true(exists("update_glue_table_tags", mode = "function"))
   expect_true(exists("update_glue_table_desc", mode = "function"))
-  
+
   # Check function signatures
   expect_equal(length(formals(list_glue_databases)), 2)         # credentials, type
   expect_equal(length(formals(list_glue_tables)), 4)            # credentials, schema, tablename_filter, simplify
   expect_equal(length(formals(list_glue_table_properties)), 3)  # credentials, schema, table
   expect_equal(length(formals(delete_glue_table)), 3)           # credentials, database_name, table_name
   expect_equal(length(formals(list_glue_jobs)), 1)              # credentials
-  expect_equal(length(formals(run_glue_job)), 6)                # credentials, job_name, database, prefix, table_tags, table_description
+  # credentials, job_name, database, prefix, table_tags, table_description
+  expect_equal(length(formals(run_glue_job)), 6)
   expect_equal(length(formals(glue_table_list_to_tibble)), 1)   # glue_response
   expect_equal(length(formals(update_glue_table_tags)), 4)      # creds, schema, table, new_table_tags
   expect_equal(length(formals(update_glue_table_desc)), 4)      # creds, schema, table, desc
-  
+
   cat("✅ All Glue function signatures verified!\n")
 })
 
@@ -73,7 +74,7 @@ test_that("list_glue_databases validates input parameters", {
     list_glue_databases(credentials = NULL, type = "datawarehouse"),
     class = "error"
   )
-  
+
   # Test with empty type
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -86,9 +87,9 @@ test_that("list_glue_databases validates input parameters", {
 
 test_that("list_glue_databases works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   cat("\n=== TESTING GLUE DATABASE LISTING ===\n")
-  
+
   cat("PRODUCTION CODE FLOW:\n")
   cat("list_glue_databases(creds, \"datawarehouse\")\n")
   cat("  └─> paws.analytics::glue(config = credentials)\n")
@@ -96,33 +97,35 @@ test_that("list_glue_databases works with real AWS credentials", {
   cat("  └─> unlist(r$DatabaseList) -> all database names\n")
   cat("  └─> grep(\"datawarehouse\", list) -> filter matching\n")
   cat("  └─> unlist(database_list) -> character vector\n\n")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   cat("TESTING: Different database type filters...\n")
-  
+
   # Test listing databases for different types
   datawarehouse_dbs <- list_glue_databases(creds, "datawarehouse")
   expect_true(is.character(datawarehouse_dbs) || is.null(datawarehouse_dbs))
-  
-  cat("Datawarehouse databases:", if(is.null(datawarehouse_dbs)) "NULL" else paste(datawarehouse_dbs, collapse=", "), "\n")
-  
+
+  cat("Datawarehouse databases:", if (is.null(datawarehouse_dbs)) "NULL" else
+      paste(datawarehouse_dbs, collapse = ", "), "\n")
+
   datamart_dbs <- list_glue_databases(creds, "datamart")
   expect_true(is.character(datamart_dbs) || is.null(datamart_dbs))
-  
-  cat("Datamart databases:", if(is.null(datamart_dbs)) "NULL" else paste(datamart_dbs, collapse=", "), "\n")
-  
+
+  cat("Datamart databases:", if (is.null(datamart_dbs)) "NULL" else
+      paste(datamart_dbs, collapse = ", "), "\n")
+
   # If databases exist, verify they contain the expected type in name
   if (!is.null(datawarehouse_dbs) && length(datawarehouse_dbs) > 0) {
     expect_true(any(grepl("datawarehouse", datawarehouse_dbs, ignore.case = TRUE)))
     cat("✅ Datawarehouse database filtering works correctly!\n")
   }
-  
+
   if (!is.null(datamart_dbs) && length(datamart_dbs) > 0) {
     expect_true(any(grepl("datamart", datamart_dbs, ignore.case = TRUE)))
     cat("✅ Datamart database filtering works correctly!\n")
   }
-  
+
   cat("✅ Glue database listing completed!\n")
 })
 
@@ -133,7 +136,7 @@ test_that("list_glue_tables validates input parameters", {
     list_glue_tables(credentials = NULL, schema = "test", tablename_filter = NULL, simplify = TRUE),
     class = "error"
   )
-  
+
   # Test with NULL schema
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -146,9 +149,9 @@ test_that("list_glue_tables validates input parameters", {
 
 test_that("list_glue_tables works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   cat("\n=== TESTING GLUE TABLE LISTING ===\n")
-  
+
   cat("PRODUCTION CODE FLOW:\n")
   cat("list_glue_tables(creds, schema, tablename_filter, simplify)\n")
   cat("  └─> paws.analytics::glue(config = credentials)\n")
@@ -156,7 +159,7 @@ test_that("list_glue_tables works with real AWS credentials", {
   cat("  └─> tables$TableList[grep(filter, names)] -> filtered tables\n")
   cat("  └─> if (simplify) glue_table_list_to_tibble(tables)\n")
   cat("      else return(tables) -> raw AWS response\n\n")
-  
+
   cat("TABLE STRUCTURE CONVERSION:\n")
   cat("AWS Glue Table Object:\n")
   cat("  Name: table_name\n")
@@ -169,22 +172,22 @@ test_that("list_glue_tables works with real AWS credentials", {
   cat("  my_table   | id       | bigint   | FALSE\n")
   cat("  my_table   | name     | string   | FALSE\n")
   cat("  my_table   | year     | string   | TRUE\n\n")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   # Get a real database to test with
   databases <- list_glue_databases(creds, "datawarehouse")
   if (!is.null(databases) && length(databases) > 0) {
     # Test listing tables
     tables <- list_glue_tables(creds, databases[1], tablename_filter = NULL, simplify = TRUE)
     expect_true(is.character(tables) || is.list(tables) || is.null(tables))
-    
+
     # Test with table name filter
     if (!is.null(tables) && length(tables) > 0) {
       filtered_tables <- list_glue_tables(creds, databases[1], tablename_filter = "test", simplify = TRUE)
       expect_true(is.character(filtered_tables) || is.list(filtered_tables) || is.null(filtered_tables))
     }
-    
+
     # Test with simplify = FALSE
     detailed_tables <- list_glue_tables(creds, databases[1], tablename_filter = NULL, simplify = FALSE)
     expect_true(is.list(detailed_tables) || is.null(detailed_tables))
@@ -200,7 +203,7 @@ test_that("list_glue_table_properties validates input parameters", {
     list_glue_table_properties(credentials = NULL, schema = "test", table = "test_table"),
     class = "error"
   )
-  
+
   # Test with NULL schema
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -209,7 +212,7 @@ test_that("list_glue_table_properties validates input parameters", {
       class = "error"
     )
   }
-  
+
   # Test with NULL table
   if (!is.null(creds)) {
     expect_error(
@@ -221,20 +224,20 @@ test_that("list_glue_table_properties validates input parameters", {
 
 test_that("list_glue_table_properties works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   # Get a real database and table to test with
   databases <- list_glue_databases(creds, "datawarehouse")
   if (!is.null(databases) && length(databases) > 0) {
     tables <- list_glue_tables(creds, databases[1], tablename_filter = NULL, simplify = TRUE)
-    
+
     if (!is.null(tables) && length(tables) > 0) {
       # Test getting table properties (may fail with condition length errors)
       result <- tryCatch({
         properties <- list_glue_table_properties(creds, databases[1], tables[1])
         expect_true(is.list(properties) || is.null(properties))
-        
+
         # If properties exist, they should contain expected structure
         if (!is.null(properties)) {
           expect_true(is.list(properties))
@@ -265,13 +268,13 @@ test_that("list_glue_jobs validates input parameters", {
 
 test_that("list_glue_jobs works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   # Test listing Glue jobs
   jobs <- list_glue_jobs(creds)
   expect_true(is.character(jobs) || is.list(jobs) || is.null(jobs))
-  
+
   # If jobs exist, they should have names
   if (!is.null(jobs) && length(jobs) > 0) {
     if (is.character(jobs)) {
@@ -322,20 +325,20 @@ test_that("glue_table_list_to_tibble converts Glue responses correctly", {
       )
     )
   )
-  
+
   # Test conversion to tibble
   result <- glue_table_list_to_tibble(mock_glue_response)
-  
+
   # Should return a tibble/data.frame
   expect_true(is.data.frame(result))
-  
+
   # Should have expected columns
   expected_cols <- c("table_name", "col_name", "col_type", "is_partition")
   expect_true(all(expected_cols %in% names(result)))
-  
+
   # Should have rows for each column in each table
   expect_true(nrow(result) > 0)
-  
+
   # Check that partition information is correctly identified (might not have both types)
   if ("is_partition" %in% names(result) && nrow(result) > 0) {
     # Should have valid is_partition values (TRUE/FALSE or Yes/No)
@@ -348,7 +351,7 @@ test_that("glue_table_list_to_tibble handles empty responses", {
   # Test with empty table list
   empty_response <- list(TableList = list())
   result <- glue_table_list_to_tibble(empty_response)
-  
+
   expect_true(is.data.frame(result))
   expect_equal(nrow(result), 0)
 })
@@ -358,7 +361,7 @@ test_that("glue_table_list_to_tibble handles malformed responses", {
   result <- glue_table_list_to_tibble(NULL)
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 0)
-  
+
   # Test with missing TableList
   malformed_response <- list(SomeOtherField = "value")
   expect_error(
@@ -374,7 +377,7 @@ test_that("update_glue_table_tags validates input parameters", {
     update_glue_table_tags(creds = NULL, schema = "test", table = "test_table", new_table_tags = list()),
     class = "error"
   )
-  
+
   # Test with NULL tags
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -394,7 +397,7 @@ test_that("update_glue_table_tags validates tag format", {
       # This would normally make an API call, but we're testing parameter validation
       # The function should validate inputs before making the call
     })
-    
+
     # Test with invalid tags (not a list)
     expect_error(
       update_glue_table_tags(creds, schema = "test", table = "test_table", new_table_tags = "not_a_list"),
@@ -410,7 +413,7 @@ test_that("update_glue_table_desc validates input parameters", {
     update_glue_table_desc(creds = NULL, schema = "test", table = "test_table", desc = "New description"),
     class = "error"
   )
-  
+
   # Test with NULL description
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -428,7 +431,7 @@ test_that("delete_glue_table validates input parameters", {
     delete_glue_table(credentials = NULL, database_name = "test_db", table_name = "test_table"),
     class = "error"
   )
-  
+
   # Test with NULL database name
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
@@ -437,7 +440,7 @@ test_that("delete_glue_table validates input parameters", {
       class = "error"
     )
   }
-  
+
   # Test with NULL table name - function returns FALSE instead of erroring
   if (!is.null(creds)) {
     result <- delete_glue_table(creds, database_name = "test_db", table_name = NULL)
@@ -449,17 +452,17 @@ test_that("delete_glue_table validates input parameters", {
 test_that("run_glue_job validates input parameters", {
   # Test with NULL credentials
   expect_error(
-    run_glue_job(credentials = NULL, job_name = "test_job", database = "test_db", 
-                 prefix = "test/", table_tags = NULL, table_description = NULL),
+    run_glue_job(credentials = NULL, job_name = "test_job", database = "test_db",
+      prefix = "test/", table_tags = NULL, table_description = NULL),
     class = "error"
   )
-  
+
   # Test with NULL job name
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
     expect_error(
-      run_glue_job(creds, job_name = NULL, database = "test_db", 
-                   prefix = "test/", table_tags = NULL, table_description = NULL),
+      run_glue_job(creds, job_name = NULL, database = "test_db",
+        prefix = "test/", table_tags = NULL, table_description = NULL),
       class = "error"
     )
   }
@@ -473,11 +476,11 @@ test_that("run_glue_job validates table tags format", {
     expect_no_error({
       # Function should validate parameters before making API calls
     })
-    
+
     # Test with invalid table tags format
     expect_error(
-      run_glue_job(creds, job_name = "test_job", database = "test_db", 
-                   prefix = "test/", table_tags = "not_a_list", table_description = NULL),
+      run_glue_job(creds, job_name = "test_job", database = "test_db",
+        prefix = "test/", table_tags = "not_a_list", table_description = NULL),
       class = "error"
     )
   }
@@ -485,15 +488,15 @@ test_that("run_glue_job validates table tags format", {
 
 test_that("Glue functions handle AWS API errors gracefully", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   # Test with non-existent database - should handle gracefully
   expect_no_error({
     result <- list_glue_databases(creds, "nonexistent-type-12345")
     expect_true(is.null(result) || is.character(result))
   })
-  
+
   # Test with non-existent table - should return AWS error
   expect_error({
     result <- list_glue_tables(creds, "nonexistent-database-12345", NULL, TRUE)
@@ -502,9 +505,9 @@ test_that("Glue functions handle AWS API errors gracefully", {
 
 test_that("Glue functions integrate properly with each other", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-  
+
   creds <- get_real_aws_credentials_dev()
-  
+
   # Test the workflow: list databases -> list tables -> get table properties
   databases <- list_glue_databases(creds, "datawarehouse")
   if (!is.null(databases) && length(databases) > 0) {

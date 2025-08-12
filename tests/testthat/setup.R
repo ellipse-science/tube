@@ -11,7 +11,7 @@ if (requireNamespace("testthat", quietly = TRUE)) {
   # Check if real AWS credentials are available
   aws_dev_key <- Sys.getenv("AWS_ACCESS_KEY_ID_DEV")
   aws_region <- Sys.getenv("AWS_REGION")
-  
+
   if (nzchar(aws_dev_key) && nzchar(aws_region)) {
     message("✅ Real AWS testing environment available")
   } else {

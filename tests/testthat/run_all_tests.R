@@ -6,16 +6,16 @@
 cat("=== MASTER TEST RUNNER - ALL UNIT TESTS ===\n")
 
 # Setup
-readRenviron('.Renviron')
+readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all('.', quiet = TRUE)
+load_all(".", quiet = TRUE)
 
 # Test sequence
 test_files <- c(
-  'tests/testthat/test-basic-functions.R',
-  'tests/testthat/test-aws-credentials.R', 
-  'tests/testthat/test-ellipse-main.R'
+  "tests/testthat/test-basic-functions.R",
+  "tests/testthat/test-aws-credentials.R",
+  "tests/testthat/test-ellipse-main.R"
 )
 
 total_tests <- 0
@@ -25,9 +25,9 @@ for (test_file in test_files) {
   cat("\n", rep("=", 60), "\n")
   cat("Running:", basename(test_file), "\n")
   cat(rep("=", 60), "\n")
-  
+
   result <- test_file(test_file, reporter = "summary")
-  
+
   if (!is.null(result)) {
     total_tests <- total_tests + sum(result$nb)
     total_failures <- total_failures + sum(result$failed)

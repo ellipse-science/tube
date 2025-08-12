@@ -15,5 +15,5 @@ list_datalake_bucket <- function(credentials) {
   datalake_list <- list_s3_buckets(credentials, "datalakebucket")
 
   logger::log_debug("[tube::list_datalakes] returning results")
-  return(datalake_list)
+  datalake_list
 }

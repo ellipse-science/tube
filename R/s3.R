@@ -24,16 +24,16 @@ list_s3_buckets <- function(credentials, type) {
   list <- unlist(r$Buckets)
   bucket_list <- list[grep(type, list)]
   bucket_list <- as.list(bucket_list)
-  
+
   # Only assign names if bucket_list is not empty
   if (length(bucket_list) > 0) {
     names(bucket_list) <- ""
   }
-  
+
   bucket_list <- unlist(bucket_list)
 
   logger::log_debug("[tube::list_s3_buckets] returning results")
-  return(bucket_list)
+  bucket_list
 }
 
 #' @title List S3 partitions
@@ -67,13 +67,13 @@ list_s3_partitions <- function(credentials, bucket) {
   }, error = function(e) {
     if (grepl("NoSuchBucket", e$message)) {
       logger::log_debug("[tube::list_s3_partitions] bucket does not exist")
-      return(NULL)
+      NULL
     } else {
       logger::log_error("[tube::list_s3_partitions] AWS API error")
-      return(NULL)
+      NULL
     }
   })
-  
+
   if (is.null(r)) {
     return(NULL)
   }
@@ -84,7 +84,7 @@ list_s3_partitions <- function(credentials, bucket) {
   partition_list <- lapply(partition_list, function(x) x$Prefix)
   partition_list <- unlist(partition_list)
   logger::log_debug("[tube::list_s3_partitions] returning results")
-  return(partition_list)
+  partition_list
 }
 
 #' @title List S3 folders
@@ -120,13 +120,13 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   }, error = function(e) {
     if (grepl("NoSuchBucket", e$message)) {
       logger::log_debug("[tube::list_s3_folders] bucket does not exist")
-      return(NULL)
+      NULL
     } else {
       logger::log_error("[tube::list_s3_folders] AWS API error")
-      return(NULL)
+      NULL
     }
   })
-  
+
   if (is.null(r)) {
     return(NULL)
   }
@@ -138,7 +138,7 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   folder_list <- lapply(folder_list, function(x) regmatches(x, regexec(".*/(.*)/$", x))[[1]][2])
   folder_list <- unlist(folder_list)
   logger::log_debug("[tube::list_s3_folders] returning results")
-  return(folder_list)
+  folder_list
 }
 
 #' Upload a file to an S3 bucket

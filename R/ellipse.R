@@ -15,22 +15,22 @@ utils::globalVariables(c(
 #' @returns Un object de connexion `DBI`.
 #' @export
 ellipse_connect <- function(
-    env = NULL,
-    database = "datawarehouse") {
+  env = NULL,
+  database = "datawarehouse") {
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Environnement:", env))
 
   if (!check_database(database)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir une base de données! 😅\n\n",
-      "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
-      sep = ""
-    ))
+        "Le paramètre `database` peut être \"datawarehouse\" ou \"datamarts\"",
+        sep = ""
+      ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Database:", database))
@@ -466,14 +466,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
 ellipse_publish <- function(
-    con,
-    dataframe,
-    datamart,
-    table,
-    data_tag = NULL,
-    table_tags = NULL,
-    table_description = NULL,
-    unattended_options = NULL) {
+  con,
+  dataframe,
+  datamart,
+  table,
+  data_tag = NULL,
+  table_tags = NULL,
+  table_description = NULL,
+  unattended_options = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -591,8 +591,8 @@ ellipse_publish <- function(
     if (choice == 2) {
       # confirm by the user
       if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?",
-            unattended_option = unattended_options$are_you_sure
-          )) {
+          unattended_option = unattended_options$are_you_sure
+        )) {
         info("Publication des données abandonnée.")
         invisible(FALSE)
       }
@@ -629,8 +629,8 @@ ellipse_publish <- function(
   } else {
     danger("La table demandée n'existe pas")
     if (ask_yes_no("Voulez-vous créer la table?",
-      unattended_option = unattended_options$create_table
-    )) {
+        unattended_option = unattended_options$create_table
+      )) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
@@ -763,13 +763,13 @@ ellipse_unpublish <- function(con, datamart, table) {
 ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
-  
+
   # If schema contains datawarehouse, exit the function BEFORE any AWS calls
   if (grepl("datawarehouse", schema)) {
     cli::cli_alert_danger("L'opération ellipse_describe n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅")
     return(invisible(FALSE))
   }
-  
+
   creds <- get_aws_credentials(env)
 
   if (!check_params_before_describe(env, schema, table, new_table_tags, new_table_desc)) {
@@ -846,7 +846,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   cli::cli_text("")
 
   if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 &&
-        (is.na(table_props$description) || table_props$description != new_table_desc)) {
+      (is.na(table_props$description) || table_props$description != new_table_desc)) {
     cli::cli_alert_info("La nouvelle description de la table sera:")
     cli::cli_alert_info(cli::col_cyan(new_table_desc))
     change_desc <- TRUE

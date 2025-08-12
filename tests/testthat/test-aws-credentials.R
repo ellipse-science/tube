@@ -6,7 +6,7 @@ devtools::load_all(".")
 
 test_that("get_aws_credentials() works with real DEV environment variables", {
   cat("\n=== TESTING AWS CREDENTIALS RETRIEVAL ===\n")
-  
+
   cat("PRODUCTION CODE BEING TESTED:\n")
   cat("get_aws_credentials <- function(env) {\n")
   cat("  if (env == \"DEV\") {\n")
@@ -21,9 +21,9 @@ test_that("get_aws_credentials() works with real DEV environment variables", {
   cat("    secret_access_key = secret_key\n")
   cat("  ))))\n")
   cat("}\n\n")
-  
+
   cat("CREDENTIAL STRUCTURE: env → Sys.getenv() → paws-compatible list structure\n\n")
-  
+
   # Skip if real AWS credentials not available
   skip_if_not(can_test_real_aws_dev(), "Real AWS DEV credentials not available")
 

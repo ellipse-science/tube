@@ -64,7 +64,10 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
 
       # check that the folder contains only csv or rtf files
       if (!all(tools::file_ext(folder_content) %in% c("csv", "rtf"))) {
-        cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers qui ne sont ni des fichiers CSV ni des fichiers RTF! 😅")
+        cli::cli_alert_danger(paste(
+          "Oups, le répertoire fourni contient des fichiers qui ne sont",
+          "ni des fichiers CSV ni des fichiers RTF! 😅"
+        ))
         return(NULL)
       }
 
@@ -119,5 +122,5 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
     return(NULL)
   }
 
-  return(folder_content)
+  folder_content
 }

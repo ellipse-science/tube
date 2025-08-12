@@ -11,13 +11,13 @@ check_env <- function(env) {
   if (is.null(env) || !is.character(env) || length(env) != 1) {
     return(FALSE)
   }
-  
+
   # Content validation: must be exactly "DEV" or "PROD"
   if (is.na(env) || !env %in% c("DEV", "PROD")) {
     return(FALSE)
   }
-  
-  return(TRUE)
+
+  TRUE
 }
 
 #' @title Check the database parameter provided to a function
@@ -29,13 +29,13 @@ check_database <- function(database) {
   if (is.null(database) || !is.character(database) || length(database) != 1) {
     return(FALSE)
   }
-  
+
   # Content validation: must be exactly "datawarehouse" or "datamarts"
   if (is.na(database) || !database %in% c("datawarehouse", "datamarts")) {
     return(FALSE)
   }
-  
-  return(TRUE)
+
+  TRUE
 }
 
 #' @title Check the parameters provided to the ellipse_ingest function
@@ -54,7 +54,7 @@ check_pipeline_before_ingest <- function(pipeline, landing_zone_partitions, file
     cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
     return(FALSE)
   }
-  
+
   # Handle empty string pipeline
   if (is.na(pipeline) || nchar(pipeline) == 0) {
     cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
@@ -82,11 +82,16 @@ check_pipeline_before_ingest <- function(pipeline, landing_zone_partitions, file
   }
 
   if (grepl("^(dict-|dim-)", pipeline) && is.null(file_version)) {
-    cli::cli_alert_danger("Oups, il faut fournir une version pour les données dimensionnelles ou les dictionnaires (pipelines dict- ou dim-)! 😅")
+    cli::cli_alert_danger(
+      paste0(
+        "Oups, il faut fournir une version pour les données dimensionnelles ",
+        "ou les dictionnaires (pipelines dict- ou dim-)! 😅"
+      )
+    )
     return(FALSE)
   }
 
-  return(TRUE)
+  TRUE
 }
 
 #' @title Check the parameters provided to the ellipse_ingest function
@@ -103,21 +108,21 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
       return(FALSE)
     }
   }
-  
+
   # Validate file_version type and content
   if (!is.null(file_version)) {
     if (!is.character(file_version) || length(file_version) != 1 || is.na(file_version) || nchar(file_version) == 0) {
       return(FALSE)
     }
   }
-  
+
   # According to tests: NULL batch + version should be FALSE
   if (is.null(file_batch) && !is.null(file_version)) {
     return(FALSE)
   }
-  
+
   # Both NULL or both present or batch only - these should be TRUE
-  return(TRUE)
+  TRUE
 }
 
 #' @title Check the parameters provided to the ellipse_publish function
@@ -131,9 +136,9 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   logger::log_debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 
@@ -204,7 +209,7 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   }
 
   logger::log_debug("[tube::check_params_before_publish] Exitting function")
-  return(TRUE)
+  TRUE
 }
 
 #' @title Check the parameters provided to the ellipse_unpublish function
@@ -218,9 +223,9 @@ check_params_before_unpublish <- function(env, datamart, table) {
   logger::log_debug("[tube::check_params_before_unpublish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 
@@ -237,7 +242,7 @@ check_params_before_unpublish <- function(env, datamart, table) {
   }
 
   logger::log_debug("[tube::check_params_before_unpublish] Exitting function")
-  return(TRUE)
+  TRUE
 }
 
 #' @title Check the parameters provided to the ellipse_describe function
@@ -249,15 +254,17 @@ check_params_before_unpublish <- function(env, datamart, table) {
 #' @param new_table_description The new table description to apply to the table
 #' @return TRUE if the parameters are valid, FALSE otherwise
 check_params_before_describe <- function(env, schema, table, new_table_tags, new_table_description) {
-  logger::log_debug("[tube::check_params_before_describe] Checking parameters before applying changes to a glue table properties")
+  logger::log_debug(
+    "[tube::check_params_before_describe] Checking parameters before applying changes to a glue table properties"
+  )
   logger::log_debug("[tube::check_params_before_describe] Checking the env parameter")
 
   # Check env
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 
@@ -332,7 +339,7 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
   }
 
   logger::log_debug("[tube::check_params_before_describe] Exiting function")
-  return(TRUE)
+  TRUE
 }
 
 
@@ -375,6 +382,5 @@ check_params_before_refresh <- function(con, schema, table) {
   })
 
   logger::log_debug("[tube::check_params_before_describe] Exiting function")
-  return(TRUE)
+  TRUE
 }
-

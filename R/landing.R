@@ -17,7 +17,7 @@ list_landing_zone_bucket <- function(credentials) {
   datalake_list <- list_s3_buckets(credentials, "landingzonebucket")
 
   logger::log_debug("[tube::list_landing_zone_bucket] returning results")
-  return(datalake_list)
+  datalake_list
 }
 
 # Returns the first level partition names of the landing zone bucket
@@ -29,7 +29,7 @@ list_landing_zone_partitions <- function(credentials) {
   partitions_list <- list_s3_partitions(credentials, landing_zone_bucket)
 
   logger::log_debug("[tube::list_landing_zone_partitions] returning results")
-  return(partitions_list)
+  partitions_list
 }
 
 #' Uploads the file specified file to the landing zone bucket.
@@ -39,9 +39,15 @@ list_landing_zone_partitions <- function(credentials) {
 #'
 #' @param credentials An AWS session object with your credentials and the aws ressources required
 #' @param filepath The path to the file to upload
-#' @param pipeline_name The name of the pipeline (i.e.: the name of the first folder in the path within the landding zone bucket)
-#' @param file_batch mandatory parameter to specify the batch name.  if batch is specified, then version must be NULL.  Batch is used ONLY for factual data to help you retrieve your data in the datawarehouse
-#' @param file_version mandatory parameter to specify the version of the file. if version is specified, then batch must be NULL. Version is used ONLY for reference data (dimensions, dictionaries) to help you retrieve your data in the datawarehouse
+#' @param pipeline_name The name of the pipeline (i.e.: the name of the first
+#'   folder in the path within the landding zone bucket)
+#' @param file_batch mandatory parameter to specify the batch name.  if batch
+#'   is specified, then version must be NULL.  Batch is used ONLY for factual
+#'   data to help you retrieve your data in the datawarehouse
+#' @param file_version mandatory parameter to specify the version of the file.
+#'   if version is specified, then batch must be NULL. Version is used ONLY
+#'   for reference data (dimensions, dictionaries) to help you retrieve your
+#'   data in the datawarehouse
 #'
 #' @returns the status of each file upload
 #' @examples \dontrun{
@@ -101,7 +107,10 @@ upload_file_to_landing_zone <- function(credentials, filepath, pipeline_name, fi
       TRUE
     },
     error = function(e) {
-      logger::log_error(paste("[tube::upload_file_to_landing_zone] an error occurred while uploading file: ", filepath, " to key: ", key))
+      logger::log_error(paste(
+        "[tube::upload_file_to_landing_zone] an error occurred while uploading file: ",
+        filepath, " to key: ", key
+      ))
       FALSE
     }
   )

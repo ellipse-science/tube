@@ -18,5 +18,5 @@ list_athena_staging_bucket <- function(credentials) {
   datalake_list <- list_s3_buckets(credentials, "athenaqueryresults")
 
   logger::log_debug("[tube::list_athena_staging_bucket] returning results")
-  return(datalake_list)
+  datalake_list
 }

@@ -1,4 +1,17 @@
 linters: linters_with_defaults(
     line_length_linter(120),
-    commented_code_linter = NULL
-  )
+    commented_code_linter = NULL,
+    object_name_linter(styles = c("snake_case")),
+    object_length_linter(length = 40L),
+    spaces_inside_linter(),
+    brace_linter(),
+    commas_linter(),
+    infix_spaces_linter(),
+    semicolon_linter(),
+    pipe_continuation_linter(),
+    whitespace_linter(),
+    indentation_linter(indent = 2, hanging_indent_style = "never")
+    )
+exclude: "# Exclude Shiny files"
+exclude_start: "# Begin Exclude"
+exclude_end: "# End Exclude"

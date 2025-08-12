@@ -6,13 +6,13 @@
 cat("=== TESTING BASIC UTILITY FUNCTIONS ===\n")
 
 # Setup
-readRenviron('.Renviron')
+readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all('.', quiet = TRUE)
+load_all(".", quiet = TRUE)
 
 # Run ONLY the basic function tests
 cat("Running test-basic-functions.R...\n")
-test_results <- test_file('tests/testthat/test-basic-functions.R', reporter = "summary")
+test_results <- test_file("tests/testthat/test-basic-functions.R", reporter = "summary")
 
 cat("\n=== BASIC FUNCTIONS TESTING COMPLETE ===\n")

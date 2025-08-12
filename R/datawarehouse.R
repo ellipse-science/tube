@@ -16,7 +16,7 @@ list_datawarehouse_bucket <- function(credentials) {
   datalake_list <- list_s3_buckets(credentials, "datawarehousebucket")
 
   logger::log_debug("[tube::list_datawarehouse_bucket] returning results")
-  return(datalake_list)
+  datalake_list
 }
 
 #' Returns the datawarehouse GLUE database name
@@ -37,7 +37,7 @@ list_datawarehouse_database <- function(credentials) {
   datawarehouse_database <- list_glue_databases(credentials, "datawarehouse")
 
   logger::log_debug("[tube::list_datawarehouse_database] returning results")
-  return(datawarehouse_database)
+  datawarehouse_database
 }
 
 #' Returns the datawarehouse GLUE tables names
@@ -65,17 +65,18 @@ list_datawarehouse_tables <- function(credentials, simplify = TRUE) {
     logger::log_warn("[tube::list_datawarehouse_tables] No datawarehouse database found")
     return(NULL)
   }
-  
+
   # Use the first database if multiple are returned
   database_name <- database_name[1]
-  
+
   # Get raw data (simplify = FALSE) so we can handle simplification here
   datawarehouse_database <- list_glue_tables(credentials, database_name, NULL, simplify = FALSE)
 
   logger::log_debug("[tube::list_datawarehouse_tables] returning results")
 
   if (simplify) {
-    return(glue_table_list_to_tibble(datawarehouse_database))
+    glue_table_list_to_tibble(datawarehouse_database)
+  } else {
+    datawarehouse_database
   }
-  return(datawarehouse_database)
 }

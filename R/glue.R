@@ -30,7 +30,7 @@ list_glue_databases <- function(credentials, type) {
   database_list <- unlist(database_list)
 
   logger::log_debug("[tube::list_glue_databases] wrangling result")
-  return(database_list)
+  database_list
 }
 
 #' Lists all the tables in a GLUE database
@@ -42,7 +42,6 @@ list_glue_databases <- function(credentials, type) {
 #' @returns A list of tables
 list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simplify = TRUE) {
   logger::log_debug("[tube::list_glue_tables] entering function")
-  table_list <- list()
 
   logger::log_debug("[tube::list_glue_tables] instanciating glue client")
   glue_client <- paws.analytics::glue(
@@ -95,7 +94,7 @@ list_glue_table_properties <- function(credentials, schema, table) {
 
   if (length(props) == 0) {
     logger::log_error("[tube::list_glue_table_properties] no table found")
-    return(NULL)
+    NULL
   } else {
     logger::log_debug("[tube::list_glue_table_properties] returning results")
 
@@ -105,13 +104,17 @@ list_glue_table_properties <- function(credentials, schema, table) {
 
     properties_tibble <- tibble::tibble(
       table_name = props$Table$Name,
-      description = ifelse(is.null(props$Table$Description) || length(props$Table$Description) == 0, NA, props$Table$Description),
+      description = ifelse(
+        is.null(props$Table$Description) || length(props$Table$Description) == 0,
+        NA,
+        props$Table$Description
+      ),
       create_time = props$Table$CreateTime,
       update_time = props$Table$UpdateTime,
       location = props$Table$StorageDescriptor$Location,
       table_tags = if (length(custom_parameters) == 0) NULL else list(custom_parameters)
     )
-    return(properties_tibble)
+    properties_tibble
   }
 }
 
@@ -170,7 +173,6 @@ delete_glue_table <- function(credentials, database_name, table_name) {
 #' @returns A list of jobs
 list_glue_jobs <- function(credentials) {
   logger::log_debug("[tube::list_glue_jobs] entering function")
-  job_list <- list()
 
   logger::log_debug("[tube::list_glue_jobs] instanciating glue client")
   glue_client <- paws.analytics::glue(
@@ -193,7 +195,7 @@ list_glue_jobs <- function(credentials) {
 
   logger::log_debug(paste("[tube::list_glue_jobs] returning results", paste(job_names, collapse = " | ")))
 
-  return(job_names)
+  job_names
 }
 
 #' Run a GLUE job manually specifically for ingesting CSV in to
@@ -292,8 +294,6 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
       Delimiter = "/"
     )
-
-    index <- 1
   }
 
   if (length(tmp_prefix_split[[1]]) == 1) {
@@ -313,7 +313,6 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     })
 
     r <- r[[1]]
-    index <- 2
   }
 
   logger::log_debug("[tube::run_glue_job] wrangling partitions")
@@ -321,7 +320,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     ret <- gsub(prefix, "", x$Prefix)
     ret <- gsub("^/", "", ret)
     ret <- gsub("/$", "", ret)
-    return(ret)
+    ret
   })
 
   has_unprocessed <- function(prefix_list) {
@@ -386,9 +385,9 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
           setNames(
             table_tags,
             ifelse(!sapply(table_tags, is.null) &
-              !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
-            paste0("x-amz-meta-", names(table_tags)),
-            names(table_tags)
+                !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+              paste0("x-amz-meta-", names(table_tags)),
+              names(table_tags)
             )
           )
 
@@ -491,7 +490,7 @@ glue_table_list_to_tibble <- function(glue_response) {
     df <- dplyr::bind_rows(df, parts, cols)
   }
 
-  return(df)
+  df
 }
 
 
@@ -555,9 +554,9 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
     setNames(
       custom_table_properties,
       ifelse(!sapply(custom_table_properties, is.null) &
-        !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
-      paste0("x-amz-meta-", names(custom_table_properties)),
-      names(custom_table_properties)
+          !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
+        paste0("x-amz-meta-", names(custom_table_properties)),
+        names(custom_table_properties)
       )
     )
 

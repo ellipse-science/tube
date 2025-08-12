@@ -18,11 +18,12 @@ test_that("validation functions can be loaded and have proper signatures", {
   expect_true(exists("check_params_before_unpublish", mode = "function"))
   expect_true(exists("check_params_before_describe", mode = "function"))
   expect_true(exists("check_params_before_refresh", mode = "function"))
-  
+
   # Check function signatures
   expect_equal(length(formals(check_env)), 1)  # env
   expect_equal(length(formals(check_database)), 1)  # database
-  expect_equal(length(formals(check_pipeline_before_ingest)), 4)  # pipeline, landing_zone_partitions, file_batch, file_version
+  # pipeline, landing_zone_partitions, file_batch, file_version
+  expect_equal(length(formals(check_pipeline_before_ingest)), 4)
   expect_equal(length(formals(check_file_versioning_before_ingest)), 2)  # file_batch, file_version
 })
 
@@ -31,7 +32,7 @@ test_that("check_env validates environment parameters correctly", {
   # Test valid environments
   expect_true(check_env("DEV"))
   expect_true(check_env("PROD"))
-  
+
   # Test invalid environments
   expect_false(check_env("INVALID"))
   expect_false(check_env("dev"))  # case sensitive
@@ -49,7 +50,7 @@ test_that("check_env handles edge cases", {
   expect_false(check_env(factor("DEV")))
   expect_false(check_env(TRUE))
   expect_false(check_env(FALSE))
-  
+
   # Test with whitespace
   expect_false(check_env(" DEV "))
   expect_false(check_env("DEV "))
@@ -61,7 +62,7 @@ test_that("check_database validates database parameters correctly", {
   # Test valid databases
   expect_true(check_database("datawarehouse"))
   expect_true(check_database("datamarts"))
-  
+
   # Test invalid databases
   expect_false(check_database("DATAWAREHOUSE"))  # case sensitive
   expect_false(check_database("DATAMARTS"))      # case sensitive
@@ -79,7 +80,7 @@ test_that("check_database handles edge cases", {
   expect_false(check_database(factor("datawarehouse")))
   expect_false(check_database(TRUE))
   expect_false(check_database(FALSE))
-  
+
   # Test with whitespace
   expect_false(check_database(" datawarehouse "))
   expect_false(check_database("datawarehouse "))
@@ -90,12 +91,12 @@ test_that("check_database handles edge cases", {
 test_that("check_pipeline_before_ingest validates pipeline parameters", {
   # Create mock landing zone partitions for testing with valid pipeline names
   mock_partitions <- c("a-pipeline1/", "r-pipeline2/", "dict-test-pipeline/")
-  
+
   # Test valid pipeline that exists in partitions and follows naming convention
   # a- and r- pipelines need file_batch, dict- pipelines need file_version
   expect_true(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", NULL))
   expect_true(check_pipeline_before_ingest("r-pipeline2", mock_partitions, "batch2", NULL))
-  
+
   # Test invalid pipeline that doesn't exist in partitions
   expect_false(check_pipeline_before_ingest("a-nonexistent", mock_partitions, "batch1", NULL))
   expect_false(check_pipeline_before_ingest("", mock_partitions, NULL, NULL))
@@ -104,7 +105,7 @@ test_that("check_pipeline_before_ingest validates pipeline parameters", {
 
 test_that("check_pipeline_before_ingest handles file versioning scenarios", {
   mock_partitions <- c("a-pipeline1/", "r-pipeline2/")
-  
+
   # Test with file_batch and file_version combinations
   expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", "v1.0"))
   expect_no_error(check_pipeline_before_ingest("a-pipeline1", mock_partitions, "batch1", NULL))
@@ -118,7 +119,7 @@ test_that("check_file_versioning_before_ingest validates versioning logic", {
   expect_true(check_file_versioning_before_ingest("batch1", "v1.0"))  # both provided
   expect_true(check_file_versioning_before_ingest("batch1", NULL))    # only batch
   expect_true(check_file_versioning_before_ingest(NULL, NULL))        # neither provided
-  
+
   # Test invalid combination - version without batch should be invalid
   expect_false(check_file_versioning_before_ingest(NULL, "v1.0"))
 })
@@ -128,7 +129,7 @@ test_that("check_file_versioning_before_ingest handles edge cases", {
   expect_false(check_file_versioning_before_ingest("", "v1.0"))
   expect_false(check_file_versioning_before_ingest("batch1", ""))
   expect_false(check_file_versioning_before_ingest("", ""))
-  
+
   # Test with different data types
   expect_false(check_file_versioning_before_ingest(123, "v1.0"))
   expect_false(check_file_versioning_before_ingest("batch1", 123))
@@ -142,7 +143,7 @@ test_that("check_params_before_publish validates publish parameters", {
     col2 = c("a", "b", "c"),
     stringsAsFactors = FALSE
   )
-  
+
   # Test with valid parameters
   expect_no_error({
     result <- check_params_before_publish(
@@ -155,7 +156,7 @@ test_that("check_params_before_publish validates publish parameters", {
       table_description = "Test table"
     )
   })
-  
+
   # Test with invalid environment
   expect_no_error({
     result <- check_params_before_publish(
@@ -186,7 +187,7 @@ test_that("check_params_before_publish validates dataframe parameter", {
     )
     expect_false(result)
   })
-  
+
   # Test with empty dataframe
   empty_df <- data.frame()
   expect_no_error({
@@ -213,7 +214,7 @@ test_that("check_params_before_unpublish validates unpublish parameters", {
       table = "test_table"
     )
   })
-  
+
   # Test with invalid environment
   expect_no_error({
     result <- check_params_before_unpublish(
@@ -223,7 +224,7 @@ test_that("check_params_before_unpublish validates unpublish parameters", {
     )
     expect_false(result)
   })
-  
+
   # Test with missing parameters
   expect_no_error({
     result <- check_params_before_unpublish(
@@ -233,7 +234,7 @@ test_that("check_params_before_unpublish validates unpublish parameters", {
     )
     expect_false(result)
   })
-  
+
   expect_no_error({
     result <- check_params_before_unpublish(
       env = "DEV",
@@ -256,7 +257,7 @@ test_that("check_params_before_describe validates describe parameters", {
       new_table_description = "Test description"
     )
   })
-  
+
   # Test with invalid environment
   expect_no_error({
     result <- check_params_before_describe(
@@ -268,7 +269,7 @@ test_that("check_params_before_describe validates describe parameters", {
     )
     expect_false(result)
   })
-  
+
   # Test with missing schema
   expect_no_error({
     result <- check_params_before_describe(
@@ -280,7 +281,7 @@ test_that("check_params_before_describe validates describe parameters", {
     )
     expect_false(result)
   })
-  
+
   # Test with missing table
   expect_no_error({
     result <- check_params_before_describe(
@@ -305,7 +306,7 @@ test_that("check_params_before_describe validates table tags format", {
       new_table_description = NULL
     )
   })
-  
+
   # Test with invalid table tags (not a list)
   expect_no_error({
     result <- check_params_before_describe(
@@ -327,7 +328,7 @@ test_that("check_params_before_refresh validates refresh parameters", {
     dbms.name = "test_schema"
   )
   class(mock_con) <- "mock_connection"
-  
+
   # Test with valid parameters
   expect_no_error({
     result <- check_params_before_refresh(
@@ -336,7 +337,7 @@ test_that("check_params_before_refresh validates refresh parameters", {
       table = "test_table"
     )
   })
-  
+
   # Test with NULL connection
   expect_no_error({
     result <- check_params_before_refresh(
@@ -346,7 +347,7 @@ test_that("check_params_before_refresh validates refresh parameters", {
     )
     expect_false(result)
   })
-  
+
   # Test with missing schema
   expect_no_error({
     result <- check_params_before_refresh(
@@ -356,7 +357,7 @@ test_that("check_params_before_refresh validates refresh parameters", {
     )
     expect_false(result)
   })
-  
+
   # Test with missing table
   expect_no_error({
     result <- check_params_before_refresh(
@@ -371,15 +372,15 @@ test_that("check_params_before_refresh validates refresh parameters", {
 test_that("validation functions handle error conditions gracefully", {
   # All validation functions should handle unexpected inputs gracefully
   # and return FALSE rather than throwing errors
-  
+
   expect_false(check_env(list()))
   expect_false(check_database(matrix(1:4, 2, 2)))
-  
+
   # Test with very long strings
   long_string <- paste(rep("a", 1000), collapse = "")
   expect_false(check_env(long_string))
   expect_false(check_database(long_string))
-  
+
   # Test with special characters
   expect_false(check_env("DEV\n"))
   expect_false(check_env("DEV\t"))
@@ -392,7 +393,7 @@ test_that("validation functions are consistent in their return types", {
   expect_type(check_env("INVALID"), "logical")
   expect_type(check_database("datawarehouse"), "logical")
   expect_type(check_database("invalid"), "logical")
-  
+
   # Length should always be 1
   expect_length(check_env("DEV"), 1)
   expect_length(check_database("datawarehouse"), 1)
