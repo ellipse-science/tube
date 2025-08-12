@@ -1,22 +1,39 @@
-# Current Function Inventory for Feature 006 Analysis
+# Current Function Inventory - Post Feature 007
 
-## Overview
-This document provides a complete inventory of all functions currently in the tube package, organized by conceptual area. This serves as the baseline for Feature 006 concept formalization work.
+## 📊 COMPREHENSIVE FUNCTION MAPPING
 
----
+### Public Datalake Functions (NEW - Feature 007)
 
-## CURRENT FUNCTION INVENTORY BY FILE
+#### Infrastructure Functions
+```r
+# R/public-datalake.R
+list_public_datalake_bucket()    # List S3 objects in publicdatalakebucket
+list_public_datalake_database()  # List Glue tables in public datalake database
+```
 
-### R/athena.R - Amazon Athena Operations
-Functions for SQL querying and data analysis:
-- Query execution functions
-- Result management functions
-- Athena staging bucket operations
+#### Discovery Utility Functions (Internal)
+```r
+# R/utils_public_datalake_discovery.R
+format_public_datalake_all_datasets()      # Format all datasets overview
+format_public_datalake_pattern_search()    # Format pattern search results
+format_public_datalake_dataset_details()   # Format specific dataset details
+format_public_datalake_tag_details()       # Format specific tag details
+```
 
-### R/aws.R - Core AWS Infrastructure
-- `get_aws_credentials()` - AWS credential management
-- Core AWS configuration functions
-- Authentication and session management
+### Extended Functions (Modified in Feature 007)
+
+#### Core Ellipse Functions
+```r
+# R/ellipse.R
+ellipse_connect(env, database)    # EXTENDED: Now supports database = "datalake"
+ellipse_discover(con, object, tag) # EXTENDED: Added tag parameter + public datalake logic
+```
+
+#### Validation Functions
+```r
+# R/utils_check_params.R
+check_database(database)  # EXTENDED: Now accepts "datawarehouse", "datamarts", "datalake"
+```
 
 ### R/datalake.R - Data Lake Operations
 - `list_datalake_bucket()` - List data lake storage buckets
