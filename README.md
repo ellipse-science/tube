@@ -49,6 +49,8 @@ tube::ellipse_connect(env = "DEV", database = "datawarehouse")
 
 Additionnellement, comme le montre la commande ci-dessus, il vous faut spécifier si votre connexion doit se faire sur l'entrepôt de données (datawarehouse) ou sur les comptoirs de données (datamarts).  Pour plus d'explications sur ces concepts, veuillez vous référer au repo [`tube-doc`](https://github.com/ellipse-science/tube-doc/tree/main) dans lequel on décrit [les trois composantes principales d'une platformes de données](https://github.com/ellipse-science/tube-doc/blob/main/ellipse-datalake-datawarehouse-datamart.drawio.png).
 
+**📚 Concepts de la plateforme**: Pour des définitions détaillées de tous les concepts de la plateforme de données (landing zone, datalake, datawarehouse, datamarts), voir [CONCEPTS.md](CONCEPTS.md)
+
 ## Interface de haut hiveau
 
 `tube` comporte une interface de haut niveau qui permet d'interroger la plateforme à l'aide de fonctions d'analyse de données fournies par le `tidyverse`.
@@ -504,3 +506,5 @@ GitHub Actions automatically runs:
 5. All CI/CD checks must pass
 
 For conceptual documentation, see [tube-doc](https://github.com/ellipse-science/tube-doc/tree/main)
+
+**📚 Data Platform Concepts**: For detailed definitions of all data platform concepts (landing zone, datalake, datawarehouse, datamarts), see [CONCEPTS.md](CONCEPTS.md)
