@@ -186,9 +186,9 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   total_files <- as.integer(result[1, "total_files"])
 
   cli::cli_ul()
-  cli::cli_li(glue::glue("� Dataset: {table_name}"))
-  cli::cli_li(glue::glue("🏷️  Tags: {tags_count} ({tags_list})"))
-  cli::cli_li(glue::glue("📄 Total files: {total_files}"))
+  cli::cli_li(glue::glue("📋 Dataset:\t\t{table_name}"))
+  cli::cli_li(glue::glue("🏷️ Tags:\t\t{tags_count} ({tags_list})"))
+  cli::cli_li(glue::glue("📄 Total files:\t{total_files}"))
   cli::cli_end()
   cli::cli_text("")
 
