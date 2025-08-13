@@ -415,14 +415,19 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   # Create overview data frame
   overview_data <- data.frame(
-    Property = c("📄Total files", "📅Creation date", "🔒 Sensitivity level", "✅Ethical stamp"),
+    Property = c("📄Total files", "📅Creation date", "🔒Sensitivity level", "✅Ethical stamp"),
     Value = c(file_count, creation_date, paste("Level", sensitivity_level), ethical_stamp),
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
 
-  # Print the overview table
-  print(overview_data, row.names = FALSE, col.names = FALSE, right = FALSE)
+  # Format columns with proper alignment and print
+  formatted_overview <- paste(
+    format(overview_data$Property, width = max(nchar(overview_data$Property)), justify = "left"),
+    format(overview_data$Value, width = max(nchar(overview_data$Value)), justify = "left"),
+    sep = "  "
+  )
+  cat(formatted_overview, sep = "\n")
   cli::cli_text("")
 
   # Dates information
@@ -453,7 +458,14 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   if (nrow(dates_info) > 0) {
     cli::cli_h3("📅 Important Dates")
-    print(dates_info, row.names = FALSE, col.names = FALSE, right = FALSE)
+
+    # Format columns with proper alignment and print
+    formatted_dates <- paste(
+      format(dates_info$Property, width = max(nchar(dates_info$Property)), justify = "left"),
+      format(dates_info$Value, width = max(nchar(dates_info$Value)), justify = "left"),
+      sep = "  "
+    )
+    cat(formatted_dates, sep = "\n")
     cli::cli_text("")
   }
 
