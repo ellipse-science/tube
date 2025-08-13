@@ -50,17 +50,17 @@ get_datalake_files_metadata <- function(con, dataset, tag = NULL) {
 
   # Build the query based on tag parameter
   if (is.null(tag)) {
-    query <- 'SELECT name, tag, file_paths, file_names, file_extensions, file_sizes_bytes
+    query <- sprintf('SELECT name, tag, file_paths, file_names, file_extensions, file_sizes_bytes
               FROM "public-data-lake-content" 
-              WHERE name = $1
-              ORDER BY tag'
-    result <- DBI::dbGetQuery(con, query, params = list(dataset))
+              WHERE name = \'%s\'
+              ORDER BY tag', dataset)
+    result <- DBI::dbGetQuery(con, query)
   } else {
-    query <- 'SELECT name, tag, file_paths, file_names, file_extensions, file_sizes_bytes
+    query <- sprintf('SELECT name, tag, file_paths, file_names, file_extensions, file_sizes_bytes
               FROM "public-data-lake-content" 
-              WHERE name = $1 AND tag = $2
-              ORDER BY tag'
-    result <- DBI::dbGetQuery(con, query, params = list(dataset, tag))
+              WHERE name = \'%s\' AND tag = \'%s\'
+              ORDER BY tag', dataset, tag)
+    result <- DBI::dbGetQuery(con, query)
   }
 
   if (nrow(result) == 0) {
