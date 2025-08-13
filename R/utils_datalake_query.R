@@ -147,12 +147,10 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     tryCatch(
       {
         # Download file to temp location
-        #logger::log_info(paste("[download_and_aggregate_files] downloading file:", file_info$file_name))
-        #temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+        temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
         Sys.sleep(0.5)
         # Read file based on extension
-        #logger::log_info(paste("[download_and_aggregate_files] reading file:", file_info$file_name))
-        #df <- read_file_by_extension(temp_file, file_info$file_extension)
+        df <- read_file_by_extension(temp_file, file_info$file_extension)
         df <- data.frame(
           dataset = file_info$dataset,
           tag = file_info$tag,
@@ -170,7 +168,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
         dataframes[[i]] <- df
 
         # Cleanup temp file
-        #unlink(temp_file)
+        # unlink(temp_file)
       },
       error = function(e) {
         logger::log_warn(paste(
