@@ -193,8 +193,13 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     check.names = FALSE
   )
 
-  # Print the overview table using knitr for clean formatting
-  cat(knitr::kable(overview_data, format = "simple", col.names = NULL, align = "ll"))
+  # Print the overview table with clean alignment
+  write.table(overview_data, 
+              file = "", 
+              row.names = FALSE, 
+              col.names = FALSE, 
+              quote = FALSE, 
+              sep = "   ")
   cli::cli_text("")
 
   # Tags details
