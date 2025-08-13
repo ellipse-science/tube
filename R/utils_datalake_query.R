@@ -123,22 +123,17 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with progress bar
+  # Download and read files with simple status updates
   dataframes <- list()
   failed_files <- character()
-
-  # Create CLI progress bar
-  cli::cli_progress_bar(
-    "Lecture des fichiers",
-    total = nrow(files_metadata),
-    format = "{cli::pb_spin} Lecture: {cli::pb_current}/{cli::pb_total} fichiers [{cli::pb_bar}] {cli::pb_percent} ETA: {cli::pb_eta}"
-  )
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Update progress
-    cli::cli_progress_update()
+    # Show progress every few files or at start/end
+    if (i == 1 || i %% 3 == 0 || i == nrow(files_metadata)) {
+      cli::cli_alert_info("Lecture: {i}/{nrow(files_metadata)} fichiers...")
+    }
 
     tryCatch({
       # Download file to temp location
@@ -162,9 +157,6 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
       failed_files <<- c(failed_files, file_info$file_name)
     })
   }
-
-  # Complete progress bar
-  cli::cli_progress_done()
 
   # Report on failed files
   if (length(failed_files) > 0) {
