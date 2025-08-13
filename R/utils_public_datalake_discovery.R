@@ -185,7 +185,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   tags_list <- paste(unique_tags, collapse = ", ")
   total_files <- as.integer(result[1, "total_files"])
 
-  # Create overview data frame
+  # Create overview data frame with proper formatting
   overview_data <- data.frame(
     Property = c("📋 Dataset", "🏷️ Tags", "📄 Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
@@ -193,13 +193,13 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     check.names = FALSE
   )
 
-  # Print the overview table with clean alignment
-  write.table(overview_data, 
-              file = "", 
-              row.names = FALSE, 
-              col.names = FALSE, 
-              quote = FALSE, 
-              sep = "   ")
+  # Format columns with proper alignment and print
+  formatted_output <- paste(
+    format(overview_data$Property, width = max(nchar(overview_data$Property)), justify = "left"),
+    format(overview_data$Value, width = max(nchar(overview_data$Value)), justify = "left"),
+    sep = "  "
+  )
+  cat(formatted_output, sep = "\n")
   cli::cli_text("")
 
   # Tags details
