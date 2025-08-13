@@ -187,7 +187,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame with proper formatting
   overview_data <- data.frame(
-    Property = c("Dataset 📋", "Tags 🏷️", "Total files 📄"),
+    Property = c("📋Dataset", "🏷️Tags", "📄Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE
@@ -208,20 +208,20 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create a clean data frame with icons integrated into values for tag details
   display_tag_details <- data.frame(
-    `Tag 🏷️` = result$tag,
-    `Files 📄` = result$file_count,
-    `Created 📅` = result$creation_date,
-    `Sensitivity Level ⚠️` = result$sensitivity_level,
-    `Consent Expires 🔒` = result$consent_expiry_date,
-    `Data Destruction 🗑️` = result$data_destruction_date,
-    `Ethical Stamp ✅` = result$ethical_stamp,
+    `🏷️Tag` = result$tag,
+    `📄Files` = result$file_count,
+    `📅Created` = result$creation_date,
+    `⚠️Sensitivity Level` = result$sensitivity_level,
+    `🔒Consent Expires` = result$consent_expiry_date,
+    `🗑️Data Destruction` = result$data_destruction_date,
+    `✅Ethical Stamp` = result$ethical_stamp,
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
 
   # Add file paths column if any exist
   if (any(!is.na(result$file_paths) & nzchar(result$file_paths))) {
-    display_tag_details$`File Paths 📂` <- ifelse(
+    display_tag_details$`📂File Paths` <- ifelse(
       !is.na(result$file_paths) & nzchar(result$file_paths),
       result$file_paths,
       ""
@@ -285,7 +285,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
       # First row shows the tag name
       metadata_display_list <- append(metadata_display_list, list(data.frame(
-        Tag = paste("Tag 🏷️", tag_name),
+        Tag = paste("🏷️Tag", tag_name),
         Field = field_names[1],
         Value = tag_metadata[[field_names[1]]],
         stringsAsFactors = FALSE,
@@ -415,7 +415,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   # Create overview data frame
   overview_data <- data.frame(
-    Property = c("Total files 📄", "Creation date 📅", "Sensitivity level 🔒", "Ethical stamp ✅"),
+    Property = c("📄Total files", "📅Creation date", "🔒Sensitivity level", "✅Ethical stamp"),
     Value = c(file_count, creation_date, paste("Level", sensitivity_level), ethical_stamp),
     stringsAsFactors = FALSE,
     check.names = FALSE
@@ -435,7 +435,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   if (!is.na(consent_expiry_date) && nzchar(consent_expiry_date)) {
     dates_info <- rbind(dates_info, data.frame(
-      Property = "Consent expiry ⏰",
+      Property = "⏰Consent expiry",
       Value = consent_expiry_date,
       stringsAsFactors = FALSE,
       check.names = FALSE
@@ -444,7 +444,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   if (!is.na(data_destruction_date) && nzchar(data_destruction_date)) {
     dates_info <- rbind(dates_info, data.frame(
-      Property = "Data destruction 🗑️",
+      Property = "🗑️Data destruction",
       Value = data_destruction_date,
       stringsAsFactors = FALSE,
       check.names = FALSE
@@ -477,7 +477,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       }
 
       metadata_data <- data.frame(
-        Field = paste("Field 🏷️", metadata_fields),
+        Field = paste("🏷️Field", metadata_fields),
         Value = metadata_values,
         stringsAsFactors = FALSE,
         check.names = FALSE
