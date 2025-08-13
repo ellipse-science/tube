@@ -112,25 +112,26 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   if (total_size_gb >= 1) {
     cli::cli_alert_warning("Attention: Taille totale des données = {total_size_gb} GB. Le traitement peut prendre du temps.")
   } else {
-    total_size_mb <- round(total_size_bytes / (1024^2), 2)
-    cli::cli_alert_info("Taille totale des données: {total_size_mb} MB")
+    total_size_mb <- total_size_bytes / (1024^2)
+    if (total_size_mb >= 0.1) {
+      # Show MB with 2 decimals if >= 0.1 MB
+      cli::cli_alert_info("Taille totale des données: {round(total_size_mb, 2)} MB")
+    } else {
+      # Show KB for smaller files
+      total_size_kb <- round(total_size_bytes / 1024, 1)
+      cli::cli_alert_info("Taille totale des données: {total_size_kb} KB")
+    }
   }
 
-  # Create progress bar
-  pb <- progress::progress_bar$new(
-    format = "  Lecture [:bar] :percent (:current/:total) ETA: :eta",
-    total = nrow(files_metadata),
-    clear = FALSE,
-    width = 60
-  )
-
-  # Download and read files with progress
+  # Download and read files with simple counter
   dataframes <- list()
   failed_files <- character()
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
-    pb$tick()
+    
+    # Simple progress indication
+    cat(sprintf("\r  Lecture: %d/%d fichiers", i, nrow(files_metadata)))
 
     tryCatch({
       # Download file to temp location
@@ -155,8 +156,8 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     })
   }
 
-  # Add a clean line break after progress bar
-  cat("\n")
+  # Complete progress indication with newline
+  cat(sprintf("\r  Lecture: %d/%d fichiers - Terminé\n", nrow(files_metadata), nrow(files_metadata)))
 
   # Report on failed files
   if (length(failed_files) > 0) {
