@@ -14,14 +14,20 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
     files_metadata <- get_datalake_files_metadata(con, dataset, tag)
 
     if (nrow(files_metadata) == 0) {
-      cli::cli_alert_warning("Aucun fichier trouvé pour le dataset '{dataset}'{tag_msg}.", 
-        tag_msg = if(!is.null(tag)) paste0(" avec le tag '", tag, "'") else "")
+      if (!is.null(tag)) {
+        cli::cli_alert_warning("Aucun fichier trouvé pour le dataset '{dataset}' avec le tag '{tag}'.")
+      } else {
+        cli::cli_alert_warning("Aucun fichier trouvé pour le dataset '{dataset}'.")
+      }
       return(tibble::tibble())
     }
 
     # Step 2: Download and read files
-    cli::cli_alert_info("Agrégation de {nrow(files_metadata)} fichier(s) du dataset '{dataset}'{tag_msg}...",
-      tag_msg = if(!is.null(tag)) paste0(" avec le tag '", tag, "'") else " (tous les tags)")
+    if (!is.null(tag)) {
+      cli::cli_alert_info("Agrégation de {nrow(files_metadata)} fichier(s) du dataset '{dataset}' avec le tag '{tag}'...")
+    } else {
+      cli::cli_alert_info("Agrégation de {nrow(files_metadata)} fichier(s) du dataset '{dataset}' (tous les tags)...")
+    }
 
     result <- download_and_aggregate_files(files_metadata)
 
