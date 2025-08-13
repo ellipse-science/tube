@@ -229,7 +229,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   cli::cli_text("")
 
   # User Metadata Details section
-  metadata_display_list <- list()
+  metadata_by_tag <- list()
 
   for (i in seq_len(nrow(result))) {
     row <- result[i, ]
@@ -246,20 +246,18 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
           # Parse the nested JSON string to get the actual custom metadata
           custom_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
 
-          # Add each custom field
+          # Store metadata fields for this tag
+          tag_name <- row$tag
+          if (!tag_name %in% names(metadata_by_tag)) {
+            metadata_by_tag[[tag_name]] <- list()
+          }
+
           for (field_name in names(custom_metadata)) {
             field_value <- custom_metadata[[field_name]]
             if (is.list(field_value) || length(field_value) > 1) {
               field_value <- paste(as.character(field_value), collapse = ", ")
             }
-
-            metadata_display_list <- append(metadata_display_list, list(data.frame(
-              Tag = paste("🏷️", row$tag),
-              Field = paste("📝", field_name),
-              Value = paste("💾", as.character(field_value)),
-              stringsAsFactors = FALSE,
-              check.names = FALSE
-            )))
+            metadata_by_tag[[tag_name]][[field_name]] <- as.character(field_value)
           }
         }
       }, error = function(e) {
@@ -269,11 +267,41 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     }
   }
 
-  if (length(metadata_display_list) > 0) {
+  if (length(metadata_by_tag) > 0) {
     cli::cli_h3("🏷️  User Metadata Details")
     cli::cli_text("")
 
-    # Combine all metadata rows
+    # Build grouped display data frame
+    metadata_display_list <- list()
+    
+    for (tag_name in names(metadata_by_tag)) {
+      tag_metadata <- metadata_by_tag[[tag_name]]
+      field_names <- names(tag_metadata)
+      
+      # First row shows the tag name
+      metadata_display_list <- append(metadata_display_list, list(data.frame(
+        Tag = paste("🏷️", tag_name),
+        Field = paste("📝", field_names[1]),
+        Value = paste("💾", tag_metadata[[field_names[1]]]),
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )))
+      
+      # Subsequent rows for this tag have empty tag column
+      if (length(field_names) > 1) {
+        for (i in 2:length(field_names)) {
+          metadata_display_list <- append(metadata_display_list, list(data.frame(
+            Tag = "",
+            Field = paste("📝", field_names[i]),
+            Value = paste("💾", tag_metadata[[field_names[i]]]),
+            stringsAsFactors = FALSE,
+            check.names = FALSE
+          )))
+        }
+      }
+    }
+
+    # Combine all metadata rows and print
     metadata_display <- do.call(rbind, metadata_display_list)
     print(metadata_display, row.names = FALSE, right = FALSE)
     cli::cli_text("")
