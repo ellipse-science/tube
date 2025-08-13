@@ -30,9 +30,9 @@ ellipse_connect <- function(
 
   if (!check_database(database)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir une base de données! 😅\n\n",
-      "Le paramètre `database` peut être \"datawarehouse\", \"datamarts\", ou \"datalake\"",
-      sep = ""
-    ))
+        "Le paramètre `database` peut être \"datawarehouse\", \"datamarts\", ou \"datalake\"",
+        sep = ""
+      ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Database:", database))
@@ -218,7 +218,7 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
       return(format_public_datalake_all_datasets(con))
     } else if (!is.null(table) && is.null(tag)) {
       # Check if this is an exact match or pattern search
-      exact_check_query <- paste0('SELECT COUNT(*) as count FROM "public-data-lake-content" 
+      exact_check_query <- paste0('SELECT COUNT(*) as count FROM "public-data-lake-content"
                                   WHERE name = \'', table, '\'')
       exact_result <- DBI::dbGetQuery(con, exact_check_query)
 
@@ -657,8 +657,8 @@ ellipse_publish <- function(
   } else {
     danger("La table demandée n'existe pas")
     if (ask_yes_no("Voulez-vous créer la table?",
-      unattended_option = unattended_options$create_table
-    )) {
+        unattended_option = unattended_options$create_table
+      )) {
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)

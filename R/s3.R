@@ -291,7 +291,6 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
 #' @param credentials AWS credentials from get_aws_credentials()
 #' @keywords internal
 download_s3_file_to_temp <- function(s3_path, credentials) {
-
   # Parse S3 path
   s3_parts <- gsub("^s3://", "", s3_path)
   bucket_and_key <- strsplit(s3_parts, "/", fixed = TRUE)[[1]]

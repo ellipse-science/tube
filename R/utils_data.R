@@ -41,9 +41,12 @@ get_column_type <- function(column) {
 #' @param df_list List of dataframes to merge
 #' @keywords internal
 merge_dataframes_with_schema_union <- function(df_list) {
-
-  if (length(df_list) == 0) return(tibble::tibble())
-  if (length(df_list) == 1) return(df_list[[1]])
+  if (length(df_list) == 0) {
+    return(tibble::tibble())
+  }
+  if (length(df_list) == 1) {
+    return(df_list[[1]])
+  }
 
   # Get the column order from the first dataframe
   first_df_cols <- names(df_list[[1]])
@@ -57,7 +60,6 @@ merge_dataframes_with_schema_union <- function(df_list) {
 
   # Add missing columns to each dataframe and convert all to character
   df_list_standardized <- lapply(df_list, function(df) {
-
     # Add missing columns with NA
     missing_cols <- setdiff(final_col_order, names(df))
     if (length(missing_cols) > 0) {

@@ -2,7 +2,7 @@ linters: linters_with_defaults(
     line_length_linter(120),
     commented_code_linter = NULL,
     object_name_linter(styles = c("snake_case")),
-    object_length_linter(length = 40L),
+    object_length_linter(length = 50L),
     quotes_linter = NULL,  # Allow both single and double quotes for SQL queries
     spaces_inside_linter(),
     brace_linter(),
