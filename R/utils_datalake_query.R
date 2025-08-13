@@ -187,8 +187,18 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     #}) # Close suppressMessages
 
     # Update progress bar
+    sleep(0.9)  # Simulate processing time
     cli::cli_progress_update()
   }
+
+  dataframes <- data.frame(
+    dataset = files_metadata$dataset,
+    tag = files_metadata$tag,
+    file_name = files_metadata$file_name,
+    file_path = files_metadata$file_path,
+    file_extension = files_metadata$file_extension,
+    file_size_bytes = files_metadata$file_size_bytes
+  )
 
   # cli progress bar is closed automatically
 
