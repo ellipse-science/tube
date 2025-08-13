@@ -147,11 +147,11 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     tryCatch(
       {
         # Download file to temp location
-        logger::log_info(paste("[download_and_aggregate_files] downloading file:", file_info$file_name))
+        #logger::log_info(paste("[download_and_aggregate_files] downloading file:", file_info$file_name))
         temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
         Sys.sleep(0.5)
         # Read file based on extension
-        logger::log_info(paste("[download_and_aggregate_files] reading file:", file_info$file_name))
+        #logger::log_info(paste("[download_and_aggregate_files] reading file:", file_info$file_name))
         df <- read_file_by_extension(temp_file, file_info$file_extension)
         Sys.sleep(0.5)
         # Add metadata columns
@@ -174,15 +174,6 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
 
     cli::cli_progress_update()
   }
-
-  dataframes <- data.frame(
-    dataset = files_metadata$dataset,
-    tag = files_metadata$tag,
-    file_name = files_metadata$file_name,
-    file_path = files_metadata$file_path,
-    file_extension = files_metadata$file_extension,
-    file_size_bytes = files_metadata$file_size_bytes
-  )
 
   # cli progress bar is closed automatically
 
