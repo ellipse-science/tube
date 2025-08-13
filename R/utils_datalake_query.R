@@ -170,7 +170,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
         dataframes[[i]] <- df
 
         # Cleanup temp file
-        unlink(temp_file)
+        #unlink(temp_file)
       },
       error = function(e) {
         logger::log_warn(paste(
