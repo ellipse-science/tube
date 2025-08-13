@@ -128,7 +128,7 @@ test_that("ellipse_query validates parameters and executes queries", {
   expect_no_error({
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
-      query_result <- ellipse_query(conn, table = "nonexistent_table")
+      query_result <- ellipse_query(conn, dataset = "nonexistent_table")
       expect_true(is.data.frame(query_result) || is.list(query_result) || is.null(query_result))
     }
   })
