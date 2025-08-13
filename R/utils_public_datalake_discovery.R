@@ -157,9 +157,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       data_destruction_date,
       sensitivity_level,
       ethical_stamp,
-      regexp_extract(user_metadata_json, \'"([^"]+)"\', 1) as user_metadata_fields,
-      regexp_extract(user_metadata_json, \':\\\\s*"([^"]+)"\', 1) as user_metadata_values,
-      substr(user_metadata_json, 1, 50) || \'...\' as user_metadata_preview,
+      user_metadata_json,
       regexp_replace(file_paths, \'s3://[^/]+/\', \'\') as file_paths,
       COUNT(*) OVER () as total_rows,
       SUM(CAST(file_count AS INTEGER)) OVER () as total_files
@@ -189,7 +187,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame
   overview_data <- data.frame(
-    Property = c("📋 Dataset", "🏷️\sTags", "📄 Total files"),
+    Property = c("📋 Dataset", "🏷️ Tags", "📄 Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE
@@ -231,20 +229,47 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   cli::cli_text("")
   
   # User Metadata Details section
-  metadata_rows <- result[!is.na(result$user_metadata_fields) & nzchar(result$user_metadata_fields), ]
-  if (nrow(metadata_rows) > 0) {
+  metadata_display_list <- list()
+  
+  for (i in seq_len(nrow(result))) {
+    row <- result[i, ]
+    if (!is.null(row$user_metadata_json) && nzchar(row$user_metadata_json)) {
+      tryCatch({
+        # Parse the main JSON
+        full_metadata <- jsonlite::fromJSON(row$user_metadata_json)
+        
+        # Extract the nested user_metadata_json if it exists
+        if ("user_metadata_json" %in% names(full_metadata)) {
+          nested_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
+          
+          # Add each field from the nested metadata
+          for (field_name in names(nested_metadata)) {
+            field_value <- nested_metadata[[field_name]]
+            if (is.list(field_value) || length(field_value) > 1) {
+              field_value <- paste(as.character(field_value), collapse = ", ")
+            }
+            
+            metadata_display_list <- append(metadata_display_list, list(data.frame(
+              Tag = paste("🏷️", row$tag),
+              Field = paste("📝", field_name),
+              Value = paste("💾", as.character(field_value)),
+              stringsAsFactors = FALSE,
+              check.names = FALSE
+            )))
+          }
+        }
+      }, error = function(e) {
+        # Skip this row if JSON parsing fails
+      })
+    }
+  }
+  
+  if (length(metadata_display_list) > 0) {
     cli::cli_h3("🏷️  User Metadata Details")
     cli::cli_text("")
     
-    # Create metadata table
-    metadata_display <- data.frame(
-      Tag = paste("🏷️", metadata_rows$tag),
-      Field = paste("📝", metadata_rows$user_metadata_fields),
-      Value = paste("💾", metadata_rows$user_metadata_values),
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
-    
+    # Combine all metadata rows
+    metadata_display <- do.call(rbind, metadata_display_list)
     print(metadata_display, row.names = FALSE, right = FALSE)
     cli::cli_text("")
   }
