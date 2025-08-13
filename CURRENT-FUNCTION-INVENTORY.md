@@ -1,6 +1,34 @@
-# Current Function Inventory - Post Feature 007
+# Current Function Inventory - Post Feature 007, Pre Feature 008
 
 ## 📊 COMPREHENSIVE FUNCTION MAPPING
+
+### Core Status
+- **Feature 007**: ✅ Complete - Public Datalake Discovery
+- **Feature 008**: 🎯 Ready - Public Datalake Query Implementation  
+- **Current Branch**: `feature/008-public-datalake-query`
+
+### Feature 008 Target: ellipse_query() Extension
+
+#### Current Implementation (R/ellipse.R lines 362-390)
+```r
+ellipse_query <- function(con, table) {
+  schema_name <- DBI::dbGetInfo(con)$dbms.name
+  tables <- DBI::dbGetQuery(con, paste0("SHOW TABLES IN ", schema_name))$tab_name
+  
+  if (!table %in% tables) {
+    cli::cli_alert_danger("La table demandée est inconnue.")
+    return(NULL)
+  }
+  
+  return(dplyr::tbl(con, table))
+}
+```
+
+#### Extension Required for Feature 008
+1. **Detect Query Type**: Table name vs SQL query
+2. **SQL Query Support**: For public datalake connections  
+3. **Backward Compatibility**: Existing behavior for datawarehouse/datamarts
+4. **Error Handling**: Comprehensive validation and user-friendly messages
 
 ### Public Datalake Functions (NEW - Feature 007)
 
