@@ -194,7 +194,9 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   )
 
   # Print the overview table
-  print(overview_data, row.names = FALSE, col.names = FALSE, right = FALSE)
+  for (i in seq_len(nrow(overview_data))) {
+    cat(sprintf(" %s %s\n", overview_data[i, "Property"], overview_data[i, "Value"]))
+  }
   cli::cli_text("")
 
   # Tags details
