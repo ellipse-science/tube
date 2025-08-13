@@ -77,7 +77,7 @@ format_public_datalake_all_datasets <- function(con) {
   )
 
   # Print the data frame as a simple table
-  print(display_details, row.names = FALSE, right = FALSE)
+  print(display_details, row.names = FALSE, col.names = FALSE, right = FALSE)
 
   cli::cli_text("")
   cli::cli_rule()
@@ -130,7 +130,7 @@ format_public_datalake_pattern_search <- function(con, pattern) {
   )
 
   # Print the data frame as a simple table
-  print(display_pattern, row.names = FALSE, right = FALSE)
+  print(display_pattern, row.names = FALSE, col.names = FALSE, right = FALSE)
 
   cli::cli_text("")
   cli::cli_rule()
