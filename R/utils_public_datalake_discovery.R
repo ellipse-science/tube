@@ -519,18 +519,18 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   }
 
   # Files List section
-  if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+  if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
     cli::cli_h3("📁 Files List")
 
     tryCatch({
-      # Parse the file names JSON array
-      file_names <- jsonlite::fromJSON(tag_result$file_names)
+      # Parse the file paths JSON array (already cleaned of bucket prefix)
+      file_paths <- jsonlite::fromJSON(tag_result$file_paths)
 
-      if (length(file_names) > 0) {
-        # Create a data frame for file listing
+      if (length(file_paths) > 0) {
+        # Create a data frame for file listing with cleaned paths
         files_data <- data.frame(
-          File = paste("📄File", seq_along(file_names)),
-          Name = file_names,
+          File = paste("📄File", seq_along(file_paths)),
+          Path = file_paths,
           stringsAsFactors = FALSE,
           check.names = FALSE
         )
@@ -538,7 +538,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
         # Format columns with proper alignment and print
         formatted_files <- paste(
           format(files_data$File, width = max(nchar(files_data$File)), justify = "left"),
-          format(files_data$Name, width = max(nchar(files_data$Name)), justify = "left"),
+          format(files_data$Path, width = max(nchar(files_data$Path)), justify = "left"),
           sep = "  "
         )
         cat(formatted_files, sep = "\n")
@@ -547,7 +547,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
         cli::cli_alert_info("No files found in this tag")
       }
     }, error = function(e) {
-      cli::cli_alert_warning("Could not parse file names")
+      cli::cli_alert_warning("Could not parse file paths")
     })
   }
 
