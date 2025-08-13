@@ -56,7 +56,7 @@ format_public_datalake_all_datasets <- function(con) {
   )
 
   # Print the data frame as a simple table
-  print(display_summary, row.names = FALSE, right = FALSE)
+  print(display_summary, row.names = FALSE, col.names = FALSE, right = FALSE)
 
   cli::cli_text("")
   cli::cli_rule()
@@ -194,7 +194,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   )
 
   # Print the overview table
-  print(overview_data, row.names = FALSE, right = FALSE)
+  print(overview_data, row.names = FALSE, col.names = FALSE, right = FALSE)
   cli::cli_text("")
 
   # Tags details
@@ -303,7 +303,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
     # Combine all metadata rows and print
     metadata_display <- do.call(rbind, metadata_display_list)
-    print(metadata_display, row.names = FALSE, right = FALSE)
+    print(metadata_display, row.names = FALSE, col.names = FALSE, right = FALSE)
     cli::cli_text("")
   }
 
@@ -409,7 +409,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   )
 
   # Print the overview table
-  print(overview_data, row.names = FALSE, right = FALSE)
+  print(overview_data, row.names = FALSE, col.names = FALSE, right = FALSE)
   cli::cli_text("")
 
   # Dates information
@@ -440,7 +440,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
 
   if (nrow(dates_info) > 0) {
     cli::cli_h3("📅 Important Dates")
-    print(dates_info, row.names = FALSE, right = FALSE)
+    print(dates_info, row.names = FALSE, col.names = FALSE, right = FALSE)
     cli::cli_text("")
   }
 
@@ -470,7 +470,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
         check.names = FALSE
       )
 
-      print(metadata_data, row.names = FALSE, right = FALSE)
+      print(metadata_data, row.names = FALSE, col.names = FALSE, right = FALSE)
       cli::cli_text("")
     }, error = function(e) {
       # Fallback to simple display if data frame creation fails
