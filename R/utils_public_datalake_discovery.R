@@ -326,14 +326,14 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   invisible(result)
 }
 
-#' Format public datalake discovery results for specific dataset and tag
+#' Format public datalake discovery results for specific dataset and tag (BACKUP - DETAILED VERSION)
 #'
 #' @param con Database connection object
 #' @param dataset_name Exact dataset name
 #' @param tag_name Exact tag name
 #' @return List with specific tag information
 #' @keywords internal
-format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
+format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_name) {
   # Query to get all individual file records for this dataset/tag combination
   comprehensive_query <- paste0('
     SELECT
@@ -612,6 +612,183 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       cli::cli_rule()
       cli::cli_text("")
     }
+  }
+  
+  # Create file summary for programmatic use
+  files_summary <- data.frame(
+    dataset = rep(dataset_name, length(all_files_data)),
+    tag = rep(tag_name, length(all_files_data)),
+    file_path = sapply(all_files_data, function(f) f$path),
+    file_name = sapply(all_files_data, function(f) f$name),
+    file_size_bytes = sapply(all_files_data, function(f) as.numeric(f$size_bytes)),
+    stringsAsFactors = FALSE
+  )
+  
+  invisible(files_summary)
+}
+
+#' Format public datalake discovery results for specific dataset and tag (CONDENSED VERSION)
+#'
+#' @param con Database connection object
+#' @param dataset_name Exact dataset name
+#' @param tag_name Exact tag name
+#' @return List with specific tag information
+#' @keywords internal
+format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
+  # Query to get all individual file records for this dataset/tag combination
+  comprehensive_query <- paste0('
+    SELECT
+      name, tag, file_count, creation_date, consent_expiry_date, data_destruction_date,
+      sensitivity_level, ethical_stamp, user_metadata_json,
+      regexp_replace(file_paths, \'s3://[^/]+/\', \'\') as file_paths,
+      file_names, file_extensions, file_sizes_bytes
+    FROM "public-data-lake-content"
+    WHERE name = \'', dataset_name, "' AND tag = '", tag_name, "'")
+
+  result <- DBI::dbGetQuery(con, comprehensive_query)
+
+  if (nrow(result) == 0) {
+    cli::cli_alert_danger("La combinaison table/tag demandée est inconnue.")
+    return(invisible(NULL))
+  }
+
+  cli::cli_h2(glue::glue("🏷️  Tag Details: {dataset_name} / {tag_name}"))
+
+  # Parse all file arrays from all matching records
+  all_files_data <- list()
+  
+  for (row_idx in seq_len(nrow(result))) {
+    tag_result <- result[row_idx, ]
+    
+    tryCatch({
+      # Parse file arrays
+      file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
+        jsonlite::fromJSON(tag_result$file_paths)
+      } else { character(0) }
+      
+      file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+        jsonlite::fromJSON(tag_result$file_names)
+      } else { character(0) }
+      
+      file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
+        jsonlite::fromJSON(tag_result$file_extensions)
+      } else { character(0) }
+      
+      file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
+        jsonlite::fromJSON(tag_result$file_sizes_bytes)
+      } else { numeric(0) }
+      
+      # Parse user metadata
+      user_metadata <- NULL
+      if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
+        tryCatch({
+          full_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
+          if ("user_metadata_json" %in% names(full_metadata)) {
+            user_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
+          }
+        }, error = function(e) { user_metadata <<- NULL })
+      }
+      
+      # Store file data
+      num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
+      
+      if (num_files > 0) {
+        for (file_idx in seq_len(num_files)) {
+          file_data <- list(
+            path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
+            name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
+            extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
+            size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
+            creation_date = tag_result$creation_date,
+            sensitivity_level = tag_result$sensitivity_level,
+            ethical_stamp = tag_result$ethical_stamp,
+            consent_expiry_date = tag_result$consent_expiry_date,
+            data_destruction_date = tag_result$data_destruction_date,
+            user_metadata = user_metadata
+          )
+          all_files_data <- append(all_files_data, list(file_data))
+        }
+      }
+    }, error = function(e) {
+      cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
+    })
+  }
+  
+  if (length(all_files_data) == 0) {
+    cli::cli_alert_info("No files found in this tag")
+    return(invisible(NULL))
+  }
+  
+  # Display compact summary
+  total_size <- sum(sapply(all_files_data, function(f) as.numeric(f$size_bytes)), na.rm = TRUE)
+  if (total_size >= 1024^3) {
+    total_size_display <- paste(round(total_size / 1024^3, 2), "GB")
+  } else if (total_size >= 1024^2) {
+    total_size_display <- paste(round(total_size / 1024^2, 2), "MB") 
+  } else if (total_size >= 1024) {
+    total_size_display <- paste(round(total_size / 1024, 2), "KB")
+  } else {
+    total_size_display <- paste(total_size, "bytes")
+  }
+  
+  cli::cli_alert_info(paste("📊", length(all_files_data), "files, Total size:", total_size_display))
+  cli::cli_text("")
+  
+  # Display compact file information as a table
+  files_table_data <- data.frame(
+    File = paste("📄", seq_along(all_files_data)),
+    Name = sapply(all_files_data, function(f) {
+      name <- ifelse(nzchar(f$name), f$name, basename(f$path))
+      if (nchar(name) > 25) paste0(substr(name, 1, 22), "...") else name
+    }),
+    Ext = sapply(all_files_data, function(f) ifelse(nzchar(f$extension), f$extension, "N/A")),
+    Size = sapply(all_files_data, function(f) {
+      size_bytes <- as.numeric(f$size_bytes)
+      if (size_bytes >= 1024^2) {
+        paste(round(size_bytes / 1024^2, 1), "MB")
+      } else if (size_bytes >= 1024) {
+        paste(round(size_bytes / 1024, 1), "KB")
+      } else {
+        paste(size_bytes, "B")
+      }
+    }),
+    Created = sapply(all_files_data, function(f) {
+      if (!is.na(f$creation_date) && nzchar(f$creation_date)) {
+        substr(f$creation_date, 1, 10)  # Just date, no time
+      } else "N/A"
+    }),
+    Level = sapply(all_files_data, function(f) {
+      if (!is.na(f$sensitivity_level)) paste("L", f$sensitivity_level, sep="") else "N/A"
+    }),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Print compact table
+  print(files_table_data, row.names = FALSE, right = FALSE)
+  cli::cli_text("")
+  
+  # Show metadata summary if any files have custom metadata
+  files_with_metadata <- sapply(all_files_data, function(f) !is.null(f$user_metadata) && length(f$user_metadata) > 0)
+  
+  if (any(files_with_metadata)) {
+    cli::cli_text("🏷️  Custom metadata available for files:", paste(which(files_with_metadata), collapse = ", "))
+    cli::cli_text("💡 Use format_public_datalake_tag_details_detailed() for full metadata view")
+  }
+  
+  # Show consent/destruction dates if any exist
+  consent_dates <- unique(sapply(all_files_data, function(f) f$consent_expiry_date))
+  consent_dates <- consent_dates[!is.na(consent_dates) & nzchar(consent_dates)]
+  
+  destruction_dates <- unique(sapply(all_files_data, function(f) f$data_destruction_date))
+  destruction_dates <- destruction_dates[!is.na(destruction_dates) & nzchar(destruction_dates)]
+  
+  if (length(consent_dates) > 0) {
+    cli::cli_text("⏰ Consent expiry:", paste(consent_dates, collapse = ", "))
+  }
+  
+  if (length(destruction_dates) > 0) {
+    cli::cli_text("🗑️  Data destruction:", paste(destruction_dates, collapse = ", "))
   }
   
   # Create file summary for programmatic use
