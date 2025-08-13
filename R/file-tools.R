@@ -218,7 +218,8 @@ read_csv_with_manual_overflow <- function(filepath) {
   header <- strsplit(header_line, ",")[[1]]
   n_cols <- length(header)
 
-  cli::cli_alert_warning("Détection de colonnes supplémentaires. Concaténation dans la dernière colonne.")
+  # Note: Overflow columns detected, concatenating into last column
+  # (suppressing warning to avoid UI disruption)
 
   # Process data lines
   data_rows <- list()
