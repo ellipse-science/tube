@@ -288,8 +288,9 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
 
 #' Download S3 file to temporary location
 #' @param s3_path S3 path (s3://bucket/key format)
+#' @param credentials AWS credentials from get_aws_credentials()
 #' @keywords internal
-download_s3_file_to_temp <- function(s3_path) {
+download_s3_file_to_temp <- function(s3_path, credentials) {
 
   # Parse S3 path
   s3_parts <- gsub("^s3://", "", s3_path)
@@ -300,8 +301,13 @@ download_s3_file_to_temp <- function(s3_path) {
   # Create temp file with appropriate extension
   temp_file <- tempfile(fileext = paste0(".", tools::file_ext(key)))
 
-  # Download using paws.storage
-  s3 <- paws.storage::s3()
+  # Download using paws.storage with credentials
+  s3 <- paws.storage::s3(
+    config = c(
+      credentials,
+      close_connection = TRUE
+    )
+  )
   s3$download_file(
     Bucket = bucket,
     Key = key,

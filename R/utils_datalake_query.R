@@ -10,6 +10,10 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
   logger::log_debug(paste("[ellipse_query_datalake_aggregator] entering with dataset =", dataset, ", tag =", tag))
 
   tryCatch({
+    # Get AWS credentials from connection
+    env <- DBI::dbGetInfo(con)$profile_name
+    creds <- get_aws_credentials(env)
+    
     # Step 1: Get file metadata from public datalake
     files_metadata <- get_datalake_files_metadata(con, dataset, tag)
 
@@ -29,7 +33,7 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
       cli::cli_alert_info("Agrégation de {nrow(files_metadata)} fichier(s) du dataset '{dataset}' (tous les tags)...")
     }
 
-    result <- download_and_aggregate_files(files_metadata)
+    result <- download_and_aggregate_files(files_metadata, creds)
 
     # Step 3: Add metadata info
     if (!is.null(tag)) {
@@ -97,8 +101,9 @@ get_datalake_files_metadata <- function(con, dataset, tag = NULL) {
 
 #' Download files from S3 and aggregate into single dataframe
 #' @param files_metadata Tibble with file metadata
+#' @param credentials AWS credentials from get_aws_credentials()
 #' @keywords internal
-download_and_aggregate_files <- function(files_metadata) {
+download_and_aggregate_files <- function(files_metadata, credentials) {
 
   # Calculate total size and show warning if > 1GB
   total_size_bytes <- sum(files_metadata$file_size_bytes, na.rm = TRUE)
@@ -129,7 +134,7 @@ download_and_aggregate_files <- function(files_metadata) {
 
     tryCatch({
       # Download file to temp location
-      temp_file <- download_s3_file_to_temp(file_info$file_path)
+      temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
 
       # Read file based on extension
       df <- read_file_by_extension(temp_file, file_info$file_extension)
