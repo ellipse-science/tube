@@ -123,16 +123,21 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with simple status updates
+  # Download and read files with same-line progress updates
   dataframes <- list()
   failed_files <- character()
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show progress every few files or at start/end
+    # Show progress on same line with carriage return
     if (i == 1 || i %% 3 == 0 || i == nrow(files_metadata)) {
-      cli::cli_alert_info("Lecture: {i}/{nrow(files_metadata)} fichiers...")
+      progress_msg <- sprintf("ℹ Lecture: %d/%d fichiers...", i, nrow(files_metadata))
+      # Clear line and write progress
+      cat("\r\033[K", progress_msg, sep = "")
+      if (i < nrow(files_metadata)) {
+        flush.console()
+      }
     }
 
     tryCatch({
@@ -157,6 +162,9 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
       failed_files <<- c(failed_files, file_info$file_name)
     })
   }
+
+  # Move to next line after progress display
+  cat("\n")
 
   # Report on failed files
   if (length(failed_files) > 0) {
