@@ -123,20 +123,21 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with periodic progress updates
+  # Download and read files with complete output suppression
   dataframes <- list()
   failed_files <- character()
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show progress every 3 files or on first/last file to minimize output
+    # Show progress on same line for every file (works in interactive R)
     total_files <- nrow(files_metadata)
-    if (i == 1 || i == total_files || i %% 3 == 0) {
-      cli::cli_alert_info("Lecture: {i}/{total_files} fichiers...")
-    }
+    cat("\rℹ Lecture:", i, "/", total_files, "fichiers...")
+    flush.console()
 
-    tryCatch({
+    # Wrap all file operations in complete output suppression
+    invisible(capture.output({
+      tryCatch({
       # Download file to temp location
       temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
 
@@ -157,7 +158,11 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
       logger::log_warn(paste("[download_and_aggregate_files] failed to read file:", file_info$file_name, "- error:", e$message))
       failed_files <<- c(failed_files, file_info$file_name)
     })
+    })) # Close capture.output and invisible
   }
+
+  # Complete the progress line
+  cat("\n")
 
   # Report on failed files
   if (length(failed_files) > 0) {
