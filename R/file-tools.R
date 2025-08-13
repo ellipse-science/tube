@@ -132,17 +132,20 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
 read_file_by_extension <- function(filepath, extension) {
   ext <- tolower(extension)
 
-  df <- switch(ext,
-    "csv" = read_csv_with_overflow_handling(filepath),
-    "dta" = haven::read_dta(filepath),
-    "sav" = haven::read_sav(filepath),
-    "rds" = readRDS(filepath),
-    "rda" = read_rda_file(filepath),
-    "xlsx" = readxl::read_excel(filepath),
-    "xls" = readxl::read_excel(filepath),
-    "dat" = read_dat_with_overflow_handling(filepath),
-    stop("Format de fichier non supporté: ", ext)
-  )
+  # Suppress messages from file reading functions
+  df <- suppressMessages({
+    switch(ext,
+      "csv" = read_csv_with_overflow_handling(filepath),
+      "dta" = haven::read_dta(filepath),
+      "sav" = haven::read_sav(filepath),
+      "rds" = readRDS(filepath),
+      "rda" = read_rda_file(filepath),
+      "xlsx" = readxl::read_excel(filepath),
+      "xls" = readxl::read_excel(filepath),
+      "dat" = read_dat_with_overflow_handling(filepath),
+      stop("Format de fichier non supporté: ", ext)
+    )
+  })
 
   # Convert to tibble for consistency
   tibble::as_tibble(df)

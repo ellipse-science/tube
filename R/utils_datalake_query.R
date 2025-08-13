@@ -148,18 +148,12 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
       {
         # Download file to temp location
         temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
-        Sys.sleep(0.5)
+
         # Read file based on extension
-        #df <- read_file_by_extension(temp_file, file_info$file_extension)
-        df <- data.frame(
-          dataset = file_info$dataset,
-          tag = file_info$tag,
-          file_name = file_info$file_name,
-          file_path = file_info$file_path,
-          file_extension = file_info$file_extension,
-          file_size_bytes = file_info$file_size_bytes
-        )
+        df <- read_file_by_extension(temp_file, file_info$file_extension)
+
         Sys.sleep(0.5)
+
         # Add metadata columns
         df$..dataset.. <- file_info$dataset
         df$..tag.. <- file_info$tag
