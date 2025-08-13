@@ -181,8 +181,8 @@ read_dat_with_overflow_handling <- function(filepath) {
   for (delim in delims) {
     tryCatch(
       {
-        df <- suppressWarnings(
-          readr::read_delim(filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+        df <- readr::read_delim(
+          filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE
         )
         if (ncol(df) > 1) {
           return(df)
