@@ -190,8 +190,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     Property = c("📋 Dataset", "🏷️ Tags", "📄 Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
-    check.names = FALSE,
-    col.names = FALSE
+    check.names = FALSE
   )
 
   # Print the overview table
