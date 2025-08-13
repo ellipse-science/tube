@@ -741,7 +741,10 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       name <- ifelse(nzchar(f$name), f$name, basename(f$path))
       if (nchar(name) > 20) paste0(substr(name, 1, 17), "...") else name
     }),
-    `🏷️Extension` = sapply(all_files_data, function(f) ifelse(nzchar(f$extension), f$extension, "N/A")),
+    `📂Path` = sapply(all_files_data, function(f) {
+      path <- ifelse(nzchar(f$path), f$path, "N/A")
+      if (nchar(path) > 30) paste0(substr(path, 1, 27), "...") else path
+    }),
     `📏Size` = sapply(all_files_data, function(f) {
       size_bytes <- as.numeric(f$size_bytes)
       if (size_bytes >= 1024^2) {
