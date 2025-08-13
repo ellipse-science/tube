@@ -156,7 +156,9 @@ read_csv_with_overflow_handling <- function(filepath) {
 
   # First, read normally to detect if there are overflow issues
   tryCatch({
-    df <- readr::read_csv(filepath, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+    df <- suppressWarnings(
+      readr::read_csv(filepath, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+    )
     return(df)
   }, error = function(e) {
     # If normal reading fails, try with overflow handling
@@ -177,7 +179,9 @@ read_dat_with_overflow_handling <- function(filepath) {
 
   for (delim in delims) {
     tryCatch({
-      df <- readr::read_delim(filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+      df <- suppressWarnings(
+        readr::read_delim(filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+      )
       if (ncol(df) > 1) return(df)  # If we got multiple columns, probably right delimiter
     }, error = function(e) {
       # Continue to next delimiter
