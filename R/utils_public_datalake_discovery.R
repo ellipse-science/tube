@@ -471,8 +471,9 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   for (i in seq_along(all_files_data)) {
     file_data <- all_files_data[[i]]
     
-    # File header
-    cli::cli_h4(paste("📄 File", i))
+    # File header using cli_text with formatting
+    cli::cli_text(paste("📄", cli::style_bold(paste("File", i))))
+    cli::cli_text("")
     
     # Basic file information
     size_bytes <- as.numeric(file_data$size_bytes)
