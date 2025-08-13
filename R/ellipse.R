@@ -368,8 +368,8 @@ ellipse_query <- function(con, dataset, tag = NULL) {
   logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag))
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
-  # Detect if this is a datalake connection
-  is_datalake <- grepl("datalake", schema_name, ignore.case = TRUE)
+  # Detect if this is a datalake connection (same logic as ellipse_discover)
+  is_datalake <- grepl("publicdatalake", schema_name, ignore.case = TRUE)
 
   if (is_datalake) {
     # File aggregator mode for public datalake
