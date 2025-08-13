@@ -123,19 +123,17 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with milestone progress updates
+  # Download and read files with periodic progress updates
   dataframes <- list()
   failed_files <- character()
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show minimal progress: only start and completion to eliminate scrolling
+    # Show progress every 3 files or on first/last file to minimize output
     total_files <- nrow(files_metadata)
-    if (i == 1) {
-      cli::cli_alert_info("Lecture de {total_files} fichiers en cours...")
-    } else if (i == total_files) {
-      cli::cli_alert_info("Lecture terminée: {total_files}/{total_files} fichiers traités.")
+    if (i == 1 || i == total_files || i %% 3 == 0) {
+      cli::cli_alert_info("Lecture: {i}/{total_files} fichiers...")
     }
 
     tryCatch({
