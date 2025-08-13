@@ -158,33 +158,35 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     file_info <- files_metadata[i, ]
 
     # Process file and suppress messages, but update progress outside
-    #suppressMessages({
-    #  tryCatch(
-    #    {
-    #      # Download file to temp location
-    #      temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+    suppressMessages({
+      tryCatch(
+        {
+          # Download file to temp location
+          logger::log_info(paste("[download_and_aggregate_files] downloading file:", file_info$file_name))
+          temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+          Sys.sleep(0.5)
+          # Read file based on extension
+          logger::log_info(paste("[download_and_aggregate_files] reading file:", file_info$file_name))
+          df <- read_file_by_extension(temp_file, file_info$file_extension)
+          Sys.sleep(0.5)
+          # Add metadata columns
+          df$..dataset.. <- file_info$dataset
+          df$..tag.. <- file_info$tag
+          df$..file_name.. <- file_info$file_name
 
-    #      # Read file based on extension
-    #      df <- read_file_by_extension(temp_file, file_info$file_extension)
+          dataframes[[i]] <- df
 
-    #      # Add metadata columns
-    #      df$..dataset.. <- file_info$dataset
-    #      df$..tag.. <- file_info$tag
-    #      df$..file_name.. <- file_info$file_name
-
-    #      dataframes[[i]] <- df
-
-    #      # Cleanup temp file
-    #      unlink(temp_file)
-    #    },
-    #    error = function(e) {
-    #      logger::log_warn(paste(
-    #        "[download_and_aggregate_files] failed to read file:", file_info$file_name, "- error:", e$message
-    #      ))
-    #      failed_files <<- c(failed_files, file_info$file_name)
-    #    }
-    #  )
-    #}) # Close suppressMessages
+          # Cleanup temp file
+          unlink(temp_file)
+        },
+        error = function(e) {
+          logger::log_warn(paste(
+            "[download_and_aggregate_files] failed to read file:", file_info$file_name, "- error:", e$message
+          ))
+          failed_files <<- c(failed_files, file_info$file_name)
+        }
+      )
+    }) # Close suppressMessages
 
     # Update progress bar
     Sys.sleep(2)  # Simulate processing time
