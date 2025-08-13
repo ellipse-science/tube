@@ -127,20 +127,24 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with complete output suppression
+  # Download and read files
   dataframes <- list()
   failed_files <- character()
 
   # Initialize progress bar
   total_files <- nrow(files_metadata)
-  pb <- txtProgressBar(min = 0, max = total_files, style = 3, char = "=")
-  cat("Lecture de fichiers:\n")
+  cli::cli_progress_bar(
+    name = "Lecture des fichiers",
+    total = total_files,
+    format = "{cli::pb_name} {cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}",
+    clear = TRUE
+  )
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
 
     # Update progress bar
-    setTxtProgressBar(pb, i)
+    cli::cli_progress_update()
 
     # Wrap all file operations in complete output suppression
     invisible(capture.output({
@@ -172,9 +176,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     })) # Close capture.output and invisible
   }
 
-  # Close progress bar
-  close(pb)
-  cat("\n")
+  # cli progress bar is closed automatically
 
   # Report on failed files
   if (length(failed_files) > 0) {
