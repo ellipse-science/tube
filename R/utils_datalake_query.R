@@ -143,10 +143,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
 
-    # Update progress bar
-    cli::cli_progress_update()
-
-    # Wrap all file operations in complete output suppression
+    # Process file and capture output, but update progress outside
     invisible(capture.output({
       tryCatch(
         {
@@ -174,6 +171,9 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
         }
       )
     })) # Close capture.output and invisible
+
+    # Update progress bar outside of capture.output
+    cli::cli_progress_update()
   }
 
   # cli progress bar is closed automatically
