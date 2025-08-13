@@ -1,3 +1,8 @@
+# Add /home/vscode/.venv/bin to PATH
+if [ -d "/home/vscode/.venv/bin" ]; then
+  export PATH="/home/vscode/.venv/bin:$PATH"
+fi
+
 # --- Colors ---
 c_reset="\e[0m"; c_bold="\e[1m"; c_cyan="\e[36m"; c_yellow="\e[33m"; c_purple="\e[35m"; c_green="\e[32m"; c_red="\e[31m"; c_blue="\e[34m"
 PROMPT_DIRTRIM=3
