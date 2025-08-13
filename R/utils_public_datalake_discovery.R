@@ -281,8 +281,8 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       # First row shows the tag name
       metadata_display_list <- append(metadata_display_list, list(data.frame(
         Tag = paste("🏷️", tag_name),
-        Field = paste("📝", field_names[1]),
-        Value = paste("💾", tag_metadata[[field_names[1]]]),
+        Field = field_names[1],
+        Value = tag_metadata[[field_names[1]]],
         stringsAsFactors = FALSE,
         check.names = FALSE
       )))
@@ -292,8 +292,8 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
         for (i in 2:length(field_names)) {
           metadata_display_list <- append(metadata_display_list, list(data.frame(
             Tag = "",
-            Field = paste("📝", field_names[i]),
-            Value = paste("💾", tag_metadata[[field_names[i]]]),
+            Field = field_names[i],
+            Value = tag_metadata[[field_names[i]]],
             stringsAsFactors = FALSE,
             check.names = FALSE
           )))
