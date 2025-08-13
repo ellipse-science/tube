@@ -273,11 +273,11 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
     # Build grouped display data frame
     metadata_display_list <- list()
-    
+
     for (tag_name in names(metadata_by_tag)) {
       tag_metadata <- metadata_by_tag[[tag_name]]
       field_names <- names(tag_metadata)
-      
+
       # First row shows the tag name
       metadata_display_list <- append(metadata_display_list, list(data.frame(
         Tag = paste("🏷️", tag_name),
@@ -286,7 +286,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
         stringsAsFactors = FALSE,
         check.names = FALSE
       )))
-      
+
       # Subsequent rows for this tag have empty tag column
       if (length(field_names) > 1) {
         for (i in 2:length(field_names)) {
