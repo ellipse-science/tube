@@ -518,42 +518,90 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     })
   }
 
-  # Files List section
+  # Detailed Files Information section
   if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
-    cli::cli_h3("📁 Files List")
+    cli::cli_h3("📁 Files Details")
 
     tryCatch({
-      # Parse the file paths JSON array (already cleaned of bucket prefix)
+      # Parse all file-related JSON arrays
       file_paths <- jsonlite::fromJSON(tag_result$file_paths)
+      file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+        jsonlite::fromJSON(tag_result$file_names)
+      } else { rep("", length(file_paths)) }
+      
+      file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
+        jsonlite::fromJSON(tag_result$file_extensions)
+      } else { rep("", length(file_paths)) }
+      
+      file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
+        jsonlite::fromJSON(tag_result$file_sizes_bytes)
+      } else { rep(0, length(file_paths)) }
 
       if (length(file_paths) > 0) {
-        # Create a data frame for file listing with cleaned paths
-        files_data <- data.frame(
-          File = paste("📄File", seq_along(file_paths)),
-          Path = file_paths,
-          stringsAsFactors = FALSE,
-          check.names = FALSE
-        )
-
-        # Format columns with proper alignment and print
-        formatted_files <- paste(
-          format(files_data$File, width = max(nchar(files_data$File)), justify = "left"),
-          format(files_data$Path, width = max(nchar(files_data$Path)), justify = "left"),
-          sep = "  "
-        )
-        cat(formatted_files, sep = "\n")
         cli::cli_text("")
+        
+        # Display each file with its complete metadata
+        for (i in seq_along(file_paths)) {
+          # File header
+          cli::cli_h4(paste("📄 File", i))
+          
+          # Format file size in human readable format
+          size_bytes <- as.numeric(file_sizes[i])
+          if (size_bytes >= 1024^3) {
+            size_display <- paste(round(size_bytes / 1024^3, 2), "GB")
+          } else if (size_bytes >= 1024^2) {
+            size_display <- paste(round(size_bytes / 1024^2, 2), "MB")
+          } else if (size_bytes >= 1024) {
+            size_display <- paste(round(size_bytes / 1024, 2), "KB")
+          } else {
+            size_display <- paste(size_bytes, "bytes")
+          }
+          
+          # Create file metadata data frame
+          file_metadata <- data.frame(
+            Property = c("📂Path", "�Name", "🏷️ Extension", "📏Size"),
+            Value = c(
+              file_paths[i],
+              ifelse(nzchar(file_names[i]), file_names[i], "N/A"),
+              ifelse(nzchar(file_extensions[i]), file_extensions[i], "N/A"),
+              size_display
+            ),
+            stringsAsFactors = FALSE,
+            check.names = FALSE
+          )
+          
+          # Format columns with proper alignment and print
+          formatted_file_meta <- paste(
+            format(file_metadata$Property, width = max(nchar(file_metadata$Property)), justify = "left"),
+            format(file_metadata$Value, width = max(nchar(file_metadata$Value)), justify = "left"),
+            sep = "  "
+          )
+          cat(formatted_file_meta, sep = "\n")
+          cli::cli_text("")
+        }
+        
+        # Summary at the end
+        cli::cli_rule()
+        total_size <- sum(as.numeric(file_sizes), na.rm = TRUE)
+        if (total_size >= 1024^3) {
+          total_size_display <- paste(round(total_size / 1024^3, 2), "GB")
+        } else if (total_size >= 1024^2) {
+          total_size_display <- paste(round(total_size / 1024^2, 2), "MB")
+        } else if (total_size >= 1024) {
+          total_size_display <- paste(round(total_size / 1024, 2), "KB")
+        } else {
+          total_size_display <- paste(total_size, "bytes")
+        }
+        
+        cli::cli_alert_info(paste("📊 Summary:", length(file_paths), "files, Total size:", total_size_display))
+        
       } else {
         cli::cli_alert_info("No files found in this tag")
       }
     }, error = function(e) {
-      cli::cli_alert_warning("Could not parse file paths")
+      cli::cli_alert_warning(paste("Could not parse file information:", e$message))
     })
   }
-
-  # File information
-  cli::cli_h3("📁 Files Overview")
-  cli::cli_alert_info("Files located in cleaned paths (S3 bucket prefix removed)")
 
   # Return invisible file summary for programmatic use if needed
   invisible(files_summary)
