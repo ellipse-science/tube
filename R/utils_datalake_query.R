@@ -123,26 +123,17 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     }
   }
 
-  # Download and read files with environment-aware progress updates
+  # Download and read files with same-line progress updates
   dataframes <- list()
   failed_files <- character()
 
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show progress - handle different R environments
-    progress_text <- sprintf("Lecture: %d/%d fichiers...", i, nrow(files_metadata))
-    
-    # Check if running in RStudio (where carriage return doesn't work well)
-    # radian and plain R console support carriage return properly
-    if (Sys.getenv("RSTUDIO") == "1") {
-      # In RStudio, show discrete updates for every file (new lines)
-      cli::cli_alert_info(progress_text)
-    } else {
-      # In radian, plain R console, or Rscript, use carriage return for same-line updates
-      cat("\r", cli::symbol$info, " ", progress_text, sep = "")
-      flush.console()
-    }
+    # Show progress on same line for every file
+    progress_text <- sprintf("ℹ Lecture: %d/%d fichiers...", i, nrow(files_metadata))
+    cat("\r", progress_text, sep = "")
+    flush.console()
 
     tryCatch({
       # Download file to temp location
@@ -167,10 +158,8 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     })
   }
 
-  # Complete the progress line with newline (only needed for radian/plain R console)
-  if (Sys.getenv("RSTUDIO") != "1") {
-    cat("\n")
-  }
+  # Complete the progress line with newline
+  cat("\n")
 
   # Report on failed files
   if (length(failed_files) > 0) {
