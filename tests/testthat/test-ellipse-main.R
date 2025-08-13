@@ -120,7 +120,7 @@ test_that("ellipse_query validates parameters and executes queries", {
 
   # Test with NULL connection
   expect_error(
-    ellipse_query(connection = NULL, query = "SELECT 1"),
+    ellipse_query(connection = NULL, dataset = "test_table"),
     class = "error"
   )
 
@@ -301,7 +301,7 @@ test_that("ellipse functions can work together in a typical workflow", {
       # Step 4: Query
       query_result <- tryCatch(
         {
-          ellipse_query(connection, query = "SHOW TABLES")
+          ellipse_query(connection, dataset = "test_table")
         },
         error = function(e) NULL
       )
@@ -320,7 +320,7 @@ test_that("ellipse functions perform proper parameter validation", {
   # Test various invalid parameter combinations
   expect_error(ellipse_discover("not_a_connection", database = "test"), class = "error")
   expect_error(ellipse_describe("not_a_connection", database = "test"), class = "error")
-  expect_error(ellipse_query("not_a_connection", query = "SELECT 1"), class = "error")
+  expect_error(ellipse_query("not_a_connection", dataset = "test_table"), class = "error")
   expect_error(ellipse_ingest("not_a_connection", file_or_folder = "test", pipeline = "test"), class = "error")
   expect_error(ellipse_partitions("not_a_connection", table = "test"), class = "error")
   expect_error(ellipse_publish("not_a_connection", table = "test"), class = "error")
@@ -372,14 +372,14 @@ test_that("ellipse functions handle errors gracefully and provide helpful messag
   # Connection validation
   expect_error(ellipse_discover(NULL, database = "test"), class = "error")
   expect_error(ellipse_describe(NULL, database = "test"), class = "error")
-  expect_error(ellipse_query(NULL, query = "SELECT 1"), class = "error")
+  expect_error(ellipse_query(NULL, dataset = "test_table"), class = "error")
   expect_error(ellipse_ingest(NULL, file_or_folder = "test", pipeline = "test"), class = "error")
   expect_error(ellipse_partitions(NULL, table = "test"), class = "error")
   expect_error(ellipse_publish(NULL, table = "test"), class = "error")
   expect_error(ellipse_unpublish(NULL, datamart = "test", table = "test"), class = "error")
 
   # Parameter validation
-  expect_error(ellipse_query("invalid", query = ""), class = "error")
+  expect_error(ellipse_query("invalid", dataset = "test_table"), class = "error")
   expect_error(ellipse_ingest("invalid", file_or_folder = "", pipeline = ""), class = "error")
 })
 
