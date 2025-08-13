@@ -120,10 +120,8 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   pb <- progress::progress_bar$new(
     format = "  Lecture [:bar] :percent (:current/:total) ETA: :eta",
     total = nrow(files_metadata),
-    clear = TRUE,
-    width = 80,
-    force = TRUE,
-    show_after = 0
+    clear = FALSE,
+    width = 60
   )
 
   # Download and read files with progress
@@ -156,6 +154,9 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
       failed_files <<- c(failed_files, file_info$file_name)
     })
   }
+
+  # Add a clean line break after progress bar
+  cat("\n")
 
   # Report on failed files
   if (length(failed_files) > 0) {
