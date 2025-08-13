@@ -130,7 +130,7 @@ format_public_datalake_pattern_search <- function(con, pattern) {
   )
 
   # Print the data frame as a simple table
-  print(display_pattern, row.names = FALSE, col.names = FALSE, right = FALSE)
+  print(display_pattern, row.names = FALSE, right = FALSE)
 
   cli::cli_text("")
   cli::cli_rule()
@@ -190,7 +190,8 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     Property = c("📋 Dataset", "🏷️ Tags", "📄 Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
-    check.names = FALSE
+    check.names = FALSE,
+    col.names = FALSE
   )
 
   # Print the overview table
