@@ -158,9 +158,9 @@ read_csv_with_overflow_handling <- function(filepath) {
   # First, read normally to detect if there are overflow issues
   tryCatch(
     {
-      df <- suppressWarnings(
+      df <- #suppressWarnings(
         readr::read_csv(filepath, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
-      )
+      #)
       return(df)
     },
     error = function(e) {
