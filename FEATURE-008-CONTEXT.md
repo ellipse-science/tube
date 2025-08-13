@@ -2,11 +2,10 @@
 
 ## 🎯 NEXT FEATURE: PUBLIC DATALAKE INGEST & QUERY
 
-### Feature 008 Scope
-Implement the remaining public datalake functionality:
-1. **ellipse_ingest()** - Upload files to public datalake
-2. **ellipse_query()** - Query public datalake data
-3. **ellipse_process()** - Process public datalake data (if needed)
+### Feature 008 Scope - FOCUSED ON QUERY ONLY
+Implement public datalake query functionality:
+1. **ellipse_query()** - Query public datalake data (FEATURE 008)
+2. **ellipse_ingest()** - Upload files and process to public datalake (FEATURE 009 - FUTURE)
 
 ### 🔗 Continuation Strategy
 
@@ -28,10 +27,8 @@ Before writing any code, the next conversation must:
 
 1. **Analyze Existing Functions**
    ```r
-   # Study these functions thoroughly:
-   ellipse_ingest()    # Current implementation patterns
+   # Study this function thoroughly:
    ellipse_query()     # Current implementation patterns
-   ellipse_process()   # Current implementation patterns
    ```
 
 2. **Identify Reuse Opportunities**
@@ -52,17 +49,13 @@ Before writing any code, the next conversation must:
 # These must work after Feature 008:
 con <- ellipse_connect("DEV", "datalake")
 
-# File upload to public datalake
-ellipse_ingest(con, file_path = "data.csv", 
-               dataset_name = "my-dataset", 
-               tag = "v1.0", 
-               metadata = list(...))
-
 # Query public datalake data  
 result <- ellipse_query(con, "SELECT * FROM my-dataset WHERE tag = 'v1.0'")
+result <- ellipse_query(con, "SELECT * FROM \"public-data-lake-content\" LIMIT 10")
 
-# Process if needed
-ellipse_process(con, ...)
+# Discovery still works (from Feature 007)
+ellipse_discover(con)
+ellipse_discover(con, "dataset-name")
 
 ellipse_disconnect(con)
 ```
@@ -82,59 +75,51 @@ ellipse_disconnect(con)
 - `R/utils_check_params.R` - Extend parameter validation if needed
 
 #### Files to Create (Only if Necessary)
-- `R/utils_public_datalake_ingest.R` - Only if ingest logic is complex
-- `tests/testthat/test-public-datalake-ingest-query.R` - New test file
-- `tests/testthat/run_ingest_query_tests.R` - New test runner
+- `tests/testthat/test-public-datalake-query.R` - New test file
+- `tests/testthat/run_query_tests.R` - New test runner
 
 ### 🔍 Key Questions for Next Conversation
 
 The next conversation should start by asking:
 
-1. **Scope Confirmation:** "Should Feature 008 include ellipse_ingest, ellipse_query, and ellipse_process, or just the first two?"
+1. **Scope Confirmation:** "Feature 008 will focus on ellipse_query() for public datalake support. ellipse_ingest() will be Feature 009."
 
-2. **Implementation Analysis:** "Let me analyze the existing ellipse_ingest() and ellipse_query() functions to understand the current patterns..."
+2. **Implementation Analysis:** "Let me analyze the existing ellipse_query() function to understand the current patterns..."
 
-3. **Reuse Strategy:** "Based on the existing patterns, here's how we can extend these functions for public datalake support..."
+3. **Reuse Strategy:** "Based on the existing patterns, here's how we can extend ellipse_query() for public datalake support..."
 
-4. **Parameter Design:** "What parameters should ellipse_ingest() accept for public datalake uploads? (dataset_name, tag, metadata, etc.)"
-
-5. **Data Format:** "What format should uploaded data be in? CSV, Parquet, JSON?"
+4. **Query Capabilities:** "What types of queries should work on public datalake? Table queries, filtered queries, aggregations?"
 
 ### 🧪 Testing Strategy
 
 #### Required Test Coverage
-1. **Ingest Tests:**
-   - Successful file upload to publicdatalakebucket
-   - Metadata creation in public-data-lake-content table
-   - Error handling for invalid files/parameters
-   - Multiple file format support
-
-2. **Query Tests:**
-   - Basic SELECT queries on public datalake data
-   - Filtered queries by dataset/tag
-   - JOIN operations across datasets
+1. **Query Tests:**
+   - Basic SELECT queries on public-data-lake-content table
+   - Filtered queries by dataset/tag/metadata
+   - COUNT and aggregation queries
+   - LIMIT and ORDER BY queries
    - Error handling for invalid queries
+   - Complex WHERE clauses with JSON metadata
 
-3. **Integration Tests:**
-   - Full workflow: connect → ingest → discover → query → disconnect
+2. **Integration Tests:**
+   - Full workflow: connect → discover → query → disconnect
    - Cross-database compatibility (datawarehouse, datamarts, datalake)
-   - Real AWS data persistence validation
+   - Real AWS Athena query execution
+   - Query result formatting and data types
 
 ### 📈 Expected Deliverables
 
 #### Code Deliverables
-- Extended ellipse_ingest() function with public datalake support
-- Extended ellipse_query() function with public datalake support  
-- Extended ellipse_process() function (if needed)
-- Comprehensive test suite (targeting 40+ new tests)
-- Updated documentation and examples
+- Extended ellipse_query() function with public datalake support
+- Comprehensive test suite (targeting 20+ new query tests)
+- Updated documentation and examples for query functionality
 
 #### Quality Deliverables
-- 100% test coverage for new functionality
+- 100% test coverage for query functionality
 - All linting passes
 - Package builds successfully
-- Real AWS integration validated
-- Performance benchmarks for large file uploads
+- Real AWS Athena integration validated
+- Query performance benchmarks
 
 ### ⚡ Quick Start Commands for Next Conversation
 
@@ -146,10 +131,10 @@ Rscript -e "devtools::load_all(.)"
 Rscript tests/testthat/run_public_datalake_tests.R
 
 # Analyze existing functions
-Rscript -e "args(ellipse_ingest); args(ellipse_query)"
+Rscript -e "args(ellipse_query)"
 
 # Create new branch for Feature 008
-git checkout -b feature/008-public-datalake-ingest-query
+git checkout -b feature/008-public-datalake-query
 ```
 
 ---
@@ -157,6 +142,7 @@ git checkout -b feature/008-public-datalake-ingest-query
 ## 🚀 READY FOR FEATURE 008 IMPLEMENTATION
 
 **Previous Feature:** ✅ Feature 007 Complete  
-**Next Feature:** 🎯 Feature 008 - Public Datalake Ingest & Query  
+**Next Feature:** 🎯 Feature 008 - Public Datalake Query (ellipse_query support)  
+**Future Feature:** 📋 Feature 009 - Public Datalake Ingest (ellipse_ingest support)  
 **Foundation:** ✅ Solid infrastructure ready  
-**Approach:** 🔄 Extend existing functions, maximize reuse
+**Approach:** 🔄 Extend existing ellipse_query(), maximize reuse
