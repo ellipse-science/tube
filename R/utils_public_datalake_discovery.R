@@ -189,7 +189,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame
   overview_data <- data.frame(
-    Property = c("📋 Dataset", "🏷️  Tags", "📄 Total files"),
+    Property = c("📋 Dataset", "🏷️\\sTags", "📄 Total files"),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE
