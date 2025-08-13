@@ -124,3 +124,122 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
 
   folder_content
 }
+
+#' Read file based on extension with overflow handling
+#' @param filepath Path to file
+#' @param extension File extension
+#' @keywords internal
+read_file_by_extension <- function(filepath, extension) {
+
+  ext <- tolower(extension)
+
+  df <- switch(ext,
+    "csv" = read_csv_with_overflow_handling(filepath),
+    "dta" = haven::read_dta(filepath), 
+    "sav" = haven::read_sav(filepath),
+    "rds" = readRDS(filepath),
+    "rda" = read_rda_file(filepath),
+    "xlsx" = readxl::read_excel(filepath),
+    "xls" = readxl::read_excel(filepath),
+    "dat" = read_dat_with_overflow_handling(filepath),
+    stop("Format de fichier non supporté: ", ext)
+  )
+
+  # Convert to tibble for consistency
+  tibble::as_tibble(df)
+}
+
+#' Read CSV file with overflow handling (extra values concatenated to last column)
+#' @param filepath Path to CSV file
+#' @keywords internal
+read_csv_with_overflow_handling <- function(filepath) {
+
+  # First, read normally to detect if there are overflow issues
+  tryCatch({
+    df <- readr::read_csv(filepath, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+    return(df)
+  }, error = function(e) {
+    # If normal reading fails, try with overflow handling
+    read_csv_with_manual_overflow(filepath)
+  })
+}
+
+#' Read DAT file with overflow handling
+#' @param filepath Path to DAT file
+#' @keywords internal
+read_dat_with_overflow_handling <- function(filepath) {
+
+  # Try to detect delimiter
+  sample_lines <- readLines(filepath, n = 5)
+
+  # Common delimiters to try
+  delims <- c(",", "\t", ";", "|", " ")
+
+  for (delim in delims) {
+    tryCatch({
+      df <- readr::read_delim(filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE)
+      if (ncol(df) > 1) return(df)  # If we got multiple columns, probably right delimiter
+    }, error = function(e) {
+      # Continue to next delimiter
+    })
+  }
+
+  # If all fail, treat as CSV
+  read_csv_with_overflow_handling(filepath)
+}
+
+#' Read RDA file (load and return first object)
+#' @param filepath Path to RDA file
+#' @keywords internal
+read_rda_file <- function(filepath) {
+  env <- new.env()
+  load(filepath, envir = env)
+  objects <- ls(env)
+  if (length(objects) == 0) {
+    stop("Aucun objet trouvé dans le fichier RDA")
+  }
+  get(objects[1], envir = env)
+}
+
+#' Manual CSV reading with overflow concatenation
+#' @param filepath Path to CSV file
+#' @keywords internal  
+read_csv_with_manual_overflow <- function(filepath) {
+
+  lines <- readLines(filepath)
+  if (length(lines) == 0) return(tibble::tibble())
+
+  # Get header from first line
+  header_line <- lines[1]
+  header <- strsplit(header_line, ",")[[1]]
+  n_cols <- length(header)
+
+  cli::cli_alert_warning("Détection de colonnes supplémentaires. Concaténation dans la dernière colonne.")
+
+  # Process data lines
+  data_rows <- list()
+
+  for (i in 2:length(lines)) {
+    if (nchar(trimws(lines[i])) == 0) next  # Skip empty lines
+
+    values <- strsplit(lines[i], ",")[[1]]
+
+    if (length(values) > n_cols) {
+      # Concatenate overflow values into last column
+      overflow_values <- values[(n_cols+1):length(values)]
+      values[n_cols] <- paste(c(values[n_cols], overflow_values), collapse = ",")
+      values <- values[1:n_cols]
+    } else if (length(values) < n_cols) {
+      # Pad with NAs if not enough values
+      values <- c(values, rep(NA, n_cols - length(values)))
+    }
+
+    data_rows[[i - 1]] <- values
+  }
+
+  # Convert to dataframe
+  df <- data.frame(matrix(unlist(data_rows), ncol = n_cols, byrow = TRUE), stringsAsFactors = FALSE)
+  names(df) <- header
+
+  tibble::as_tibble(df)
+}

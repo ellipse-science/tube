@@ -17,13 +17,13 @@ utils::globalVariables(c(
 #' @returns Un object de connexion `DBI`.
 #' @export
 ellipse_connect <- function(
-    env = NULL,
-    database = "datawarehouse") {
+  env = NULL,
+  database = "datawarehouse") {
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(invisible(NULL))
   }
   cli::cli_alert_info(paste("Environnement:", env))
@@ -221,7 +221,7 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
       exact_check_query <- paste0('SELECT COUNT(*) as count FROM "public-data-lake-content" 
                                   WHERE name = \'', table, '\'')
       exact_result <- DBI::dbGetQuery(con, exact_check_query)
-      
+
       if (exact_result$count > 0) {
         # Pattern 3: ellipse_discover(con, exact_name) - Specific dataset details
         return(format_public_datalake_dataset_details(con, table))
@@ -355,41 +355,31 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #' Lire et exploiter une table contenue dans l'entrepôt de données ellipse
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
-#' @param table Une table que l'on souhaite interroger avec `dplyr`.
+#' @param dataset Pour les connexions datawarehouse/datamarts: nom d'une table.
+#'   Pour les connexions datalake: nom d'un dataset à agréger.
+#' @param tag Optionnel. Pour les connexions datalake seulement: tag spécifique
+#'   à filtrer. Si NULL, agrège tous les tags du dataset.
 #'
-#' @returns Une table Athena qui peut être interrogée dans un _pipeline_
-#'   `dplyr`.
+#' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
+#'   dans un pipeline `dplyr`. Pour datalake: Un dataframe agrégé de tous les
+#'   fichiers du dataset.
 #' @export
-ellipse_query <- function(con, table) {
-  logger::log_debug(paste("[ellipse_query] entering function with table = ", table))
+ellipse_query <- function(con, dataset, tag = NULL) {
+  logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag))
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
-  logger::log_debug(paste("[ellipse_query] about to dbGetQuery on schema_name = ", schema_name))
-  tables <- DBI::dbGetQuery(
-    con, paste0("SHOW TABLES IN ", schema_name)
-  )$tab_name
+  # Detect if this is a datalake connection
+  is_datalake <- grepl("datalake", schema_name, ignore.case = TRUE)
 
-  logger::log_debug("[ellipse_query] got tables")
-
-  if (!table %in% tables) {
-    logger::log_debug("[ellipse_query] table not in tables")
-    cli::cli_alert_danger("La table demandée est inconnue.")
-    return(NULL)
+  if (is_datalake) {
+    # File aggregator mode for public datalake
+    logger::log_debug("[ellipse_query] datalake mode - file aggregator")
+    return(ellipse_query_datalake_aggregator(con, dataset, tag))
+  } else {
+    # Traditional table query mode for datawarehouse/datamarts
+    logger::log_debug("[ellipse_query] traditional table mode")
+    return(ellipse_query_table_mode(con, dataset))
   }
-  logger::log_debug("[ellipse_query] returning results")
-
-  r <- tryCatch(
-    {
-      dplyr::tbl(con, table)
-    },
-    error = function(e) {
-      cli::cli_alert_danger("Oups, il semble que la table n'a pas pu être lue! 😅")
-      logger::log_error(paste("[ellipse_query] error in dplyr::tbl", e$message))
-      NULL
-    }
-  )
-
-  r
 }
 
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
@@ -504,14 +494,14 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
 #' @returns TRUE si le dataframe a été envoyé dans le datamart  FALSE sinon.
 #' @export
 ellipse_publish <- function(
-    con,
-    dataframe,
-    datamart,
-    table,
-    data_tag = NULL,
-    table_tags = NULL,
-    table_description = NULL,
-    unattended_options = NULL) {
+  con,
+  dataframe,
+  datamart,
+  table,
+  data_tag = NULL,
+  table_tags = NULL,
+  table_description = NULL,
+  unattended_options = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -629,8 +619,8 @@ ellipse_publish <- function(
     if (choice == 2) {
       # confirm by the user
       if (!ask_yes_no("Êtes-vous certain.e de vouloir écraser la table existante?",
-        unattended_option = unattended_options$are_you_sure
-      )) {
+          unattended_option = unattended_options$are_you_sure
+        )) {
         info("Publication des données abandonnée.")
         invisible(FALSE)
       }
@@ -884,7 +874,7 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
   cli::cli_text("")
 
   if (!is.null(new_table_desc) && nchar(new_table_desc) != 0 &&
-    (is.na(table_props$description) || table_props$description != new_table_desc)) {
+      (is.na(table_props$description) || table_props$description != new_table_desc)) {
     cli::cli_alert_info("La nouvelle description de la table sera:")
     cli::cli_alert_info(cli::col_cyan(new_table_desc))
     change_desc <- TRUE

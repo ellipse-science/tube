@@ -285,3 +285,28 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] returning results")
   TRUE
 }
+
+#' Download S3 file to temporary location
+#' @param s3_path S3 path (s3://bucket/key format)
+#' @keywords internal
+download_s3_file_to_temp <- function(s3_path) {
+
+  # Parse S3 path
+  s3_parts <- gsub("^s3://", "", s3_path)
+  bucket_and_key <- strsplit(s3_parts, "/", fixed = TRUE)[[1]]
+  bucket <- bucket_and_key[1]
+  key <- paste(bucket_and_key[-1], collapse = "/")
+
+  # Create temp file with appropriate extension
+  temp_file <- tempfile(fileext = paste0(".", tools::file_ext(key)))
+
+  # Download using paws.storage
+  s3 <- paws.storage::s3()
+  s3$download_file(
+    Bucket = bucket,
+    Key = key,
+    Filename = temp_file
+  )
+
+  temp_file
+}
