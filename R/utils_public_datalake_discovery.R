@@ -334,7 +334,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 #' @return List with specific tag information
 #' @keywords internal
 format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
-  # Single comprehensive query to get all tag information
+  # Query to get all individual file records for this dataset/tag combination
   comprehensive_query <- paste0('
     SELECT
       name,
@@ -361,200 +361,267 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     return(invisible(NULL))
   }
 
-  tag_result <- result[1, ]
-
-  # Parse user metadata JSON to extract only the custom fields
-  user_metadata <- NULL
-  if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
-    tryCatch(
-      {
-        full_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
-        # Extract only the user_metadata_json content (the nested JSON)
-        if ("user_metadata_json" %in% names(full_metadata)) {
-          user_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
-        } else {
-          # If no nested structure, look for custom fields (not system fields)
-          system_fields <- c(
-            "data_destruction_date", "creation_date", "ethical_stamp",
-            "consent_expiry_date", "sensitivity_level"
-          )
-          user_metadata <- full_metadata[!names(full_metadata) %in% system_fields]
-          if (length(user_metadata) == 0) user_metadata <- NULL
-        }
-      },
-      error = function(e) {
-        user_metadata <<- NULL
-      }
-    )
-  }
-
-  # Create a simple files summary from the JSON arrays
-  files_summary <- data.frame(
-    dataset = tag_result$name,
-    tag = tag_result$tag,
-    file_paths_json = tag_result$file_paths,
-    file_names_json = tag_result$file_names,
-    total_files = as.integer(tag_result$file_count),
-    stringsAsFactors = FALSE
-  )
-
-  # Enhanced CLI output instead of raw list
-  name <- tag_result$name
-  tag <- tag_result$tag
-  file_count <- as.integer(tag_result$file_count)
-  creation_date <- tag_result$creation_date
-  sensitivity_level <- as.integer(tag_result$sensitivity_level)
-  ethical_stamp <- as.logical(tag_result$ethical_stamp)
-  consent_expiry_date <- tag_result$consent_expiry_date
-  data_destruction_date <- tag_result$data_destruction_date
-
-  cli::cli_h2(glue::glue("🏷️  Tag Details: {name} / {tag}"))
-
-  # Basic information
-  cli::cli_h3("📋 Overview")
-
-  # Create overview data frame
-  overview_data <- data.frame(
-    Property = c("📄Total files", "📅Creation date", "🔒Sensitivity level", "✅Ethical stamp"),
-    Value = c(file_count, creation_date, paste("Level", sensitivity_level), ethical_stamp),
-    stringsAsFactors = FALSE,
-    check.names = FALSE
-  )
-
-  # Format columns with proper alignment and print
-  formatted_overview <- paste(
-    format(overview_data$Property, width = max(nchar(overview_data$Property)), justify = "left"),
-    format(overview_data$Value, width = max(nchar(overview_data$Value)), justify = "left"),
-    sep = "  "
-  )
-  cat(formatted_overview, sep = "\n")
+  # Display header
+  cli::cli_h2(glue::glue("🏷️  Tag Details: {dataset_name} / {tag_name}"))
   cli::cli_text("")
 
-  # Dates information
-  dates_info <- data.frame(
-    Property = character(0),
-    Value = character(0),
+  # Parse all file arrays from all matching records
+  all_files_data <- list()
+  
+  for (row_idx in seq_len(nrow(result))) {
+    tag_result <- result[row_idx, ]
+    
+    tryCatch({
+      # Parse file arrays for this record
+      file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
+        jsonlite::fromJSON(tag_result$file_paths)
+      } else { character(0) }
+      
+      file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+        jsonlite::fromJSON(tag_result$file_names)
+      } else { character(0) }
+      
+      file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
+        jsonlite::fromJSON(tag_result$file_extensions)
+      } else { character(0) }
+      
+      file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
+        jsonlite::fromJSON(tag_result$file_sizes_bytes)
+      } else { numeric(0) }
+      
+      # Parse user metadata for this record
+      user_metadata <- NULL
+      if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
+        tryCatch({
+          full_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
+          if ("user_metadata_json" %in% names(full_metadata)) {
+            user_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
+          } else {
+            system_fields <- c("data_destruction_date", "creation_date", "ethical_stamp",
+                              "consent_expiry_date", "sensitivity_level")
+            user_metadata <- full_metadata[!names(full_metadata) %in% system_fields]
+            if (length(user_metadata) == 0) user_metadata <- NULL
+          }
+        }, error = function(e) { user_metadata <<- NULL })
+      }
+      
+      # Store file data with metadata for each file in this record
+      num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
+      
+      if (num_files > 0) {
+        for (file_idx in seq_len(num_files)) {
+          file_data <- list(
+            path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
+            name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
+            extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
+            size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
+            creation_date = tag_result$creation_date,
+            sensitivity_level = tag_result$sensitivity_level,
+            ethical_stamp = tag_result$ethical_stamp,
+            consent_expiry_date = tag_result$consent_expiry_date,
+            data_destruction_date = tag_result$data_destruction_date,
+            user_metadata = user_metadata
+          )
+          all_files_data <- append(all_files_data, list(file_data))
+        }
+      }
+    }, error = function(e) {
+      cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
+    })
+  }
+  
+  if (length(all_files_data) == 0) {
+    cli::cli_alert_info("No files found in this tag")
+    return(invisible(NULL))
+  }
+  
+  # Display summary
+  cli::cli_h3("� Tag Summary")
+  total_size <- sum(sapply(all_files_data, function(f) as.numeric(f$size_bytes)), na.rm = TRUE)
+  if (total_size >= 1024^3) {
+    total_size_display <- paste(round(total_size / 1024^3, 2), "GB")
+  } else if (total_size >= 1024^2) {
+    total_size_display <- paste(round(total_size / 1024^2, 2), "MB") 
+  } else if (total_size >= 1024) {
+    total_size_display <- paste(round(total_size / 1024, 2), "KB")
+  } else {
+    total_size_display <- paste(total_size, "bytes")
+  }
+  
+  summary_data <- data.frame(
+    Property = c("📄Total files", "�Total size"),
+    Value = c(length(all_files_data), total_size_display),
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
-
-  if (!is.na(consent_expiry_date) && nzchar(consent_expiry_date)) {
-    dates_info <- rbind(dates_info, data.frame(
-      Property = "⏰Consent expiry",
-      Value = consent_expiry_date,
+  
+  formatted_summary <- paste(
+    format(summary_data$Property, width = max(nchar(summary_data$Property)), justify = "left"),
+    format(summary_data$Value, width = max(nchar(summary_data$Value)), justify = "left"),
+    sep = "  "
+  )
+  cat(formatted_summary, sep = "\n")
+  cli::cli_text("")
+  cli::cli_rule()
+  
+  # Display detailed information for each file
+  cli::cli_h3("📁 Individual File Details")
+  cli::cli_text("")
+  
+  for (i in seq_along(all_files_data)) {
+    file_data <- all_files_data[[i]]
+    
+    # File header
+    cli::cli_h4(paste("📄 File", i))
+    
+    # Basic file information
+    size_bytes <- as.numeric(file_data$size_bytes)
+    if (size_bytes >= 1024^3) {
+      size_display <- paste(round(size_bytes / 1024^3, 2), "GB")
+    } else if (size_bytes >= 1024^2) {
+      size_display <- paste(round(size_bytes / 1024^2, 2), "MB")
+    } else if (size_bytes >= 1024) {
+      size_display <- paste(round(size_bytes / 1024, 2), "KB")
+    } else {
+      size_display <- paste(size_bytes, "bytes")
+    }
+    
+    # File basic info
+    file_info <- data.frame(
+      Property = c("📂Path", "📝Name", "🏷️ Extension", "📏Size"),
+      Value = c(
+        ifelse(nzchar(file_data$path), file_data$path, "N/A"),
+        ifelse(nzchar(file_data$name), file_data$name, "N/A"),
+        ifelse(nzchar(file_data$extension), file_data$extension, "N/A"),
+        size_display
+      ),
       stringsAsFactors = FALSE,
       check.names = FALSE
-    ))
-  }
-
-  if (!is.na(data_destruction_date) && nzchar(data_destruction_date)) {
-    dates_info <- rbind(dates_info, data.frame(
-      Property = "🗑️ Data destruction",
-      Value = data_destruction_date,
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    ))
-  }
-
-  if (nrow(dates_info) > 0) {
-    cli::cli_h3("📅 Important Dates")
-
-    # Format columns with proper alignment and print
-    formatted_dates <- paste(
-      format(dates_info$Property, width = max(nchar(dates_info$Property)), justify = "left"),
-      format(dates_info$Value, width = max(nchar(dates_info$Value)), justify = "left"),
+    )
+    
+    formatted_file_info <- paste(
+      format(file_info$Property, width = max(nchar(file_info$Property)), justify = "left"),
+      format(file_info$Value, width = max(nchar(file_info$Value)), justify = "left"),
       sep = "  "
     )
-    cat(formatted_dates, sep = "\n")
+    cat(formatted_file_info, sep = "\n")
     cli::cli_text("")
-  }
-
-  # Custom metadata (if any)
-  if (!is.null(user_metadata) && length(user_metadata) > 0) {
-    cli::cli_h3("🏷️  Custom Metadata")
-
-    # Safely handle nested or complex metadata structures
-    tryCatch({
-      metadata_fields <- names(user_metadata)
-      metadata_values <- character(length(metadata_fields))
-
-      for (i in seq_along(metadata_fields)) {
-        field_value <- user_metadata[[metadata_fields[i]]]
-        # Convert complex structures to string safely
-        if (is.list(field_value) || length(field_value) > 1) {
-          metadata_values[i] <- paste(as.character(field_value), collapse = ", ")
-        } else {
-          metadata_values[i] <- as.character(field_value)
-        }
-      }
-
-      metadata_data <- data.frame(
-        Field = metadata_fields,
-        Value = metadata_values,
+    
+    # File metadata
+    metadata_info <- data.frame(
+      Property = character(0),
+      Value = character(0),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    if (!is.na(file_data$creation_date) && nzchar(file_data$creation_date)) {
+      metadata_info <- rbind(metadata_info, data.frame(
+        Property = "📅Creation date",
+        Value = file_data$creation_date,
         stringsAsFactors = FALSE,
         check.names = FALSE
-      )
-
-      # Format columns with proper alignment and print
-      formatted_metadata_data <- paste(
-        format(metadata_data$Field, width = max(nchar(metadata_data$Field)), justify = "left"),
-        format(metadata_data$Value, width = max(nchar(metadata_data$Value)), justify = "left"),
+      ))
+    }
+    
+    if (!is.na(file_data$sensitivity_level)) {
+      metadata_info <- rbind(metadata_info, data.frame(
+        Property = "🔒Sensitivity level",
+        Value = paste("Level", file_data$sensitivity_level),
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      ))
+    }
+    
+    if (!is.na(file_data$ethical_stamp)) {
+      metadata_info <- rbind(metadata_info, data.frame(
+        Property = "✅Ethical stamp",
+        Value = as.logical(file_data$ethical_stamp),
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      ))
+    }
+    
+    if (!is.na(file_data$consent_expiry_date) && nzchar(file_data$consent_expiry_date)) {
+      metadata_info <- rbind(metadata_info, data.frame(
+        Property = "⏰Consent expiry",
+        Value = file_data$consent_expiry_date,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      ))
+    }
+    
+    if (!is.na(file_data$data_destruction_date) && nzchar(file_data$data_destruction_date)) {
+      metadata_info <- rbind(metadata_info, data.frame(
+        Property = "🗑️ Data destruction",
+        Value = file_data$data_destruction_date,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      ))
+    }
+    
+    if (nrow(metadata_info) > 0) {
+      formatted_metadata_info <- paste(
+        format(metadata_info$Property, width = max(nchar(metadata_info$Property)), justify = "left"),
+        format(metadata_info$Value, width = max(nchar(metadata_info$Value)), justify = "left"),
         sep = "  "
       )
-      cat(formatted_metadata_data, sep = "\n")
+      cat(formatted_metadata_info, sep = "\n")
       cli::cli_text("")
-    }, error = function(e) {
-      # Fallback to simple display if data frame creation fails
-      cli::cli_ul()
-      for (field_name in names(user_metadata)) {
-        field_value <- user_metadata[[field_name]]
-        if (is.list(field_value) || length(field_value) > 1) {
-          field_value <- paste(as.character(field_value), collapse = ", ")
+    }
+    
+    # Custom metadata for this file
+    if (!is.null(file_data$user_metadata) && length(file_data$user_metadata) > 0) {
+      cli::cli_text("🏷️  Custom Metadata:")
+      
+      tryCatch({
+        metadata_fields <- names(file_data$user_metadata)
+        metadata_values <- character(length(metadata_fields))
+        
+        for (j in seq_along(metadata_fields)) {
+          field_value <- file_data$user_metadata[[metadata_fields[j]]]
+          if (is.list(field_value) || length(field_value) > 1) {
+            metadata_values[j] <- paste(as.character(field_value), collapse = ", ")
+          } else {
+            metadata_values[j] <- as.character(field_value)
+          }
         }
-        cli::cli_li(glue::glue("🏷️ {field_name}: {field_value}"))
-      }
-      cli::cli_end()
-      cli::cli_text("")
-    })
-  }
-
-  # Files List section
-  if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
-    cli::cli_h3("📁 Files List")
-
-    tryCatch({
-      # Parse the file paths JSON array (already cleaned of bucket prefix)
-      file_paths <- jsonlite::fromJSON(tag_result$file_paths)
-
-      if (length(file_paths) > 0) {
-        # Create a data frame for file listing with cleaned paths
-        files_data <- data.frame(
-          File = paste("📄File", seq_along(file_paths)),
-          Path = file_paths,
+        
+        custom_metadata <- data.frame(
+          Field = paste("  ", metadata_fields),  # Indent custom fields
+          Value = metadata_values,
           stringsAsFactors = FALSE,
           check.names = FALSE
         )
-
-        # Format columns with proper alignment and print
-        formatted_files <- paste(
-          format(files_data$File, width = max(nchar(files_data$File)), justify = "left"),
-          format(files_data$Path, width = max(nchar(files_data$Path)), justify = "left"),
+        
+        formatted_custom <- paste(
+          format(custom_metadata$Field, width = max(nchar(custom_metadata$Field)), justify = "left"),
+          format(custom_metadata$Value, width = max(nchar(custom_metadata$Value)), justify = "left"),
           sep = "  "
         )
-        cat(formatted_files, sep = "\n")
+        cat(formatted_custom, sep = "\n")
         cli::cli_text("")
-      } else {
-        cli::cli_alert_info("No files found in this tag")
-      }
-    }, error = function(e) {
-      cli::cli_alert_warning("Could not parse file paths")
-    })
+      }, error = function(e) {
+        cli::cli_alert_warning("Could not display custom metadata for this file")
+      })
+    }
+    
+    # Separator between files (except for last file)
+    if (i < length(all_files_data)) {
+      cli::cli_rule()
+      cli::cli_text("")
+    }
   }
-
-  # File information
-  cli::cli_h3("📁 Files Overview")
-  cli::cli_alert_info("Files located in cleaned paths (S3 bucket prefix removed)")
-
-  # Return invisible file summary for programmatic use if needed
+  
+  # Create file summary for programmatic use
+  files_summary <- data.frame(
+    dataset = rep(dataset_name, length(all_files_data)),
+    tag = rep(tag_name, length(all_files_data)),
+    file_path = sapply(all_files_data, function(f) f$path),
+    file_name = sapply(all_files_data, function(f) f$name),
+    file_size_bytes = sapply(all_files_data, function(f) as.numeric(f$size_bytes)),
+    stringsAsFactors = FALSE
+  )
+  
   invisible(files_summary)
 }
