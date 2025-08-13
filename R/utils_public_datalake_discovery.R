@@ -194,8 +194,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   )
 
   # Print the overview table
-  write.table(overview_data, file = "", row.names = FALSE, col.names = FALSE, 
-              quote = FALSE, sep = " ")
+   cat(knitr::kable(overview_data, format = "simple", col.names = NULL, align = "ll"))
   cli::cli_text("")
 
   # Tags details
