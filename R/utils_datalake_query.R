@@ -150,7 +150,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
         temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
         Sys.sleep(0.5)
         # Read file based on extension
-        df <- read_file_by_extension(temp_file, file_info$file_extension)
+        #df <- read_file_by_extension(temp_file, file_info$file_extension)
         df <- data.frame(
           dataset = file_info$dataset,
           tag = file_info$tag,
