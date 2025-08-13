@@ -131,13 +131,16 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   dataframes <- list()
   failed_files <- character()
 
+  # Initialize progress bar
+  total_files <- nrow(files_metadata)
+  pb <- txtProgressBar(min = 0, max = total_files, style = 3, char = "=")
+  cat("Lecture de fichiers:\n")
+
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
 
-    # Show progress on same line for every file (works in interactive R)
-    total_files <- nrow(files_metadata)
-    cat("\rℹ Lecture:", i, "/", total_files, "fichiers...")
-    flush.console()
+    # Update progress bar
+    setTxtProgressBar(pb, i)
 
     # Wrap all file operations in complete output suppression
     invisible(capture.output({
@@ -169,7 +172,8 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     })) # Close capture.output and invisible
   }
 
-  # Complete the progress line
+  # Close progress bar
+  close(pb)
   cat("\n")
 
   # Report on failed files
