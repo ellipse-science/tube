@@ -130,11 +130,12 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show progress at 25%, 50%, 75%, and completion to reduce scrolling
+    # Show minimal progress: only start and completion to eliminate scrolling
     total_files <- nrow(files_metadata)
-    if (i == 1 || i == round(total_files * 0.25) || i == round(total_files * 0.5) || 
-        i == round(total_files * 0.75) || i == total_files) {
-      cli::cli_alert_info("Lecture: {i}/{total_files} fichiers...")
+    if (i == 1) {
+      cli::cli_alert_info("Lecture de {total_files} fichiers en cours...")
+    } else if (i == total_files) {
+      cli::cli_alert_info("Lecture terminée: {total_files}/{total_files} fichiers traités.")
     }
 
     tryCatch({
