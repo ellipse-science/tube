@@ -130,10 +130,8 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
     
-    # Show progress with carriage return for same-line updates
-    # Clear the line first, then write progress
-    progress_text <- sprintf("Lecture: %d/%d fichiers...", i, nrow(files_metadata))
-    cat("\r", strrep(" ", 50), "\r", progress_text, sep = "")
+    # Simple same-line progress update
+    cat("\rLecture:", i, "/", nrow(files_metadata), "fichiers...")
     flush.console()
 
     tryCatch({
