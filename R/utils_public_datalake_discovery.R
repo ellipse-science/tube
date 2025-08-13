@@ -489,13 +489,19 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       }
 
       metadata_data <- data.frame(
-        Field = paste("🏷️ Field", metadata_fields),
+        Field = metadata_fields,
         Value = metadata_values,
         stringsAsFactors = FALSE,
         check.names = FALSE
       )
 
-      print(metadata_data, row.names = FALSE, col.names = FALSE, right = FALSE)
+      # Format columns with proper alignment and print
+      formatted_metadata_data <- paste(
+        format(metadata_data$Field, width = max(nchar(metadata_data$Field)), justify = "left"),
+        format(metadata_data$Value, width = max(nchar(metadata_data$Value)), justify = "left"),
+        sep = "  "
+      )
+      cat(formatted_metadata_data, sep = "\n")
       cli::cli_text("")
     }, error = function(e) {
       # Fallback to simple display if data frame creation fails
