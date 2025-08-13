@@ -146,14 +146,26 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     # Process file and suppress messages, but update progress outside
     tryCatch(
       {
-        # Download file to temp location
-        #logger::log_info(paste("[download_and_aggregate_files] downloading file:", file_info$file_name))
-        temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
-        Sys.sleep(0.5)
+        # Simulate file download and content creation
+        temp_file <- tempfile(fileext = paste0(".", file_info$file_extension))
+        dummy_data <- data.frame(
+          id = 1:3,
+          value = runif(3),
+          category = sample(letters, 3)
+        )
+        if (file_info$file_extension == "csv") {
+          write.csv(dummy_data, temp_file, row.names = FALSE)
+        } else if (file_info$file_extension == "parquet") {
+          if (requireNamespace("arrow", quietly = TRUE)) {
+            arrow::write_parquet(dummy_data, temp_file)
+          }
+        } else if (file_info$file_extension == "json") {
+          jsonlite::write_json(dummy_data, temp_file)
+        }
+
         # Read file based on extension
-        #logger::log_info(paste("[download_and_aggregate_files] reading file:", file_info$file_name))
         df <- read_file_by_extension(temp_file, file_info$file_extension)
-        Sys.sleep(0.5)
+
         # Add metadata columns
         df$..dataset.. <- file_info$dataset
         df$..tag.. <- file_info$tag
