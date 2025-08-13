@@ -736,13 +736,13 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   
   # Display compact file information as a table with more details
   files_table_data <- data.frame(
-    `📄 File` = paste("📄", seq_along(all_files_data)),
-    `📝 Name` = sapply(all_files_data, function(f) {
+    `📄File` = paste("📄", seq_along(all_files_data)),
+    `📝Name` = sapply(all_files_data, function(f) {
       name <- ifelse(nzchar(f$name), f$name, basename(f$path))
       if (nchar(name) > 20) paste0(substr(name, 1, 17), "...") else name
     }),
-    `🏷️ Extension` = sapply(all_files_data, function(f) ifelse(nzchar(f$extension), f$extension, "N/A")),
-    `📏 Size` = sapply(all_files_data, function(f) {
+    `🏷️Extension` = sapply(all_files_data, function(f) ifelse(nzchar(f$extension), f$extension, "N/A")),
+    `📏Size` = sapply(all_files_data, function(f) {
       size_bytes <- as.numeric(f$size_bytes)
       if (size_bytes >= 1024^2) {
         paste(round(size_bytes / 1024^2, 1), "MB")
@@ -752,30 +752,30 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
         paste(size_bytes, "B")
       }
     }),
-    `📅 Creation Date` = sapply(all_files_data, function(f) {
+    `📅Creation Date` = sapply(all_files_data, function(f) {
       if (!is.na(f$creation_date) && nzchar(f$creation_date)) {
         substr(f$creation_date, 1, 10)  # Just date, no time
       } else "N/A"
     }),
-    `🔒 Sensitivity Level` = sapply(all_files_data, function(f) {
+    `🔒Sensitivity Level` = sapply(all_files_data, function(f) {
       if (!is.na(f$sensitivity_level)) paste("Level", f$sensitivity_level) else "N/A"
     }),
-    `✅ Ethical Stamp` = sapply(all_files_data, function(f) {
+    `✅Ethical Stamp` = sapply(all_files_data, function(f) {
       if (!is.na(f$ethical_stamp)) {
         ifelse(as.logical(f$ethical_stamp), "✅ Yes", "❌ No")
       } else "N/A"
     }),
-    `⏰ Consent Expiry` = sapply(all_files_data, function(f) {
+    `⏰Consent Expiry` = sapply(all_files_data, function(f) {
       if (!is.na(f$consent_expiry_date) && nzchar(f$consent_expiry_date)) {
         substr(f$consent_expiry_date, 1, 10)
       } else "N/A"
     }),
-    `🗑️ Data Destruction` = sapply(all_files_data, function(f) {
+    `🗑️Data Destruction` = sapply(all_files_data, function(f) {
       if (!is.na(f$data_destruction_date) && nzchar(f$data_destruction_date)) {
         substr(f$data_destruction_date, 1, 10)
       } else "N/A"
     }),
-    `🏷️ Custom Metadata` = sapply(all_files_data, function(f) {
+    `🏷️Custom Metadata` = sapply(all_files_data, function(f) {
       if (!is.null(f$user_metadata) && length(f$user_metadata) > 0) {
         metadata_summary <- paste(names(f$user_metadata)[1:min(2, length(f$user_metadata))], collapse = ",")
         if (length(f$user_metadata) > 2) {
