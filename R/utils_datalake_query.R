@@ -141,11 +141,15 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     cli::cli_progress_update()
 
     tryCatch({
-      # Download file to temp location
-      temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+      # Download file to temp location (suppress any AWS output)
+      temp_file <- suppressMessages(suppressWarnings(
+        download_s3_file_to_temp(file_info$file_path, credentials)
+      ))
 
-      # Read file based on extension
-      df <- read_file_by_extension(temp_file, file_info$file_extension)
+      # Read file based on extension (suppress any file reading output)
+      df <- suppressMessages(suppressWarnings(
+        read_file_by_extension(temp_file, file_info$file_extension)
+      ))
 
       # Add metadata columns
       df$..dataset.. <- file_info$dataset
