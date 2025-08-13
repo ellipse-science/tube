@@ -238,13 +238,17 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
         # Parse the main JSON
         full_metadata <- jsonlite::fromJSON(row$user_metadata_json)
         
-        # Extract the nested user_metadata_json if it exists
-        if ("user_metadata_json" %in% names(full_metadata)) {
-          nested_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
+        # Only extract the nested user_metadata_json content
+        if ("user_metadata_json" %in% names(full_metadata) && 
+            !is.null(full_metadata$user_metadata_json) && 
+            nzchar(full_metadata$user_metadata_json)) {
           
-          # Add each field from the nested metadata
-          for (field_name in names(nested_metadata)) {
-            field_value <- nested_metadata[[field_name]]
+          # Parse the nested JSON string to get the actual custom metadata
+          custom_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
+          
+          # Add each custom field
+          for (field_name in names(custom_metadata)) {
+            field_value <- custom_metadata[[field_name]]
             if (is.list(field_value) || length(field_value) > 1) {
               field_value <- paste(as.character(field_value), collapse = ", ")
             }
@@ -260,6 +264,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
         }
       }, error = function(e) {
         # Skip this row if JSON parsing fails
+        cat("JSON parsing error for tag", row$tag, ":", e$message, "\n")
       })
     }
   }
