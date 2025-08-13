@@ -152,8 +152,6 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
         # Read file based on extension
         df <- read_file_by_extension(temp_file, file_info$file_extension)
 
-        Sys.sleep(0.5)
-
         # Add metadata columns
         df$..dataset.. <- file_info$dataset
         df$..tag.. <- file_info$tag
