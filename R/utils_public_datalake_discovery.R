@@ -227,32 +227,32 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   print(display_tag_details, row.names = FALSE, right = FALSE)
 
   cli::cli_text("")
-  
+
   # User Metadata Details section
   metadata_display_list <- list()
-  
+
   for (i in seq_len(nrow(result))) {
     row <- result[i, ]
     if (!is.null(row$user_metadata_json) && nzchar(row$user_metadata_json)) {
       tryCatch({
         # Parse the main JSON
         full_metadata <- jsonlite::fromJSON(row$user_metadata_json)
-        
+
         # Only extract the nested user_metadata_json content
-        if ("user_metadata_json" %in% names(full_metadata) && 
-            !is.null(full_metadata$user_metadata_json) && 
+        if ("user_metadata_json" %in% names(full_metadata) &&
+            !is.null(full_metadata$user_metadata_json) &&
             nzchar(full_metadata$user_metadata_json)) {
-          
+
           # Parse the nested JSON string to get the actual custom metadata
           custom_metadata <- jsonlite::fromJSON(full_metadata$user_metadata_json)
-          
+
           # Add each custom field
           for (field_name in names(custom_metadata)) {
             field_value <- custom_metadata[[field_name]]
             if (is.list(field_value) || length(field_value) > 1) {
               field_value <- paste(as.character(field_value), collapse = ", ")
             }
-            
+
             metadata_display_list <- append(metadata_display_list, list(data.frame(
               Tag = paste("🏷️", row$tag),
               Field = paste("📝", field_name),
@@ -268,17 +268,17 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       })
     }
   }
-  
+
   if (length(metadata_display_list) > 0) {
     cli::cli_h3("🏷️  User Metadata Details")
     cli::cli_text("")
-    
+
     # Combine all metadata rows
     metadata_display <- do.call(rbind, metadata_display_list)
     print(metadata_display, row.names = FALSE, right = FALSE)
     cli::cli_text("")
   }
-  
+
   cli::cli_rule()
 
   cli::cli_alert_info(glue::glue("💡 Use ellipse_discover(con, '{dataset_name}', 'tag_name') for specific tag details"))
@@ -384,7 +384,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   print(overview_data, row.names = FALSE, right = FALSE)
   cli::cli_text("")
 
-  # Dates information  
+  # Dates information
   dates_info <- data.frame(
     Property = character(0),
     Value = character(0),
