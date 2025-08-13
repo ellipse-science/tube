@@ -187,7 +187,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
     #}) # Close suppressMessages
 
     # Update progress bar
-    sleep(0.9)  # Simulate processing time
+    Sys.sleep(2)  # Simulate processing time
     cli::cli_progress_update()
   }
 
