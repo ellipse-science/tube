@@ -518,6 +518,39 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     })
   }
 
+  # Files List section
+  if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+    cli::cli_h3("📁 Files List")
+
+    tryCatch({
+      # Parse the file names JSON array
+      file_names <- jsonlite::fromJSON(tag_result$file_names)
+
+      if (length(file_names) > 0) {
+        # Create a data frame for file listing
+        files_data <- data.frame(
+          File = paste("📄File", seq_along(file_names)),
+          Name = file_names,
+          stringsAsFactors = FALSE,
+          check.names = FALSE
+        )
+
+        # Format columns with proper alignment and print
+        formatted_files <- paste(
+          format(files_data$File, width = max(nchar(files_data$File)), justify = "left"),
+          format(files_data$Name, width = max(nchar(files_data$Name)), justify = "left"),
+          sep = "  "
+        )
+        cat(formatted_files, sep = "\n")
+        cli::cli_text("")
+      } else {
+        cli::cli_alert_info("No files found in this tag")
+      }
+    }, error = function(e) {
+      cli::cli_alert_warning("Could not parse file names")
+    })
+  }
+
   # File information
   cli::cli_h3("📁 Files Overview")
   cli::cli_alert_info("Files located in cleaned paths (S3 bucket prefix removed)")
