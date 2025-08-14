@@ -69,7 +69,7 @@ ellipse_push_datalake_mode <- function(con, file_or_folder, dataset_name = NULL,
   })
 }
 
-#' Interactive flow for collecting push parameters
+#' Interactive flow for collecting push parameters (SIMPLIFIED)
 #' @param file_or_folder Initial file/folder (may be NULL)
 #' @param dataset_name Initial dataset name (may be NULL) 
 #' @param tag Initial tag (may be NULL)
@@ -79,9 +79,39 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   cli::cli_h1("🚀 Upload vers le Datalake Public")
   cli::cli_text("")
   
-  # File/folder selection
+  # SIMPLIFIED FILE SELECTION - just ask for path
   if (is.null(file_or_folder)) {
-    file_or_folder <- interactive_file_folder_selector()
+    cli::cli_h2("📁 Sélection de fichier ou dossier")
+    cli::cli_text("📍 Répertoire actuel: {cli::col_blue(getwd())}")
+    cli::cli_text("💡 Tapez un chemin relatif ou absolu vers votre fichier/dossier")
+    cli::cli_text("📄 Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
+    cli::cli_text("")
+    
+    repeat {
+      file_or_folder <- readline(prompt = "📂 Chemin vers fichier/dossier: ")
+      
+      if (nchar(file_or_folder) == 0) {
+        cli::cli_alert_danger("Le chemin ne peut pas être vide!")
+        next
+      }
+      
+      # Handle relative paths
+      if (!file.exists(file_or_folder)) {
+        # Try relative to current directory
+        full_path <- file.path(getwd(), file_or_folder)
+        if (file.exists(full_path)) {
+          file_or_folder <- full_path
+        } else {
+          cli::cli_alert_danger("Fichier/dossier introuvable: {file_or_folder}")
+          cli::cli_text("💡 Assurez-vous que le chemin est correct")
+          next
+        }
+      }
+      
+      break
+    }
+    
+    cli::cli_alert_success("✅ Sélectionné: {file_or_folder}")
   }
   
   # Dataset name
@@ -112,10 +142,9 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
     }
   }
   
-  # Metadata collection
+  # ENHANCED METADATA COLLECTION - now includes required system fields
   if (is.null(metadata)) {
-    cli::cli_h2("📊 Métadonnées personnalisées")
-    metadata <- collect_custom_metadata_interactive()
+    metadata <- collect_all_metadata_interactive()
   }
   
   # Confirmation
@@ -134,15 +163,94 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   )
 }
 
-#' Collect custom metadata interactively
+#' Collect ALL metadata including required system fields
 #' @keywords internal
-collect_custom_metadata_interactive <- function() {
-  cli::cli_text("Ajoutez des métadonnées personnalisées (optionnel)")
-  cli::cli_text("Exemples: title, authors, year, description, etc.")
-  cli::cli_text("Tapez 'done' pour terminer")
+collect_all_metadata_interactive <- function() {
+  cli::cli_h2("📊 Métadonnées du dataset")
+  cli::cli_text("Ces informations sont importantes pour la gouvernance des données")
   cli::cli_text("")
   
   metadata <- list()
+  
+  # REQUIRED SYSTEM FIELDS
+  metadata <- collect_required_system_metadata(metadata)
+  
+  # OPTIONAL CUSTOM FIELDS
+  metadata <- collect_optional_custom_metadata(metadata)
+  
+  return(metadata)
+}
+
+#' Collect required system metadata fields
+#' @keywords internal
+collect_required_system_metadata <- function(metadata) {
+  cli::cli_h3("🔒 Métadonnées système requises")
+  
+  # Creation date (default to today)
+  cli::cli_text("📅 Date de création des données")
+  default_date <- format(Sys.Date(), "%Y-%m-%d")
+  creation_date <- readline(prompt = paste0("📅 Date de création [", default_date, "]: "))
+  if (nchar(creation_date) == 0) creation_date <- default_date
+  metadata$creation_date <- creation_date
+  
+  # Sensitivity level
+  cli::cli_text("")
+  cli::cli_text("🔐 Niveau de sensibilité des données")
+  cli::cli_text("1 = Public, 2 = Interne, 3 = Confidentiel, 4 = Restreint")
+  repeat {
+    sensitivity <- readline(prompt = "🔐 Niveau de sensibilité [1-4]: ")
+    if (sensitivity %in% c("1", "2", "3", "4")) {
+      metadata$sensitivity_level <- as.numeric(sensitivity)
+      break
+    }
+    cli::cli_alert_danger("Veuillez entrer un niveau entre 1 et 4")
+  }
+  
+  # Consent expiry (optional but important)
+  cli::cli_text("")
+  cli::cli_text("⏰ Date d'expiration du consentement (optionnel)")
+  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
+  consent_expiry <- readline(prompt = "⏰ Date d'expiration du consentement: ")
+  if (nchar(consent_expiry) > 0 && tolower(consent_expiry) != "none") {
+    metadata$consent_expiry_date <- consent_expiry
+  }
+  
+  # Data destruction date (optional but important)
+  cli::cli_text("")
+  cli::cli_text("🗑️ Date de destruction des données (optionnel)")
+  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
+  destruction_date <- readline(prompt = "🗑️ Date de destruction: ")
+  if (nchar(destruction_date) > 0 && tolower(destruction_date) != "none") {
+    metadata$data_destruction_date <- destruction_date
+  }
+  
+  # Ethical stamp
+  cli::cli_text("")
+  if (ask_yes_no("✅ Ce dataset a-t-il reçu un tampon éthique/approbation?")) {
+    metadata$ethical_stamp <- "approved"
+  } else {
+    metadata$ethical_stamp <- "pending"
+  }
+  
+  cli::cli_text("")
+  cli::cli_alert_success("✅ Métadonnées système collectées")
+  
+  return(metadata)
+}
+
+#' Collect optional custom metadata fields  
+#' @keywords internal
+collect_optional_custom_metadata <- function(metadata) {
+  cli::cli_text("")
+  cli::cli_h3("📝 Métadonnées personnalisées (optionnel)")
+  
+  if (!ask_yes_no("Voulez-vous ajouter des métadonnées personnalisées?")) {
+    return(metadata)
+  }
+  
+  cli::cli_text("Exemples: title, authors, year, description, contact, etc.")
+  cli::cli_text("Tapez 'done' pour terminer")
+  cli::cli_text("")
   
   repeat {
     field_name <- readline(prompt = "🏷️ Nom du champ (ou 'done'): ")
@@ -159,14 +267,20 @@ collect_custom_metadata_interactive <- function() {
     }
   }
   
-  if (length(metadata) == 0) {
-    cli::cli_text("💡 Aucune métadonnée personnalisée ajoutée")
-  }
-  
+  return(metadata)
+}
+      break
+    }
+    
+    field_value <- readline(prompt = paste0("📝 Valeur pour '", field_name, "': "))
+    
+    if (nchar(field_value) > 0) {
+      metadata[[field_name]] <- field_value
+      cli::cli_alert_success("✅ Ajouté: {field_name} = {field_value}")
   return(metadata)
 }
 
-#' Display upload summary before confirmation
+#' Display upload summary before confirmation (enhanced with system metadata)
 #' @keywords internal
 display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) {
   cli::cli_rule("📋 Résumé de l'upload")
@@ -183,13 +297,36 @@ display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) 
   cli::cli_text("🏷️ Dataset: {dataset_name}")
   cli::cli_text("🔖 Tag: {tag}")
   
-  if (length(metadata) > 0) {
-    cli::cli_text("📊 Métadonnées personnalisées:")
-    for (name in names(metadata)) {
-      cli::cli_text("   • {name}: {metadata[[name]]}")
+  # System metadata
+  cli::cli_text("")
+  cli::cli_text("🔒 Métadonnées système:")
+  if (!is.null(metadata$creation_date)) {
+    cli::cli_text("   📅 Date de création: {metadata$creation_date}")
+  }
+  if (!is.null(metadata$sensitivity_level)) {
+    cli::cli_text("   � Niveau de sensibilité: {metadata$sensitivity_level}")
+  }
+  if (!is.null(metadata$consent_expiry_date)) {
+    cli::cli_text("   ⏰ Expiration consentement: {metadata$consent_expiry_date}")
+  }
+  if (!is.null(metadata$data_destruction_date)) {
+    cli::cli_text("   🗑️ Destruction données: {metadata$data_destruction_date}")
+  }
+  if (!is.null(metadata$ethical_stamp)) {
+    cli::cli_text("   ✅ Tampon éthique: {metadata$ethical_stamp}")
+  }
+  
+  # Custom metadata
+  system_fields <- c("creation_date", "consent_expiry_date", "data_destruction_date", 
+                     "sensitivity_level", "ethical_stamp")
+  user_metadata <- metadata[!names(metadata) %in% system_fields]
+  
+  if (length(user_metadata) > 0) {
+    cli::cli_text("")
+    cli::cli_text("📝 Métadonnées personnalisées:")
+    for (name in names(user_metadata)) {
+      cli::cli_text("   • {name}: {user_metadata[[name]]}")
     }
-  } else {
-    cli::cli_text("📊 Aucune métadonnée personnalisée")
   }
   
   cli::cli_rule()
@@ -432,172 +569,12 @@ find_datalake_indexing_lambda <- function(credentials) {
   return(lambda_name)
 }
 
-#' Interactive file and folder selector with current directory browsing
-#' @keywords internal
-interactive_file_folder_selector <- function() {
-  cli::cli_h2("📁 Sélection intelligente des fichiers")
-  cli::cli_text("Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
-  cli::cli_text("")
-  
-  current_dir <- getwd()
-  cli::cli_text("📂 Répertoire actuel: {cli::col_blue(current_dir)}")
-  
-  repeat {
-    # Show options for selection
-    display_file_selection_menu(current_dir)
-    
-    choice <- readline(prompt = "👆 Votre choix: ")
-    
-    # Handle the choice
-    result <- process_file_selection_choice(choice, current_dir)
-    
-    if (!is.null(result)) {
-      if (result == "navigate") {
-        # User chose to navigate - continue the loop
-        current_dir <- getwd()  # Update current directory
-        next
-      } else {
-        # User made a valid selection
-        return(result)
-      }
-    }
-  }
-}
-
-#' Display file selection menu with current directory contents
-#' @keywords internal
-display_file_selection_menu <- function(current_dir) {
-  cli::cli_rule("📋 Options de sélection")
-  
-  # Show current directory contents
-  items <- list.files(current_dir, include.dirs = TRUE, no.. = TRUE)
-  
-  if (length(items) == 0) {
-    cli::cli_text("💡 Répertoire vide")
-  } else {
-    # Separate files and directories
-    full_paths <- file.path(current_dir, items)
-    is_dir <- file.info(full_paths)$isdir
-    
-    dirs <- items[is_dir]
-    files <- items[!is_dir]
-    
-    # Show supported files first
-    supported_exts <- c("\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$", 
-                       "\\.xlsx$", "\\.xls$", "\\.dat$")
-    supported_pattern <- paste(supported_exts, collapse = "|")
-    
-    supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
-    other_files <- files[!grepl(supported_pattern, files, ignore.case = TRUE)]
-    
-    # Display supported files
-    if (length(supported_files) > 0) {
-      cli::cli_h3("📄 Fichiers supportés")
-      for (i in seq_along(supported_files)) {
-        file_path <- file.path(current_dir, supported_files[i])
-        file_size <- format_file_size(file.info(file_path)$size)
-        cli::cli_text("  {cli::col_green(i)}. {supported_files[i]} {cli::col_silver('({file_size})')}")
-      }
-      cli::cli_text("")
-    }
-    
-    # Display directories
-    if (length(dirs) > 0) {
-      cli::cli_h3("📁 Dossiers")
-      dir_start <- length(supported_files)
-      for (i in seq_along(dirs)) {
-        dir_num <- dir_start + i
-        dir_path <- file.path(current_dir, dirs[i])
-        file_count <- length(list.files(dir_path, recursive = TRUE))
-        cli::cli_text("  {cli::col_blue(dir_num)}. {dirs[i]}/ {cli::col_silver('({file_count} fichiers)')}")
-      }
-      cli::cli_text("")
-    }
-    
-    # Display other files (collapsed)
-    if (length(other_files) > 0) {
-      cli::cli_h3("📎 Autres fichiers")
-      cli::cli_text("  {cli::col_silver(paste(length(other_files), 'fichier(s) non-supporté(s)'))}")
-      cli::cli_text("")
-    }
-  }
-  
-  # Show navigation and action options
-  cli::cli_h3("🧭 Navigation et actions")
-  cli::cli_text("  {cli::col_yellow('p')}. 📁 Naviguer vers le dossier parent")
-  cli::cli_text("  {cli::col_yellow('cd')}. 📂 Changer de répertoire (tapez le chemin)")
-  cli::cli_text("  {cli::col_yellow('.')}. 📂 Sélectionner le dossier actuel")
-  cli::cli_text("  {cli::col_yellow('r')}. 🔄 Rafraîchir la liste")
-  cli::cli_text("  {cli::col_yellow('q')}. ❌ Annuler")
-  cli::cli_text("")
-}
-
-#' Process user's file selection choice
-#' @keywords internal
-process_file_selection_choice <- function(choice, current_dir) {
-  # Handle special commands
-  if (choice == "q") {
-    cli::cli_alert_info("Sélection annulée.")
-    stop("Sélection annulée par l'utilisateur")
-  }
-  
-  if (choice == "r") {
-    return("navigate")  # Signal to refresh
-  }
-  
-  if (choice == ".") {
-    if (confirm_directory_selection(current_dir)) {
-      return(current_dir)
-    } else {
-      return("navigate")
-    }
-  }
-  
-  if (choice == "p") {
-    parent_dir <- dirname(current_dir)
-    if (parent_dir != current_dir) {  # Not root
-      setwd(parent_dir)
-      cli::cli_alert_info("📁 Navigé vers: {parent_dir}")
-    } else {
-      cli::cli_alert_warning("⚠️ Déjà au répertoire racine")
-    }
-    return("navigate")
-  }
-  
-  if (choice == "cd") {
-    new_path <- readline(prompt = "📂 Nouveau chemin: ")
-    if (nchar(new_path) > 0 && dir.exists(new_path)) {
-      setwd(new_path)
-      cli::cli_alert_success("📁 Navigé vers: {new_path}")
-    } else {
-      cli::cli_alert_danger("❌ Chemin invalide ou inexistant")
-    }
-    return("navigate")
-  }
-  
-  # Handle numeric selection
-  choice_num <- suppressWarnings(as.integer(choice))
-  if (!is.na(choice_num)) {
-    return(handle_numeric_selection(choice_num, current_dir))
-  }
-  
-  # Handle direct path input
-  if (nchar(choice) > 0) {
-    # Check if it's a relative or absolute path
-    test_path <- if (file.exists(choice)) choice else file.path(current_dir, choice)
-    
-    if (file.exists(test_path)) {
-      if (file.info(test_path)$isdir) {
-        if (confirm_directory_selection(test_path)) {
-          return(test_path)
-        } else {
-          return("navigate")
-        }
-      } else {
-        return(test_path)
-      }
-    }
-  }
+# ==============================================================================
+# SIMPLIFIED FILE SELECTION - OLD COMPLEX FUNCTIONS REMOVED
+# ==============================================================================
+# The interactive file browser has been simplified to a direct path input
+# All the complex navigation functions have been removed for better UX
+# ==============================================================================
   
   cli::cli_alert_danger("❌ Choix invalide. Essayez à nouveau.")
   return("navigate")
