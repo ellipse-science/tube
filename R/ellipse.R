@@ -220,7 +220,7 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
     } else if (!is.null(table) && is.null(tag)) {
       # Check if this is an exact match or pattern search
       exact_check_query <- paste0('SELECT COUNT(*) as count FROM "public-data-lake-content"
-                                  WHERE name = \'', table, '\'')
+                                  WHERE name = \'', table, "'")
       exact_result <- DBI::dbGetQuery(con, exact_check_query)
 
       if (exact_result$count > 0) {
@@ -402,7 +402,8 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export
-ellipse_push <- function(con, file_or_folder = NULL, dataset_name = NULL, tag = NULL,
+ellipse_push <- function(
+  con, file_or_folder = NULL, dataset_name = NULL, tag = NULL,
   metadata = NULL, interactive = TRUE,
   pipeline = NULL, file_batch = NULL, file_version = NULL) {
   logger::log_debug("[ellipse_push] entering function")
@@ -517,8 +518,10 @@ ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_ba
 #' @export
 ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   # Delegate to ellipse_push for backward compatibility
-  ellipse_push(con, file_or_folder, pipeline = pipeline, file_batch = file_batch,
-    file_version = file_version, interactive = FALSE)
+  ellipse_push(con, file_or_folder,
+    pipeline = pipeline, file_batch = file_batch,
+    file_version = file_version, interactive = FALSE
+  )
 }
 
 

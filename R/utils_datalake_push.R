@@ -9,64 +9,69 @@
 #' @param metadata Named list of custom metadata
 #' @param interactive Whether to use interactive mode
 #' @keywords internal
-ellipse_push_datalake_mode <- function(con, file_or_folder, dataset_name = NULL, tag = NULL,
+ellipse_push_datalake_mode <- function(
+  con, file_or_folder, dataset_name = NULL, tag = NULL,
   metadata = NULL, interactive = TRUE) {
   logger::log_debug("[ellipse_push_datalake_mode] entering function")
 
-  tryCatch({
-    # Get AWS credentials from connection
-    env <- DBI::dbGetInfo(con)$profile_name
-    creds <- get_aws_credentials(env)
+  tryCatch(
+    {
+      # Get AWS credentials from connection
+      env <- DBI::dbGetInfo(con)$profile_name
+      creds <- get_aws_credentials(env)
 
-    # Interactive mode for missing parameters
-    if (interactive) {
-      result <- interactive_datalake_push_flow(file_or_folder, dataset_name, tag, metadata)
-      file_or_folder <- result$file_or_folder
-      dataset_name <- result$dataset_name
-      tag <- result$tag
-      metadata <- result$metadata
-    }
-
-    # Validate all parameters
-    if (!validate_datalake_push_params(file_or_folder, dataset_name, tag, metadata)) {
-      invisible(NULL)
-    }
-
-    # Process files
-    files_to_upload <- prepare_files_for_upload(file_or_folder)
-
-    # Check total file size
-    total_size <- sum(sapply(files_to_upload, function(f) file.info(f)$size), na.rm = TRUE)
-    if (total_size > 1024^3) { # 1GB
-      cli::cli_alert_warning("⚠️ Taille totale des fichiers: {round(total_size / 1024^3, 2)} GB - c'est volumineux!")
-    }
-
-    # Upload files to S3
-    success <- upload_files_to_public_datalake(creds, files_to_upload, dataset_name, tag, metadata)
-
-    if (success) {
-      # Trigger lambda indexing
-      lambda_success <- invoke_datalake_indexing_lambda(creds)
-
-      if (lambda_success) {
-        cli::cli_alert_success("✅ Fichiers uploadés et indexation déclenchée avec succès!")
-        cli::cli_alert_info("Les données seront disponibles dans ellipse_discover() dans quelques minutes.")
-      } else {
-        cli::cli_alert_warning("⚠️ Fichiers uploadés mais l'indexation a échoué. Contactez votre ingénieur de données.")
+      # Interactive mode for missing parameters
+      if (interactive) {
+        result <- interactive_datalake_push_flow(file_or_folder, dataset_name, tag, metadata)
+        file_or_folder <- result$file_or_folder
+        dataset_name <- result$dataset_name
+        tag <- result$tag
+        metadata <- result$metadata
       }
 
-      cli::cli_alert_info("N'oubliez pas de vous déconnecter avec ellipse_disconnect(con) 👋")
-      invisible(files_to_upload)
-    } else {
-      cli::cli_alert_danger("❌ Erreur lors de l'upload des fichiers.")
+      # Validate all parameters
+      if (!validate_datalake_push_params(file_or_folder, dataset_name, tag, metadata)) {
+        invisible(NULL)
+      }
+
+      # Process files
+      files_to_upload <- prepare_files_for_upload(file_or_folder)
+
+      # Check total file size
+      total_size <- sum(sapply(files_to_upload, function(f) file.info(f)$size), na.rm = TRUE)
+      if (total_size > 1024^3) { # 1GB
+        cli::cli_alert_warning("⚠️ Taille totale des fichiers: {round(total_size / 1024^3, 2)} GB - c'est volumineux!")
+      }
+
+      # Upload files to S3
+      success <- upload_files_to_public_datalake(creds, files_to_upload, dataset_name, tag, metadata)
+
+      if (success) {
+        # Trigger lambda indexing
+        lambda_success <- invoke_datalake_indexing_lambda(creds)
+
+        if (lambda_success) {
+          cli::cli_alert_success("✅ Fichiers uploadés et indexation déclenchée avec succès!")
+          cli::cli_alert_info("Les données seront disponibles dans ellipse_discover() dans quelques minutes.")
+        } else {
+          cli::cli_alert_warning(
+            "⚠️ Fichiers uploadés mais l'indexation a échoué. Contactez votre ingénieur de données."
+          )
+        }
+
+        cli::cli_alert_info("N'oubliez pas de vous déconnecter avec ellipse_disconnect(con) 👋")
+        invisible(files_to_upload)
+      } else {
+        cli::cli_alert_danger("❌ Erreur lors de l'upload des fichiers.")
+        invisible(NULL)
+      }
+    },
+    error = function(e) {
+      logger::log_error(paste("[ellipse_push_datalake_mode] error:", e$message))
+      cli::cli_alert_danger("Erreur lors de l'upload: {e$message}")
       invisible(NULL)
     }
-
-  }, error = function(e) {
-    logger::log_error(paste("[ellipse_push_datalake_mode] error:", e$message))
-    cli::cli_alert_danger("Erreur lors de l'upload: {e$message}")
-    invisible(NULL)
-  })
+  )
 }
 
 #' Interactive flow for collecting push parameters (SIMPLIFIED)
@@ -380,31 +385,33 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
   success_count <- 0
 
   for (file_path in files) {
-    tryCatch({
-      # Generate S3 key: dataset_name/tag/filename
-      filename <- basename(file_path)
-      s3_key <- paste0(dataset_name, "/", tag, "/", filename)
+    tryCatch(
+      {
+        # Generate S3 key: dataset_name/tag/filename
+        filename <- basename(file_path)
+        s3_key <- paste0(dataset_name, "/", tag, "/", filename)
 
-      # Prepare metadata for S3
-      s3_metadata <- prepare_s3_metadata(metadata)
+        # Prepare metadata for S3
+        s3_metadata <- prepare_s3_metadata(metadata)
 
-      # Upload file
-      s3_client$put_object(
-        Bucket = bucket,
-        Key = s3_key,
-        Body = file_path,
-        Metadata = s3_metadata,
-        ContentType = get_content_type(file_path)
-      )
+        # Upload file
+        s3_client$put_object(
+          Bucket = bucket,
+          Key = s3_key,
+          Body = file_path,
+          Metadata = s3_metadata,
+          ContentType = get_content_type(file_path)
+        )
 
-      success_count <- success_count + 1
-      logger::log_debug(paste("[upload_files_to_public_datalake] uploaded:", s3_key))
-
-    }, error = function(e) {
-      logger::log_error(paste("[upload_files_to_public_datalake] failed to upload:", file_path, "-", e$message))
-      cli::cli_alert_danger("❌ Erreur upload: {basename(file_path)}")
-      FALSE  # Stop on first error
-    })
+        success_count <- success_count + 1
+        logger::log_debug(paste("[upload_files_to_public_datalake] uploaded:", s3_key))
+      },
+      error = function(e) {
+        logger::log_error(paste("[upload_files_to_public_datalake] failed to upload:", file_path, "-", e$message))
+        cli::cli_alert_danger("❌ Erreur upload: {basename(file_path)}")
+        FALSE # Stop on first error
+      }
+    )
 
     cli::cli_progress_update()
   }
@@ -489,43 +496,47 @@ get_content_type <- function(file_path) {
 invoke_datalake_indexing_lambda <- function(creds) {
   logger::log_debug("[invoke_datalake_indexing_lambda] entering function")
 
-  tryCatch({
-    # Find the correct lambda function using the generic finder
-    lambda_name <- find_datalake_indexing_lambda(creds)
+  tryCatch(
+    {
+      # Find the correct lambda function using the generic finder
+      lambda_name <- find_datalake_indexing_lambda(creds)
 
-    if (is.null(lambda_name)) {
-      logger::log_warn("[invoke_datalake_indexing_lambda] no matching lambda function found")
-      cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
+      if (is.null(lambda_name)) {
+        logger::log_warn("[invoke_datalake_indexing_lambda] no matching lambda function found")
+        cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
+        FALSE
+      }
+
+      logger::log_debug(paste("[invoke_datalake_indexing_lambda] using lambda:", lambda_name))
+
+      # Setup Lambda client
+      lambda_client <- paws.compute::lambda(config = creds)
+
+      # Invoke the lambda function (no payload needed)
+      result <- lambda_client$invoke(
+        FunctionName = lambda_name,
+        InvocationType = "Event" # Async invocation
+      )
+
+      success <- result$StatusCode == 202 # Accepted for async
+
+      if (success) {
+        logger::log_debug("[invoke_datalake_indexing_lambda] lambda invoked successfully")
+        cli::cli_alert_info("🔄 Indexation déclenchée...")
+      } else {
+        logger::log_error(
+          paste("[invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode)
+        )
+      }
+
+      success
+    },
+    error = function(e) {
+      logger::log_error(paste("[invoke_datalake_indexing_lambda] error:", e$message))
+      cli::cli_alert_warning("⚠️ Erreur lors du déclenchement de l'indexation: {e$message}")
       FALSE
     }
-
-    logger::log_debug(paste("[invoke_datalake_indexing_lambda] using lambda:", lambda_name))
-
-    # Setup Lambda client
-    lambda_client <- paws.compute::lambda(config = creds)
-
-    # Invoke the lambda function (no payload needed)
-    result <- lambda_client$invoke(
-      FunctionName = lambda_name,
-      InvocationType = "Event"  # Async invocation
-    )
-
-    success <- result$StatusCode == 202  # Accepted for async
-
-    if (success) {
-      logger::log_debug("[invoke_datalake_indexing_lambda] lambda invoked successfully")
-      cli::cli_alert_info("🔄 Indexation déclenchée...")
-    } else {
-      logger::log_error(paste("[invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode))
-    }
-
-    success
-
-  }, error = function(e) {
-    logger::log_error(paste("[invoke_datalake_indexing_lambda] error:", e$message))
-    cli::cli_alert_warning("⚠️ Erreur lors du déclenchement de l'indexation: {e$message}")
-    FALSE
-  })
+  )
 }
 
 #' Find the lambda function for datalake indexing
@@ -537,7 +548,7 @@ find_datalake_indexing_lambda <- function(credentials) {
 
   # Updated patterns based on actual infrastructure
   patterns <- c(
-    "publicdatalakecontent"           # Primary pattern
+    "publicdatalakecontent" # Primary pattern
   )
 
   lambda_name <- find_lambda_by_pattern(credentials, patterns, return_first = TRUE)
@@ -689,15 +700,19 @@ display_simple_file_menu <- function(items) {
       # Check if it's a directory
       if (item %in% items$dirs) {
         file_count <- length(list.files(item_path, recursive = FALSE))
-        dir_text <- paste0("  {cli::col_blue(sprintf('%2d', choice_num))}. 📁 {item}/ ",
-                          "{cli::col_silver(paste0('(', file_count, ' éléments)'))}")
+        dir_text <- paste0(
+          "  {cli::col_blue(sprintf('%2d', choice_num))}. 📁 {item}/ ",
+          "{cli::col_silver(paste0('(', file_count, ' éléments)'))}"
+        )
         cli::cli_text(dir_text)
         choice_map[[as.character(choice_num)]] <- list(type = "dir", path = item_path, name = item)
       } else {
         # It's a supported file
         file_size <- format_file_size(file.info(item_path)$size)
-        file_text <- paste0("  {cli::col_green(sprintf('%2d', choice_num))}. 📄 {item} ",
-                           "{cli::col_silver(paste0('(', file_size, ')'))}")
+        file_text <- paste0(
+          "  {cli::col_green(sprintf('%2d', choice_num))}. 📄 {item} ",
+          "{cli::col_silver(paste0('(', file_size, ')'))}"
+        )
         cli::cli_text(file_text)
         choice_map[[as.character(choice_num)]] <- list(type = "file", path = item_path, name = item)
       }
@@ -938,7 +953,9 @@ confirm_directory_selection <- function(dir_path) {
 #' Format file size for display
 #' @keywords internal
 format_file_size <- function(size_bytes) {
-  if (is.na(size_bytes)) return("N/A")
+  if (is.na(size_bytes)) {
+    return("N/A")
+  }
 
   if (size_bytes < 1024) {
     paste(size_bytes, "B")

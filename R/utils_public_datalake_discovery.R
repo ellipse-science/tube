@@ -239,27 +239,30 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   for (i in seq_len(nrow(result))) {
     row <- result[i, ]
     if (!is.null(row$user_metadata_json) && nzchar(row$user_metadata_json)) {
-      tryCatch({
-        # Parse the user metadata JSON directly (no nested structure after lambda fix)
-        custom_metadata <- jsonlite::fromJSON(row$user_metadata_json)
+      tryCatch(
+        {
+          # Parse the user metadata JSON directly (no nested structure after lambda fix)
+          custom_metadata <- jsonlite::fromJSON(row$user_metadata_json)
 
-        # Store metadata fields for this tag
-        tag_name <- row$tag
-        if (!tag_name %in% names(metadata_by_tag)) {
-          metadata_by_tag[[tag_name]] <- list()
-        }
-
-        for (field_name in names(custom_metadata)) {
-          field_value <- custom_metadata[[field_name]]
-          if (is.list(field_value) || length(field_value) > 1) {
-            field_value <- paste(as.character(field_value), collapse = ", ")
+          # Store metadata fields for this tag
+          tag_name <- row$tag
+          if (!tag_name %in% names(metadata_by_tag)) {
+            metadata_by_tag[[tag_name]] <- list()
           }
-          metadata_by_tag[[tag_name]][[field_name]] <- as.character(field_value)
+
+          for (field_name in names(custom_metadata)) {
+            field_value <- custom_metadata[[field_name]]
+            if (is.list(field_value) || length(field_value) > 1) {
+              field_value <- paste(as.character(field_value), collapse = ", ")
+            }
+            metadata_by_tag[[tag_name]][[field_name]] <- as.character(field_value)
+          }
+        },
+        error = function(e) {
+          # Skip this row if JSON parsing fails
+          cat("JSON parsing error for tag", row$tag, ":", e$message, "\n")
         }
-      }, error = function(e) {
-        # Skip this row if JSON parsing fails
-        cat("JSON parsing error for tag", row$tag, ":", e$message, "\n")
-      })
+      )
     }
   }
 
@@ -362,67 +365,73 @@ format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_n
   for (row_idx in seq_len(nrow(result))) {
     tag_result <- result[row_idx, ]
 
-    tryCatch({
-      # Parse file arrays for this record
-      file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
-        jsonlite::fromJSON(tag_result$file_paths)
-      } else {
-        character(0)
-      }
-
-      file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
-        jsonlite::fromJSON(tag_result$file_names)
-      } else {
-        character(0)
-      }
-
-      file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
-        jsonlite::fromJSON(tag_result$file_extensions)
-      } else {
-        character(0)
-      }
-
-      file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
-        jsonlite::fromJSON(tag_result$file_sizes_bytes)
-      } else {
-        numeric(0)
-      }
-
-      # Parse user metadata for this record
-      user_metadata <- NULL
-      if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
-        tryCatch({
-          # After lambda fix, user_metadata_json contains only custom metadata directly
-          user_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
-          if (length(user_metadata) == 0) user_metadata <- NULL
-        }, error = function(e) {
-          user_metadata <<- NULL
-        })
-      }
-
-      # Store file data with metadata for each file in this record
-      num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
-
-      if (num_files > 0) {
-        for (file_idx in seq_len(num_files)) {
-          file_data <- list(
-            path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
-            name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
-            extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
-            size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
-            creation_date = tag_result$creation_date,
-            sensitivity_level = tag_result$sensitivity_level,
-            ethical_stamp = tag_result$ethical_stamp,
-            consent_expiry_date = tag_result$consent_expiry_date,
-            data_destruction_date = tag_result$data_destruction_date,
-            user_metadata = user_metadata
-          )
-          all_files_data <- append(all_files_data, list(file_data))
+    tryCatch(
+      {
+        # Parse file arrays for this record
+        file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
+          jsonlite::fromJSON(tag_result$file_paths)
+        } else {
+          character(0)
         }
+
+        file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+          jsonlite::fromJSON(tag_result$file_names)
+        } else {
+          character(0)
+        }
+
+        file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
+          jsonlite::fromJSON(tag_result$file_extensions)
+        } else {
+          character(0)
+        }
+
+        file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
+          jsonlite::fromJSON(tag_result$file_sizes_bytes)
+        } else {
+          numeric(0)
+        }
+
+        # Parse user metadata for this record
+        user_metadata <- NULL
+        if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
+          tryCatch(
+            {
+              # After lambda fix, user_metadata_json contains only custom metadata directly
+              user_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
+              if (length(user_metadata) == 0) user_metadata <- NULL
+            },
+            error = function(e) {
+              user_metadata <<- NULL
+            }
+          )
+        }
+
+        # Store file data with metadata for each file in this record
+        num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
+
+        if (num_files > 0) {
+          for (file_idx in seq_len(num_files)) {
+            file_data <- list(
+              path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
+              name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
+              extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
+              size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
+              creation_date = tag_result$creation_date,
+              sensitivity_level = tag_result$sensitivity_level,
+              ethical_stamp = tag_result$ethical_stamp,
+              consent_expiry_date = tag_result$consent_expiry_date,
+              data_destruction_date = tag_result$data_destruction_date,
+              user_metadata = user_metadata
+            )
+            all_files_data <- append(all_files_data, list(file_data))
+          }
+        }
+      },
+      error = function(e) {
+        cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
       }
-    }, error = function(e) {
-      cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
-    })
+    )
   }
 
   if (length(all_files_data) == 0) {
@@ -570,36 +579,39 @@ format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_n
     if (!is.null(file_data$user_metadata) && length(file_data$user_metadata) > 0) {
       cli::cli_text("🏷️  Custom Metadata:")
 
-      tryCatch({
-        metadata_fields <- names(file_data$user_metadata)
-        metadata_values <- character(length(metadata_fields))
+      tryCatch(
+        {
+          metadata_fields <- names(file_data$user_metadata)
+          metadata_values <- character(length(metadata_fields))
 
-        for (j in seq_along(metadata_fields)) {
-          field_value <- file_data$user_metadata[[metadata_fields[j]]]
-          if (is.list(field_value) || length(field_value) > 1) {
-            metadata_values[j] <- paste(as.character(field_value), collapse = ", ")
-          } else {
-            metadata_values[j] <- as.character(field_value)
+          for (j in seq_along(metadata_fields)) {
+            field_value <- file_data$user_metadata[[metadata_fields[j]]]
+            if (is.list(field_value) || length(field_value) > 1) {
+              metadata_values[j] <- paste(as.character(field_value), collapse = ", ")
+            } else {
+              metadata_values[j] <- as.character(field_value)
+            }
           }
+
+          custom_metadata <- data.frame(
+            Field = paste("  ", metadata_fields), # Indent custom fields
+            Value = metadata_values,
+            stringsAsFactors = FALSE,
+            check.names = FALSE
+          )
+
+          formatted_custom <- paste(
+            format(custom_metadata$Field, width = max(nchar(custom_metadata$Field)), justify = "left"),
+            format(custom_metadata$Value, width = max(nchar(custom_metadata$Value)), justify = "left"),
+            sep = "  "
+          )
+          cat(formatted_custom, sep = "\n")
+          cli::cli_text("")
+        },
+        error = function(e) {
+          cli::cli_alert_warning("Could not display custom metadata for this file")
         }
-
-        custom_metadata <- data.frame(
-          Field = paste("  ", metadata_fields),  # Indent custom fields
-          Value = metadata_values,
-          stringsAsFactors = FALSE,
-          check.names = FALSE
-        )
-
-        formatted_custom <- paste(
-          format(custom_metadata$Field, width = max(nchar(custom_metadata$Field)), justify = "left"),
-          format(custom_metadata$Value, width = max(nchar(custom_metadata$Value)), justify = "left"),
-          sep = "  "
-        )
-        cat(formatted_custom, sep = "\n")
-        cli::cli_text("")
-      }, error = function(e) {
-        cli::cli_alert_warning("Could not display custom metadata for this file")
-      })
+      )
     }
 
     # Separator between files (except for last file)
@@ -655,67 +667,73 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   for (row_idx in seq_len(nrow(result))) {
     tag_result <- result[row_idx, ]
 
-    tryCatch({
-      # Parse file arrays
-      file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
-        jsonlite::fromJSON(tag_result$file_paths)
-      } else {
-        character(0)
-      }
-
-      file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
-        jsonlite::fromJSON(tag_result$file_names)
-      } else {
-        character(0)
-      }
-
-      file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
-        jsonlite::fromJSON(tag_result$file_extensions)
-      } else {
-        character(0)
-      }
-
-      file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
-        jsonlite::fromJSON(tag_result$file_sizes_bytes)
-      } else {
-        numeric(0)
-      }
-
-      # Parse user metadata
-      user_metadata <- NULL
-      if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
-        tryCatch({
-          # After lambda fix, user_metadata_json contains only custom metadata directly
-          user_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
-          if (length(user_metadata) == 0) user_metadata <- NULL
-        }, error = function(e) {
-          user_metadata <<- NULL
-        })
-      }
-
-      # Store file data
-      num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
-
-      if (num_files > 0) {
-        for (file_idx in seq_len(num_files)) {
-          file_data <- list(
-            path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
-            name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
-            extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
-            size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
-            creation_date = tag_result$creation_date,
-            sensitivity_level = tag_result$sensitivity_level,
-            ethical_stamp = tag_result$ethical_stamp,
-            consent_expiry_date = tag_result$consent_expiry_date,
-            data_destruction_date = tag_result$data_destruction_date,
-            user_metadata = user_metadata
-          )
-          all_files_data <- append(all_files_data, list(file_data))
+    tryCatch(
+      {
+        # Parse file arrays
+        file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
+          jsonlite::fromJSON(tag_result$file_paths)
+        } else {
+          character(0)
         }
+
+        file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
+          jsonlite::fromJSON(tag_result$file_names)
+        } else {
+          character(0)
+        }
+
+        file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
+          jsonlite::fromJSON(tag_result$file_extensions)
+        } else {
+          character(0)
+        }
+
+        file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
+          jsonlite::fromJSON(tag_result$file_sizes_bytes)
+        } else {
+          numeric(0)
+        }
+
+        # Parse user metadata
+        user_metadata <- NULL
+        if (!is.null(tag_result$user_metadata_json) && nzchar(tag_result$user_metadata_json)) {
+          tryCatch(
+            {
+              # After lambda fix, user_metadata_json contains only custom metadata directly
+              user_metadata <- jsonlite::fromJSON(tag_result$user_metadata_json)
+              if (length(user_metadata) == 0) user_metadata <- NULL
+            },
+            error = function(e) {
+              user_metadata <<- NULL
+            }
+          )
+        }
+
+        # Store file data
+        num_files <- max(length(file_paths), length(file_names), length(file_extensions), length(file_sizes))
+
+        if (num_files > 0) {
+          for (file_idx in seq_len(num_files)) {
+            file_data <- list(
+              path = if (file_idx <= length(file_paths)) file_paths[file_idx] else "",
+              name = if (file_idx <= length(file_names)) file_names[file_idx] else "",
+              extension = if (file_idx <= length(file_extensions)) file_extensions[file_idx] else "",
+              size_bytes = if (file_idx <= length(file_sizes)) file_sizes[file_idx] else 0,
+              creation_date = tag_result$creation_date,
+              sensitivity_level = tag_result$sensitivity_level,
+              ethical_stamp = tag_result$ethical_stamp,
+              consent_expiry_date = tag_result$consent_expiry_date,
+              data_destruction_date = tag_result$data_destruction_date,
+              user_metadata = user_metadata
+            )
+            all_files_data <- append(all_files_data, list(file_data))
+          }
+        }
+      },
+      error = function(e) {
+        cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
       }
-    }, error = function(e) {
-      cli::cli_alert_warning(paste("Error processing record", row_idx, ":", e$message))
-    })
+    )
   }
 
   if (length(all_files_data) == 0) {
@@ -728,7 +746,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   if (total_size >= 1024^3) {
     total_size_display <- paste(round(total_size / 1024^3, 2), "GB")
   } else if (total_size >= 1024^2) {
-    total_size_display <- paste(round(total_size / 1024^2, 2), "MB") 
+    total_size_display <- paste(round(total_size / 1024^2, 2), "MB")
   } else if (total_size >= 1024) {
     total_size_display <- paste(round(total_size / 1024, 2), "KB")
   } else {
@@ -769,7 +787,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     }),
     `📅Creation Date` = sapply(all_files_data, function(f) {
       if (!is.na(f$creation_date) && nzchar(f$creation_date)) {
-        substr(f$creation_date, 1, 10)  # Just date, no time
+        substr(f$creation_date, 1, 10) # Just date, no time
       } else {
         "N/A"
       }

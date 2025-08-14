@@ -115,7 +115,7 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
           valid_rtf_files[i] <- is_rtf_file(rtf_files[i])
           cli::cli_progress_update()
         }
-        
+
         if (!all(valid_rtf_files)) {
           cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers RTF qui ne sont pas valides! 😅")
           return(NULL)
@@ -210,7 +210,8 @@ read_dat_with_overflow_handling <- function(filepath) {
     tryCatch(
       {
         df <- readr::read_delim(
-          filepath, delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE
+          filepath,
+          delim = delim, col_types = readr::cols(.default = "c"), show_col_types = FALSE
         )
         if (ncol(df) > 1) {
           return(df)

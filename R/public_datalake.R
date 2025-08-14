@@ -102,22 +102,25 @@ upload_file_to_public_datalake <- function(credentials, file_path, dataset_name,
     )
   )
 
-  tryCatch({
-    logger::log_debug(paste("[tube::upload_file_to_public_datalake] uploading to key:", key))
-    s3_client$put_object(
-      Bucket = bucket,
-      Key = key,
-      Body = file_path,
-      Metadata = aws_metadata,
-      ContentType = "application/octet-stream; charset=utf-8"
-    )
-    logger::log_debug("[tube::upload_file_to_public_datalake] upload successful")
-    TRUE
-  }, error = function(e) {
-    logger::log_error(paste("[tube::upload_file_to_public_datalake] upload failed:", e$message))
-    cli::cli_alert_danger("Échec du téléchargement: {e$message}")
-    FALSE
-  })
+  tryCatch(
+    {
+      logger::log_debug(paste("[tube::upload_file_to_public_datalake] uploading to key:", key))
+      s3_client$put_object(
+        Bucket = bucket,
+        Key = key,
+        Body = file_path,
+        Metadata = aws_metadata,
+        ContentType = "application/octet-stream; charset=utf-8"
+      )
+      logger::log_debug("[tube::upload_file_to_public_datalake] upload successful")
+      TRUE
+    },
+    error = function(e) {
+      logger::log_error(paste("[tube::upload_file_to_public_datalake] upload failed:", e$message))
+      cli::cli_alert_danger("Échec du téléchargement: {e$message}")
+      FALSE
+    }
+  )
 }
 
 #' Invoke AWS Lambda to index public datalake content
@@ -136,39 +139,42 @@ invoke_datalake_indexing_lambda <- function(credentials) {
     )
   )
 
-  tryCatch({
-    # Find the correct lambda function using the generic finder
-    lambda_name <- find_datalake_indexing_lambda(credentials)
+  tryCatch(
+    {
+      # Find the correct lambda function using the generic finder
+      lambda_name <- find_datalake_indexing_lambda(credentials)
 
-    if (is.null(lambda_name)) {
-      logger::log_warn("[tube::invoke_datalake_indexing_lambda] no matching lambda function found")
-      cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
-      return(FALSE)
+      if (is.null(lambda_name)) {
+        logger::log_warn("[tube::invoke_datalake_indexing_lambda] no matching lambda function found")
+        cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
+        return(FALSE)
+      }
+
+      logger::log_debug(paste("[tube::invoke_datalake_indexing_lambda] using lambda:", lambda_name))
+      logger::log_debug("[tube::invoke_datalake_indexing_lambda] invoking lambda")
+
+      result <- lambda_client$invoke(
+        FunctionName = lambda_name,
+        InvocationType = "Event" # Async invocation
+      )
+
+      success <- result$StatusCode %in% c(200, 202)
+      if (success) {
+        logger::log_debug("[tube::invoke_datalake_indexing_lambda] lambda invocation successful")
+        cli::cli_alert_success("Indexation des données déclenchée avec succès")
+      } else {
+        logger::log_error(paste(
+          "[tube::invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode
+        ))
+        cli::cli_alert_warning("L'indexation a été déclenchée mais le statut est incertain")
+      }
+
+      success
+    },
+    error = function(e) {
+      logger::log_error(paste("[tube::invoke_datalake_indexing_lambda] lambda invocation error:", e$message))
+      cli::cli_alert_danger("Échec du déclenchement de l'indexation: {e$message}")
+      FALSE
     }
-
-    logger::log_debug(paste("[tube::invoke_datalake_indexing_lambda] using lambda:", lambda_name))
-    logger::log_debug("[tube::invoke_datalake_indexing_lambda] invoking lambda")
-
-    result <- lambda_client$invoke(
-      FunctionName = lambda_name,
-      InvocationType = "Event"  # Async invocation
-    )
-
-    success <- result$StatusCode %in% c(200, 202)
-    if (success) {
-      logger::log_debug("[tube::invoke_datalake_indexing_lambda] lambda invocation successful")
-      cli::cli_alert_success("Indexation des données déclenchée avec succès")
-    } else {
-      logger::log_error(paste(
-        "[tube::invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode
-      ))
-      cli::cli_alert_warning("L'indexation a été déclenchée mais le statut est incertain")
-    }
-
-    success
-  }, error = function(e) {
-    logger::log_error(paste("[tube::invoke_datalake_indexing_lambda] lambda invocation error:", e$message))
-    cli::cli_alert_danger("Échec du déclenchement de l'indexation: {e$message}")
-    FALSE
-  })
+  )
 }
