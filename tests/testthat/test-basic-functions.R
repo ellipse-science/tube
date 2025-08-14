@@ -1,43 +1,45 @@
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "basic-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("convert_url_to_key works with HTTP URLs", {
-  cat("\n=== TESTING URL CONVERSION UTILITY ===\n")
+  debug_log("Testing URL conversion utility")
 
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("convert_url_to_key <- function(url) {\n")
-  cat("  r <- gsub(\" |-|:|/|\\\\.|&|\\\\?|=\", \"_\", url)\n")
-  cat("  r <- gsub(\"https?___\", \"\", r)\n")
-  cat("  r <- gsub(\"_$\", \"\", r)\n")
-  cat("  return(r)\n")
-  cat("}\n\n")
+  # Test basic URL conversion
+  result <- convert_url_to_key("https://example.com/path/to/file.html")
 
-  cat("TRANSFORMATION FLOW:\n")
-  cat("URL → replace special chars with _ → remove https?___ → remove trailing _\n\n")
+  expect_equal(result, "example_com_path_to_file_html")
+  expect_type(result, "character")
+  expect_gt(nchar(result), 0)
 
-  cat("TESTING: HTTP URL conversion...\n")
-
-  # Test the URL conversion utility with proper HTTP URLs
-  http_url <- "https://example.com/path/to/file.html"
-  result <- convert_url_to_key(http_url)
-
-  cat("Input URL:", http_url, "\n")
-  cat("Converted key:", result, "\n")
-
-  expect_true(is.character(result))
-  expect_true(nchar(result) > 0)
-
-  cat("✅ URL conversion successful!\n")
+  debug_log(sprintf("URL conversion result: %s", result))
 })
 
 test_that("convert_url_to_key handles different URL formats", {
-  cat("\n=== TESTING URL FORMAT VARIATIONS ===\n")
+  debug_log("Testing various URL format transformations")
 
-  cat("TESTING: Various URL format transformations...\n")
-
+  # Test multiple URL formats with expected outputs
   test_cases <- list(
     "https://test.com" = "test_com",
-    "http://test.com/path" = "test_com_path",
+    "http://test.com/path" = "test_com_path", 
     "https://test.com/path?param=value" = "test_com_path_param_value"
   )
 
@@ -45,31 +47,36 @@ test_that("convert_url_to_key handles different URL formats", {
     result <- convert_url_to_key(url)
     expected <- test_cases[[url]]
 
-    cat("URL:", url, "→", result, "\n")
-    expect_true(is.character(result))
+    test_detail(sprintf("URL: %s → %s", url, result))
+    expect_equal(result, expected)
+    expect_type(result, "character")
   }
-
-  cat("✅ All URL format variations handled correctly!\n")
 })
 
-test_that("pipe operator is available", {
-  cat("\n=== TESTING PIPE OPERATOR ===\n")
+test_that("convert_url_to_key handles edge cases", {
+  debug_log("Testing URL conversion edge cases")
 
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("Pipe operator (%>%) from magrittr package\n")
-  cat("@importFrom magrittr %>%\n")
-  cat("Enables: lhs %>% rhs equivalent to rhs(lhs)\n\n")
+  # Test edge cases
+  expect_equal(convert_url_to_key(""), "")
+  expect_equal(convert_url_to_key("https://"), "")
+  expect_equal(convert_url_to_key("no-protocol.com"), "no_protocol_com")
+  expect_equal(convert_url_to_key("https://site.com/"), "site_com")
+})
 
-  cat("TESTING: Pipe operator functionality...\n")
+test_that("pipe operator is available and functional", {
+  debug_log("Testing pipe operator functionality")
 
-  # Test that the pipe operator is exported
+  # Test that the pipe operator works correctly
   input <- 1:3
   result <- input %>% sum()
 
-  cat("Input:", paste(input, collapse = ", "), "\n")
-  cat("Piped sum:", result, "\n")
-
   expect_equal(result, 6)
+  expect_type(result, "integer")  # sum() of integers returns integer
 
-  cat("✅ Pipe operator working correctly!\n")
+  # Test more complex piping
+  complex_result <- mtcars %>%
+    head(5) %>%
+    nrow()
+
+  expect_equal(complex_result, 5)
 })

@@ -4,40 +4,30 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "bucket-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("bucket functions can be loaded and have proper signatures", {
-  cat("\n=== TESTING BUCKET FUNCTION SIGNATURES ===\n")
-
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("1. list_athena_staging_bucket <- function(credentials) {\n")
-  cat("     list_s3_buckets(credentials, \"athenaqueryresults\")\n")
-  cat("   }\n\n")
-
-  cat("2. list_datalake_bucket <- function(credentials) {\n")
-  cat("     list_s3_buckets(credentials, \"datalakebucket\")\n")
-  cat("   }\n\n")
-
-  cat("3. list_datamarts_bucket <- function(credentials) {\n")
-  cat("     list_s3_buckets(credentials, \"datamartsbucket\")\n")
-  cat("   }\n\n")
-
-  cat("4. list_datawarehouse_bucket <- function(credentials) {\n")
-  cat("     list_s3_buckets(credentials, \"datawarehousebucket\")\n")
-  cat("   }\n\n")
-
-  cat("5. list_landing_zone_bucket <- function(credentials) {\n")
-  cat("     list_s3_buckets(credentials, \"landingzone\")\n")
-  cat("   }\n\n")
-
-  cat("6. list_landing_zone_partitions <- function(credentials) {\n")
-  cat("     bucket <- list_landing_zone_bucket(credentials)\n")
-  cat("     list_s3_partitions(credentials, bucket)\n")
-  cat("   }\n\n")
-
-  cat("DEPENDENCY CHAIN: All bucket functions → list_s3_buckets() → paws.storage::s3\n\n")
-  cat("TESTING: Function existence and signatures...\n")
-
+  debug_log("Testing bucket function signatures")
+  
   # Check that all bucket functions exist
   expect_true(exists("list_athena_staging_bucket", mode = "function"))
   expect_true(exists("list_datalake_bucket", mode = "function"))
@@ -45,7 +35,7 @@ test_that("bucket functions can be loaded and have proper signatures", {
   expect_true(exists("list_datawarehouse_bucket", mode = "function"))
   expect_true(exists("list_landing_zone_bucket", mode = "function"))
   expect_true(exists("list_landing_zone_partitions", mode = "function"))
-
+  
   # Check function signatures - all should take credentials parameter
   expect_equal(length(formals(list_athena_staging_bucket)), 1) # credentials
   expect_equal(length(formals(list_datalake_bucket)), 1) # credentials
@@ -53,11 +43,13 @@ test_that("bucket functions can be loaded and have proper signatures", {
   expect_equal(length(formals(list_datawarehouse_bucket)), 1) # credentials
   expect_equal(length(formals(list_landing_zone_bucket)), 1) # credentials
   expect_equal(length(formals(list_landing_zone_partitions)), 1) # credentials
-
-  cat("✅ All bucket function signatures verified!\n")
+  
+  debug_log("All bucket function signatures verified")
 })
 
 test_that("list_athena_staging_bucket validates input parameters", {
+  debug_log("Testing parameter validation")
+  
   # Test with NULL credentials
   expect_error(
     list_athena_staging_bucket(credentials = NULL),
@@ -67,39 +59,28 @@ test_that("list_athena_staging_bucket validates input parameters", {
 
 test_that("list_athena_staging_bucket works with real AWS credentials", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
-
-  cat("\n=== TESTING ATHENA STAGING BUCKET ===\n")
-
-  cat("PRODUCTION CODE FLOW:\n")
-  cat("list_athena_staging_bucket(creds)\n")
-  cat("  └─> list_s3_buckets(creds, \"athenaqueryresults\")\n")
-  cat("      └─> paws.storage::s3(config = creds)\n")
-  cat("      └─> s3_client$list_buckets()\n")
-  cat("      └─> filter buckets containing \"athenaqueryresults\"\n")
-  cat("      └─> return character vector or NULL\n\n")
-
+  
+  debug_log("Testing Athena staging bucket listing")
+  
   creds <- get_real_aws_credentials_dev()
-
-  cat("TESTING: Real AWS Athena bucket listing...\n")
-
+  
   # Test listing Athena staging bucket
   result <- list_athena_staging_bucket(creds)
   expect_true(is.character(result) || is.null(result))
-
-  cat("Result type:", class(result), "\n")
-  cat("Result length:", if (is.null(result)) "NULL" else length(result), "\n")
-
+  
+  test_detail(sprintf("Result type: %s", class(result)))
+  test_detail(sprintf("Result length: %s", if (is.null(result)) "NULL" else length(result)))
+  
   # If bucket exists, verify it contains "athenaqueryresults" in name
   if (!is.null(result) && length(result) > 0) {
-    cat("Found buckets:", paste(result, collapse = ", "), "\n")
     expect_true(any(grepl("athenaqueryresults", result, ignore.case = TRUE)))
-    cat("✅ Athena bucket filtering works correctly!\n")
-  } else {
-    cat("ℹ️ No Athena staging buckets found in this environment\n")
+    debug_log("Athena bucket filtering works correctly")
   }
 })
 
 test_that("list_datalake_bucket validates input parameters", {
+  debug_log("Testing datalake bucket parameter validation")
+  
   # Test with NULL credentials
   expect_error(
     list_datalake_bucket(credentials = NULL),
@@ -118,6 +99,7 @@ test_that("list_datalake_bucket works with real AWS credentials", {
 
   # If bucket exists, verify it contains "datalakebucket" in name
   if (!is.null(result) && length(result) > 0) {
+  debug_log("Testing list_datalake_bucket works with real AWS credentials")
     expect_true(any(grepl("datalakebucket", result, ignore.case = TRUE)))
   }
 })
@@ -131,6 +113,7 @@ test_that("list_datamarts_bucket validates input parameters", {
 })
 
 test_that("list_datamarts_bucket works with real AWS credentials", {
+  debug_log("Testing list_datamarts_bucket validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -154,6 +137,7 @@ test_that("list_datawarehouse_bucket validates input parameters", {
 })
 
 test_that("list_datawarehouse_bucket works with real AWS credentials", {
+  debug_log("Testing list_datawarehouse_bucket validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -177,6 +161,7 @@ test_that("list_landing_zone_bucket validates input parameters", {
 })
 
 test_that("list_landing_zone_bucket works with real AWS credentials", {
+  debug_log("Testing list_landing_zone_bucket validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -200,6 +185,7 @@ test_that("list_landing_zone_partitions validates input parameters", {
 })
 
 test_that("list_landing_zone_partitions works with real AWS credentials", {
+  debug_log("Testing list_landing_zone_partitions validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -222,6 +208,7 @@ test_that("bucket functions handle AWS API errors gracefully", {
 
   # All bucket functions should handle API errors gracefully
   expect_no_error({
+  debug_log("Testing bucket functions handle AWS API errors gracefully")
     list_athena_staging_bucket(creds)
   })
 
@@ -268,6 +255,7 @@ test_that("bucket functions use correct underlying S3 filters", {
   )
 
   if (length(all_results) > 1) {
+  debug_log("Testing bucket functions use correct underlying S3 filters")
     # Check that we don't have duplicate bucket names across different types
     expect_equal(length(all_results), length(unique(all_results)))
   }
@@ -281,6 +269,7 @@ test_that("bucket functions integrate with each other properly", {
   # Test workflow: get landing zone bucket -> get its partitions
   landing_bucket <- list_landing_zone_bucket(creds)
   if (!is.null(landing_bucket) && length(landing_bucket) > 0) {
+  debug_log("Testing bucket functions integrate with each other properly")
     partitions <- list_landing_zone_partitions(creds)
 
     # If we have a landing bucket, partitions function should work

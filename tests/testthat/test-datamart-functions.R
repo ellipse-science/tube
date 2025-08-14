@@ -3,35 +3,29 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "datamart-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("datamart functions can be loaded and have proper signatures", {
-  cat("\n=== TESTING DATAMART FUNCTION SIGNATURES ===\n")
-
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("1. list_datamarts_database <- function(credentials) {\n")
-  cat("     list_glue_databases(credentials, \"datamart\")\n")
-  cat("   }\n\n")
-
-  cat("2. list_datamart_tables <- function(credentials, datamart_name, simplify) {\n")
-  cat("     # Input validation added in our fixes:\n")
-  cat("     if (is.null(credentials)) stop(\"credentials cannot be NULL\")\n")
-  cat("     if (is.null(datamart_name) || datamart_name == \"\") {\n")
-  cat("       stop(\"datamart_name cannot be NULL or empty\")\n")
-  cat("     }\n")
-  cat("     # Core functionality:\n")
-  cat("     list_glue_tables(credentials, datamart_name, NULL, simplify)\n")
-  cat("   }\n\n")
-
-  cat("3. upload_dataframe_to_datamart <- function(...) {\n")
-  cat("     # Input validation added in our fixes:\n")
-  cat("     if (is.null(credentials)) stop(\"credentials cannot be NULL\")\n")
-  cat("     if (is.null(dataframe)) stop(\"dataframe cannot be NULL\")\n")
-  cat("     # S3 upload functionality\n")
-  cat("   }\n\n")
-
-  cat("DEPENDENCY CHAIN: datamart functions → list_glue_* functions → paws.analytics::glue\n\n")
-  cat("TESTING: Function existence and signatures...\n")
+  debug_log("Testing datamart functions can be loaded and have proper signatures")
 
   # Check that all datamart functions exist
   expect_true(exists("list_datamarts_database", mode = "function"))
@@ -43,7 +37,6 @@ test_that("datamart functions can be loaded and have proper signatures", {
   expect_equal(length(formals(list_datamart_tables)), 3) # credentials, datamart_name, simplify
   expect_equal(length(formals(upload_dataframe_to_datamart)), 5) # credentials, dataframe, bucket, prefix, partition
 
-  cat("✅ Datamart function signatures verified!\n")
 })
 
 # Tests for list_datamarts_database function
@@ -56,6 +49,7 @@ test_that("list_datamarts_database validates input parameters", {
 })
 
 test_that("list_datamarts_database works with real AWS credentials", {
+  debug_log("Testing list_datamarts_database validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -83,6 +77,7 @@ test_that("list_datamart_tables validates input parameters", {
   # Test with NULL datamart_name
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
+  debug_log("Testing list_datamart_tables validates input parameters")
     expect_error(
       list_datamart_tables(creds, datamart_name = NULL, simplify = TRUE),
       class = "error"
@@ -106,6 +101,7 @@ test_that("list_datamart_tables works with real AWS credentials", {
   # Get a real datamart database to test with
   datamart_db <- list_datamarts_database(creds)
   if (!is.null(datamart_db) && length(datamart_db) > 0) {
+  debug_log("Testing list_datamart_tables works with real AWS credentials")
     # Test listing tables with simplify = TRUE
     tables_simple <- list_datamart_tables(creds, datamart_db[1], simplify = TRUE)
     expect_true(is.character(tables_simple) || is.null(tables_simple))
@@ -135,6 +131,7 @@ test_that("list_datamart_tables handles non-existent datamarts", {
 
   # Test with non-existent datamart name - should handle gracefully
   expect_no_error({
+  debug_log("Testing list_datamart_tables handles non-existent datamarts")
     result <- list_datamart_tables(creds, "non-existent-datamart-12345", simplify = TRUE)
     expect_true(is.null(result) || is.character(result) || is.list(result))
   })
@@ -158,6 +155,7 @@ test_that("upload_dataframe_to_datamart validates input parameters", {
   # Test with NULL dataframe
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
+  debug_log("Testing upload_dataframe_to_datamart validates input parameters")
     expect_error(
       upload_dataframe_to_datamart(
         credentials = creds,
@@ -203,6 +201,7 @@ test_that("upload_dataframe_to_datamart validates input parameters", {
 test_that("upload_dataframe_to_datamart validates dataframe structure", {
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
+  debug_log("Testing upload_dataframe_to_datamart validates dataframe structure")
     # Test with valid dataframe
     valid_df <- data.frame(
       id = 1:5,
@@ -233,6 +232,7 @@ test_that("upload_dataframe_to_datamart validates dataframe structure", {
 test_that("upload_dataframe_to_datamart handles different data types", {
   creds <- get_real_aws_credentials_dev()
   if (!is.null(creds)) {
+  debug_log("Testing upload_dataframe_to_datamart handles different data types")
     # Test dataframe with various column types
     complex_df <- data.frame(
       int_col = 1:3,
@@ -267,6 +267,7 @@ test_that("upload_dataframe_to_datamart works with real AWS credentials", {
   # Get a real datamart bucket to test with
   datamart_bucket <- list_datamarts_bucket(creds)
   if (!is.null(datamart_bucket) && length(datamart_bucket) > 0) {
+  debug_log("Testing upload_dataframe_to_datamart works with real AWS credentials")
     # Create a small test dataframe
     test_df <- data.frame(
       id = 1:3,
@@ -305,6 +306,7 @@ test_that("datamart functions handle AWS API errors gracefully", {
 
   # Test with operations that might fail gracefully
   expect_no_error({
+  debug_log("Testing datamart functions handle AWS API errors gracefully")
     # Test with potentially non-existent resources
     result1 <- list_datamarts_database(creds)
     expect_true(is.character(result1) || is.null(result1))
@@ -324,6 +326,7 @@ test_that("datamart functions integrate with each other properly", {
   # Test the workflow: get datamart database -> list tables
   datamart_db <- list_datamarts_database(creds)
   if (!is.null(datamart_db) && length(datamart_db) > 0) {
+  debug_log("Testing datamart functions integrate with each other properly")
     # If we have a datamart database, listing tables should work
     tables <- list_datamart_tables(creds, datamart_db[1], simplify = TRUE)
     expect_true(is.character(tables) || is.null(tables))
@@ -353,6 +356,7 @@ test_that("datamart functions work with bucket integration", {
 
   # Both should exist or both should be null for a properly configured system
   if (!is.null(datamart_bucket) && !is.null(datamart_db)) {
+  debug_log("Testing datamart functions work with bucket integration")
     expect_true(length(datamart_bucket) > 0)
     expect_true(length(datamart_db) > 0)
 

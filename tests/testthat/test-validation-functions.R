@@ -6,7 +6,26 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "validation-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("validation functions can be loaded and have proper signatures", {
   # Check that all validation functions exist
@@ -29,6 +48,7 @@ test_that("validation functions can be loaded and have proper signatures", {
 
 # Tests for check_env function
 test_that("check_env validates environment parameters correctly", {
+  debug_log("Testing validation functions can be loaded and have proper signatures")
   # Test valid environments
   expect_true(check_env("DEV"))
   expect_true(check_env("PROD"))
@@ -59,6 +79,7 @@ test_that("check_env handles edge cases", {
 
 # Tests for check_database function
 test_that("check_database validates database parameters correctly", {
+  debug_log("Testing check_env handles edge cases")
   # Test valid databases
   expect_true(check_database("datawarehouse"))
   expect_true(check_database("datamarts"))
@@ -89,6 +110,7 @@ test_that("check_database handles edge cases", {
 
 # Tests for check_pipeline_before_ingest function
 test_that("check_pipeline_before_ingest validates pipeline parameters", {
+  debug_log("Testing check_database handles edge cases")
   # Create mock landing zone partitions for testing with valid pipeline names
   mock_partitions <- c("a-pipeline1/", "r-pipeline2/", "dict-test-pipeline/")
 
@@ -115,6 +137,7 @@ test_that("check_pipeline_before_ingest handles file versioning scenarios", {
 
 # Tests for check_file_versioning_before_ingest function
 test_that("check_file_versioning_before_ingest validates versioning logic", {
+  debug_log("Testing check_pipeline_before_ingest handles file versioning scenarios")
   # Test valid combinations
   expect_true(check_file_versioning_before_ingest("batch1", "v1.0")) # both provided
   expect_true(check_file_versioning_before_ingest("batch1", NULL)) # only batch
@@ -137,6 +160,7 @@ test_that("check_file_versioning_before_ingest handles edge cases", {
 
 # Tests for check_params_before_publish function
 test_that("check_params_before_publish validates publish parameters", {
+  debug_log("Testing check_file_versioning_before_ingest handles edge cases")
   # Create a simple test dataframe
   test_df <- data.frame(
     col1 = c(1, 2, 3),
@@ -176,6 +200,7 @@ test_that("check_params_before_publish validates publish parameters", {
 test_that("check_params_before_publish validates dataframe parameter", {
   # Test with NULL dataframe
   expect_no_error({
+  debug_log("Testing check_params_before_publish validates dataframe parameter")
     result <- check_params_before_publish(
       env = "DEV",
       dataframe = NULL,
@@ -208,6 +233,7 @@ test_that("check_params_before_publish validates dataframe parameter", {
 test_that("check_params_before_unpublish validates unpublish parameters", {
   # Test with valid parameters
   expect_no_error({
+  debug_log("Testing check_params_before_unpublish validates unpublish parameters")
     result <- check_params_before_unpublish(
       env = "DEV",
       datamart = "test_datamart",
@@ -249,6 +275,7 @@ test_that("check_params_before_unpublish validates unpublish parameters", {
 test_that("check_params_before_describe validates describe parameters", {
   # Test with valid parameters
   expect_no_error({
+  debug_log("Testing check_params_before_describe validates describe parameters")
     result <- check_params_before_describe(
       env = "DEV",
       schema = "test_schema",
@@ -298,6 +325,7 @@ test_that("check_params_before_describe validates describe parameters", {
 test_that("check_params_before_describe validates table tags format", {
   # Test with valid table tags (list format)
   expect_no_error({
+  debug_log("Testing check_params_before_describe validates table tags format")
     result <- check_params_before_describe(
       env = "DEV",
       schema = "test_schema",
@@ -331,6 +359,7 @@ test_that("check_params_before_refresh validates refresh parameters", {
 
   # Test with valid parameters
   expect_no_error({
+  debug_log("Testing check_params_before_refresh validates refresh parameters")
     result <- check_params_before_refresh(
       con = mock_con,
       schema = "test_schema",
@@ -388,6 +417,7 @@ test_that("validation functions handle error conditions gracefully", {
 })
 
 test_that("validation functions are consistent in their return types", {
+  debug_log("Testing validation functions handle error conditions gracefully")
   # All validation functions should return logical values
   expect_type(check_env("DEV"), "logical")
   expect_type(check_env("INVALID"), "logical")

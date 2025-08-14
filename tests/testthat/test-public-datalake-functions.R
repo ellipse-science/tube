@@ -2,7 +2,26 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "public-datalake-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("public datalake infrastructure functions exist and have proper signatures", {
   # Check that public datalake infrastructure functions exist
@@ -15,6 +34,7 @@ test_that("public datalake infrastructure functions exist and have proper signat
 })
 
 test_that("list_public_datalake_bucket works with real AWS credentials", {
+  debug_log("Testing public datalake infrastructure functions exist and have proper signatures")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   # Test with real AWS credentials
@@ -37,6 +57,7 @@ test_that("list_public_datalake_database works with real AWS credentials", {
 
   # Test with real AWS credentials
   expect_no_error({
+  debug_log("Testing list_public_datalake_database works with real AWS credentials")
     creds <- get_aws_credentials("DEV")
     database_result <- list_public_datalake_database(creds)
 
@@ -61,6 +82,7 @@ test_that("public datalake infrastructure functions handle invalid inputs", {
 })
 
 test_that("check_database now accepts 'datalake' parameter", {
+  debug_log("Testing public datalake infrastructure functions handle invalid inputs")
   # Test that check_database accepts the new datalake parameter
   expect_true(check_database("datawarehouse"))
   expect_true(check_database("datamarts"))
@@ -77,6 +99,7 @@ test_that("ellipse_connect supports datalake database parameter", {
 
   # Test connection to public datalake
   expect_no_error({
+  debug_log("Testing ellipse_connect supports datalake database parameter")
     connection_result <- ellipse_connect(env = "DEV", database = "datalake")
 
     # Function should return a connection object or handle gracefully
@@ -97,6 +120,7 @@ test_that("ellipse_discover works with public datalake connection", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   expect_no_error({
+  debug_log("Testing ellipse_discover works with public datalake connection")
     # Connect to public datalake
     conn <- ellipse_connect(env = "DEV", database = "datalake")
 
@@ -135,6 +159,7 @@ test_that("ellipse_discover maintains backward compatibility", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   expect_no_error({
+  debug_log("Testing ellipse_discover maintains backward compatibility")
     # Test with datawarehouse (should work as before)
     conn_dw <- ellipse_connect(env = "DEV", database = "datawarehouse")
 
@@ -165,6 +190,7 @@ test_that("ellipse_discover with tag parameter works for public datalake", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   expect_no_error({
+  debug_log("Testing ellipse_discover with tag parameter works for public datalake")
     conn <- ellipse_connect(env = "DEV", database = "datalake")
 
     if (!is.null(conn) && !inherits(conn, "error")) {

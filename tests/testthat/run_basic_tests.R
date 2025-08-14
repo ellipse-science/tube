@@ -9,7 +9,7 @@ cat("=== TESTING BASIC UTILITY FUNCTIONS ===\n")
 readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all(".", quiet = TRUE)
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
 
 # Run ONLY the basic function tests
 cat("Running test-basic-functions.R...\n")

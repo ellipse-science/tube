@@ -5,7 +5,26 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "ellipse-main")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("ellipse main functions can be loaded and have proper signatures", {
   # Check that all ellipse main functions exist
@@ -35,6 +54,7 @@ test_that("ellipse main functions can be loaded and have proper signatures", {
 
 # Tests for ellipse_connect function
 test_that("ellipse_connect validates input parameters and establishes connections", {
+  debug_log("Testing ellipse main functions can be loaded and have proper signatures")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   # Test that ellipse_connect responds properly to parameters
@@ -64,6 +84,7 @@ test_that("ellipse_disconnect handles connection objects properly", {
 
   # Test with a real connection if possible
   expect_no_error({
+  debug_log("Testing ellipse_disconnect handles connection objects properly")
     # Try to get a connection and disconnect it
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
@@ -85,6 +106,7 @@ test_that("ellipse_discover validates parameters and discovers resources", {
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_discover validates parameters and discovers resources")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       discover_result <- ellipse_discover(conn, table = NULL)
@@ -105,6 +127,7 @@ test_that("ellipse_describe validates parameters and describes resources", {
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_describe validates parameters and describes resources")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       describe_result <- ellipse_describe(conn, table = "nonexistent_table")
@@ -126,6 +149,7 @@ test_that("ellipse_query validates parameters and executes queries", {
 
   # Test with real connection and simple query
   expect_no_error({
+  debug_log("Testing ellipse_query validates parameters and executes queries")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       query_result <- ellipse_query(conn, dataset = "nonexistent_table")
@@ -146,6 +170,7 @@ test_that("ellipse_ingest validates parameters and handles data ingestion", {
 
   # Test with real connection and test data
   expect_no_error({
+  debug_log("Testing ellipse_ingest validates parameters and handles data ingestion")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       # Create a temporary test file
@@ -171,6 +196,7 @@ test_that("ellipse_process validates parameters and handles data processing", {
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_process validates parameters and handles data processing")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       process_result <- tryCatch(
@@ -199,6 +225,7 @@ test_that("ellipse_publish validates parameters and handles publishing", {
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_publish validates parameters and handles publishing")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       publish_result <- tryCatch(
@@ -227,6 +254,7 @@ test_that("ellipse_unpublish validates parameters and handles unpublishing", {
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_unpublish validates parameters and handles unpublishing")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       unpublish_result <- tryCatch(
@@ -255,6 +283,7 @@ test_that("ellipse_partitions validates parameters and handles partition operati
 
   # Test with real connection
   expect_no_error({
+  debug_log("Testing ellipse_partitions validates parameters and handles partition operations")
     conn <- ellipse_connect(env = "DEV", database = "datawarehouse")
     if (!is.null(conn) && !inherits(conn, "error")) {
       partitions_result <- tryCatch(
@@ -277,6 +306,7 @@ test_that("ellipse functions can work together in a typical workflow", {
 
   # Test a potential workflow: connect -> discover -> describe -> query -> disconnect
   expect_no_error({
+  debug_log("Testing ellipse functions can work together in a typical workflow")
     # Step 1: Connect
     connection <- ellipse_connect(env = "DEV", database = "datawarehouse")
 
@@ -329,6 +359,7 @@ test_that("ellipse functions perform proper parameter validation", {
 
 # Test ellipse functions with real data processing
 test_that("ellipse functions handle real data processing workflows", {
+  debug_log("Testing ellipse functions perform proper parameter validation")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   # Create test data
@@ -385,6 +416,7 @@ test_that("ellipse functions handle errors gracefully and provide helpful messag
 
 # Test that all main ellipse functions are properly exported
 test_that("exported ellipse functions are available", {
+  debug_log("Testing ellipse functions handle errors gracefully and provide helpful messages")
   # Test that ALL main ellipse functions are properly exported
   expect_true(exists("ellipse_connect", mode = "function"))
   expect_true(exists("ellipse_disconnect", mode = "function"))

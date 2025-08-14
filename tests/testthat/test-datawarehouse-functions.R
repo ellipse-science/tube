@@ -3,27 +3,29 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "datawarehouse-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("DATAWAREHOUSE: function signatures are correct", {
-  cat("\n=== TESTING FUNCTION SIGNATURES ===\n")
-
-  # Display the actual production code being tested
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("1. list_datawarehouse_database <- function(credentials) {\n")
-  cat("     datawarehouse_database <- list_glue_databases(credentials, \"datawarehouse\")\n")
-  cat("     return(datawarehouse_database)\n")
-  cat("   }\n\n")
-
-  cat("2. list_datawarehouse_tables <- function(credentials, simplify = TRUE) {\n")
-  cat("     datawarehouse_database <- list_glue_tables(credentials, \"datawarehouse\")\n")
-  cat("     if (simplify) {\n")
-  cat("       return(glue_table_list_to_tibble(datawarehouse_database))\n")
-  cat("     }\n")
-  cat("     return(datawarehouse_database)\n")
-  cat("   }\n\n")
-
-  cat("TESTING: Function existence and signatures...\n")
+  debug_log("Testing DATAWAREHOUSE: function signatures are correct")
 
   # Check that all datawarehouse functions exist
   expect_true(exists("list_datawarehouse_database", mode = "function"))
@@ -33,17 +35,10 @@ test_that("DATAWAREHOUSE: function signatures are correct", {
   expect_equal(length(formals(list_datawarehouse_database)), 1) # credentials
   expect_equal(length(formals(list_datawarehouse_tables)), 2) # credentials, simplify
 
-  cat("✅ Function signatures verified!\n")
 })
 
 test_that("DATAWAREHOUSE: list_datawarehouse_database validates NULL credentials", {
-  cat("\n=== TESTING NULL CREDENTIAL VALIDATION ===\n")
 
-  cat("PRODUCTION CODE: list_datawarehouse_database(credentials)\n")
-  cat("-> Calls: list_glue_databases(credentials, \"datawarehouse\")\n")
-  cat("-> Returns: character vector of database names or NULL\n\n")
-
-  cat("TESTING: NULL credentials should trigger error...\n")
 
   # Test with NULL credentials
   expect_error(
@@ -51,55 +46,34 @@ test_that("DATAWAREHOUSE: list_datawarehouse_database validates NULL credentials
     class = "error"
   )
 
-  cat("✅ NULL validation works correctly!\n")
 })
 
 test_that("DATAWAREHOUSE: list_datawarehouse_database works with real AWS", {
+  debug_log("Testing DATAWAREHOUSE: list_datawarehouse_database validates NULL credentials")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
-  cat("\n=== TESTING REAL AWS INTEGRATION ===\n")
-
-  cat("PRODUCTION CODE FLOW:\n")
-  cat("list_datawarehouse_database(creds)\n")
-  cat("  └─> list_glue_databases(creds, \"datawarehouse\")\n")
-  cat("      └─> paws.analytics::glue(config = creds)\n")
-  cat("      └─> glue_client$get_databases()\n")
-  cat("      └─> filter databases containing \"datawarehouse\"\n")
-  cat("      └─> return character vector or NULL\n\n")
 
   creds <- get_real_aws_credentials_dev()
 
-  cat("TESTING: Real AWS database listing...\n")
 
   # Test listing datawarehouse database
   result <- list_datawarehouse_database(creds)
   expect_true(is.character(result) || is.null(result))
 
-  cat("Result type:", class(result), "\n")
-  cat("Result length:", if (is.null(result)) "NULL" else length(result), "\n")
 
   # If database exists, verify it contains "datawarehouse" or "datamart" in name
   # (based on the function implementation that filters by "datamart")
   if (!is.null(result) && length(result) > 0) {
-    cat("Found databases:", paste(result, collapse = ", "), "\n")
     expect_true(any(grepl("datamart|datawarehouse", result, ignore.case = TRUE)))
     expect_true(all(is.character(result)))
     expect_true(all(nzchar(result)))
-    cat("✅ Database filtering works correctly!\n")
   } else {
-    cat("ℹ️ No datawarehouse databases found in this environment\n")
+    test_detail("ℹ️ No datawarehouse databases found in this environment\n")
   }
 })
 
 test_that("DATAWAREHOUSE: list_datawarehouse_tables validates NULL credentials", {
-  cat("\n=== TESTING TABLES FUNCTION NULL VALIDATION ===\n")
 
-  cat("PRODUCTION CODE: list_datawarehouse_tables(credentials, simplify = TRUE)\n")
-  cat("-> Calls: list_glue_tables(credentials, \"datawarehouse\")\n")
-  cat("-> If simplify=TRUE: glue_table_list_to_tibble() -> data.frame\n")
-  cat("-> If simplify=FALSE: raw list from AWS API\n\n")
-
-  cat("TESTING: NULL credentials should trigger error...\n")
 
   # Test with NULL credentials
   expect_error(
@@ -107,101 +81,75 @@ test_that("DATAWAREHOUSE: list_datawarehouse_tables validates NULL credentials",
     class = "error"
   )
 
-  cat("✅ NULL validation works correctly!\n")
 })
 
 test_that("DATAWAREHOUSE: list_datawarehouse_tables returns correct data types", {
+  debug_log("Testing DATAWAREHOUSE: list_datawarehouse_tables validates NULL credentials")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
-  cat("\n=== TESTING TABLE LISTING DATA TYPES ===\n")
-
-  cat("PRODUCTION CODE ANALYSIS:\n")
-  cat("list_datawarehouse_tables(creds, simplify = TRUE):\n")
-  cat("  └─> list_glue_tables(creds, \"datawarehouse\")\n")
-  cat("      └─> glue_client$get_tables(\"\", \"datawarehouse\")\n")
-  cat("      └─> if simplify: glue_table_list_to_tibble(tables)\n")
-  cat("          └─> tibble with cols: table_name, col_name, col_type, is_partition\n")
-  cat("      └─> if !simplify: raw AWS API list response\n\n")
 
   creds <- get_real_aws_credentials_dev()
 
-  cat("TESTING: simplify=TRUE (should return data.frame)...\n")
 
   # Test listing tables with simplify = TRUE
   tables_simple <- list_datawarehouse_tables(creds, simplify = TRUE)
   expect_true(is.data.frame(tables_simple) || is.null(tables_simple))
 
-  cat("simplify=TRUE result type:", class(tables_simple), "\n")
 
-  cat("TESTING: simplify=FALSE (should return list)...\n")
 
   # Test listing tables with simplify = FALSE
   tables_detailed <- list_datawarehouse_tables(creds, simplify = FALSE)
   expect_true(is.list(tables_detailed) || is.null(tables_detailed))
 
-  cat("simplify=FALSE result type:", class(tables_detailed), "\n")
 
   # If tables exist, verify structure
   if (!is.null(tables_simple) && nrow(tables_simple) > 0) {
-    cat("Simplified table structure:\n")
-    cat("- Rows:", nrow(tables_simple), "\n")
-    cat("- Columns:", paste(names(tables_simple), collapse = ", "), "\n")
+    test_detail("Simplified table structure:")
+    test_detail(sprintf("- Rows: %s", nrow(tables_simple)))
+    test_detail(sprintf("- Columns: %s", paste(names(tables_simple), collapse = ", ")))
 
     expect_true(is.data.frame(tables_simple))
     expected_cols <- c("table_name", "col_name", "col_type", "is_partition")
     expect_true(all(expected_cols %in% names(tables_simple)))
-    cat("✅ Data.frame structure verified!\n")
   } else {
-    cat("ℹ️ No tables found in simplified format\n")
+    test_detail("ℹ️ No tables found in simplified format")
   }
 
   if (!is.null(tables_detailed) && length(tables_detailed) > 0) {
-    cat("Detailed table structure:\n")
-    cat("- List length:", length(tables_detailed), "\n")
-    cat("- List names:", paste(names(tables_detailed), collapse = ", "), "\n")
+    test_detail("Detailed table structure:")
+    test_detail(sprintf("- List names: %s", paste(names(tables_detailed), collapse = ", ")))
 
     expect_true(is.list(tables_detailed))
-    cat("✅ List structure verified!\n")
   } else {
-    cat("ℹ️ No tables found in detailed format\n")
+    test_detail("ℹ️ No tables found in detailed format")
   }
 })
 
 test_that("DATAWAREHOUSE: simplify parameter changes return types correctly", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
-  cat("\n=== TESTING SIMPLIFY PARAMETER BEHAVIOR ===\n")
 
-  cat("PRODUCTION CODE LOGIC:\n")
-  cat("list_datawarehouse_tables(creds, simplify = TRUE):\n")
-  cat("  tables <- list_glue_tables(creds, \"datawarehouse\")\n")
-  cat("  if (simplify) {\n")
-  cat("    return(glue_table_list_to_tibble(tables))  # TIBBLE/DATA.FRAME\n")
-  cat("  }\n")
-  cat("  return(tables)  # RAW LIST FROM AWS API\n\n")
-
-  cat("SUPPORTING FUNCTION: glue_table_list_to_tibble():\n")
-  cat("  - Creates tibble with columns: table_name, col_name, col_type, is_partition\n")
-  cat("  - Processes both regular columns and partition keys\n")
-  cat("  - Combines all table metadata into structured format\n\n")
+  test_detail("SUPPORTING FUNCTION: glue_table_list_to_tibble():\n")
+  test_detail("  - Creates tibble with columns: table_name, col_name, col_type, is_partition\n")
+  test_detail("  - Processes both regular columns and partition keys\n")
+  test_detail("  - Combines all table metadata into structured format\n\n")
 
   creds <- get_real_aws_credentials_dev()
 
-  cat("TESTING: Both simplify modes...\n")
 
   # Get tables in both formats
   simple_result <- list_datawarehouse_tables(creds, simplify = TRUE)
   detailed_result <- list_datawarehouse_tables(creds, simplify = FALSE)
 
-  cat("simplify=TRUE result:", class(simple_result), "\n")
-  cat("simplify=FALSE result:", class(detailed_result), "\n")
+  debug_log("Testing DATAWAREHOUSE: simplify parameter changes return types correctly")
+  test_detail(sprintf("simplify=TRUE result: %s", class(simple_result)))
+  test_detail(sprintf("simplify=FALSE result: %s", class(detailed_result)))
 
   # If both have results, they should be different types but related
   if (!is.null(simple_result) && !is.null(detailed_result) &&
     length(simple_result) > 0 && length(detailed_result) > 0) {
-    cat("COMPARING RESULTS:\n")
-    cat("- Simple format rows:", nrow(simple_result), "\n")
-    cat("- Detailed format list length:", length(detailed_result), "\n")
+    test_detail("COMPARING RESULTS:")
+    test_detail(sprintf("- Simple format rows: %s", nrow(simple_result)))
 
     # Simple should be data.frame (tibble)
     expect_true(is.data.frame(simple_result))
@@ -213,9 +161,8 @@ test_that("DATAWAREHOUSE: simplify parameter changes return types correctly", {
     expect_true(length(simple_result) > 0)
     expect_true(length(detailed_result) > 0)
 
-    cat("✅ Simplify parameter works correctly - different return types!\n")
   } else {
-    cat("ℹ️ One or both formats returned empty results - normal for empty schema\n")
+    test_detail("ℹ️ One or both formats returned empty results - normal for empty schema\n")
   }
 })
 
@@ -226,6 +173,7 @@ test_that("DATAWAREHOUSE: functions handle AWS API errors gracefully", {
 
   # All datawarehouse functions should handle API errors gracefully
   expect_no_error({
+  debug_log("Testing DATAWAREHOUSE: functions handle AWS API errors gracefully")
     db_result <- list_datawarehouse_database(creds)
     expect_true(is.character(db_result) || is.null(db_result))
   })
@@ -250,6 +198,7 @@ test_that("DATAWAREHOUSE: database and table functions integrate properly", {
   datawarehouse_db <- list_datawarehouse_database(creds)
 
   if (!is.null(datawarehouse_db) && length(datawarehouse_db) > 0) {
+  debug_log("Testing DATAWAREHOUSE: database and table functions integrate properly")
     # If we have a datawarehouse database, listing tables should work
     tables <- list_datawarehouse_tables(creds, simplify = TRUE)
 
@@ -274,6 +223,7 @@ test_that("DATAWAREHOUSE: bucket and database integration works", {
 
   # Test that bucket and database functions return consistent results
   if (!is.null(datawarehouse_bucket) && !is.null(datawarehouse_db)) {
+  debug_log("Testing DATAWAREHOUSE: bucket and database integration works")
     expect_true(length(datawarehouse_bucket) > 0)
     expect_true(length(datawarehouse_db) > 0)
 
@@ -296,6 +246,7 @@ test_that("DATAWAREHOUSE: functions handle empty results correctly", {
 
   # Functions should handle cases where no resources exist
   expect_no_error({
+  debug_log("Testing DATAWAREHOUSE: functions handle empty results correctly")
     db_result <- list_datawarehouse_database(creds)
     # Should return NULL or empty character vector if no databases
     if (!is.null(db_result)) {
@@ -328,6 +279,7 @@ test_that("DATAWAREHOUSE: functions return consistent data types", {
   # Test that functions consistently return expected types
   db_result <- list_datawarehouse_database(creds)
   if (!is.null(db_result)) {
+  debug_log("Testing DATAWAREHOUSE: functions return consistent data types")
     expect_true(is.character(db_result))
     expect_true(length(db_result) >= 0)
   }
@@ -348,39 +300,32 @@ test_that("DATAWAREHOUSE: functions return consistent data types", {
 test_that("DATAWAREHOUSE: Glue integration works correctly", {
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
-  cat("\n=== TESTING GLUE INTEGRATION ===\n")
 
-  cat("PRODUCTION CODE INTEGRATION FLOW:\n")
-  cat("1. list_datawarehouse_database(creds)\n")
-  cat("   └─> list_glue_databases(creds, \"datawarehouse\")\n\n")
+  test_detail("   └─> Should return SAME results as datawarehouse wrapper\n\n")
 
-  cat("2. list_glue_databases(creds, \"datawarehouse\") [DIRECT CALL]\n")
-  cat("   └─> Should return SAME results as datawarehouse wrapper\n\n")
+  test_detail("3. list_glue_tables(creds, database_name, NULL, TRUE)\n")
+  test_detail("   └─> Uses database from step 1 to get table details\n\n")
 
-  cat("3. list_glue_tables(creds, database_name, NULL, TRUE)\n")
-  cat("   └─> Uses database from step 1 to get table details\n\n")
-
-  cat("DEPENDENCY CHAIN:\n")
-  cat("datawarehouse functions -> glue functions -> paws.analytics::glue -> AWS API\n\n")
+  test_detail("datawarehouse functions -> glue functions -> paws.analytics::glue -> AWS API\n\n")
 
   creds <- get_real_aws_credentials_dev()
 
-  cat("TESTING: Datawarehouse vs direct Glue calls...\n")
 
   # Test that datawarehouse functions work alongside Glue functions
   datawarehouse_db <- list_datawarehouse_database(creds)
   glue_databases <- list_glue_databases(creds, "datawarehouse")
 
-  cat("Datawarehouse wrapper result:", if (is.null(datawarehouse_db)) {
+  debug_log("Testing DATAWAREHOUSE: Glue integration works correctly")
+  test_detail(sprintf("Datawarehouse wrapper result: %s", if (is.null(datawarehouse_db)) {
     "NULL"
   } else {
     paste(datawarehouse_db, collapse = ", ")
-  }, "\n")
-  cat("Direct Glue call result:", if (is.null(glue_databases)) {
+  }))
+  test_detail(sprintf("Direct Glue call result: %s", if (is.null(glue_databases)) {
     "NULL"
   } else {
     paste(glue_databases, collapse = ", ")
-  }, "\n")
+  }))
 
   # These should be consistent if both find databases
   if (!is.null(datawarehouse_db) && !is.null(glue_databases) &&
@@ -393,9 +338,8 @@ test_that("DATAWAREHOUSE: Glue integration works correctly", {
     expect_true(all(nzchar(datawarehouse_db)))
     expect_true(all(nzchar(glue_databases)))
 
-    cat("✅ Wrapper and direct calls return consistent results!\n")
   } else {
-    cat("ℹ️ No databases found - integration cannot be fully tested\n")
+    test_detail("ℹ️ No databases found - integration cannot be fully tested\n")
   }
 
   # Test table listing integration
@@ -403,15 +347,13 @@ test_that("DATAWAREHOUSE: Glue integration works correctly", {
 
   if (!is.null(datawarehouse_tables) && !is.null(datawarehouse_db) &&
     length(datawarehouse_tables) > 0 && length(datawarehouse_db) > 0) {
-    cat("TESTING: Table integration with database:", datawarehouse_db[1], "\n")
 
     # Should be able to get Glue tables for the same database
     glue_tables <- list_glue_tables(creds, datawarehouse_db[1], NULL, TRUE)
     expect_true(is.data.frame(glue_tables) || is.list(glue_tables) || is.null(glue_tables))
 
-    cat("Direct Glue table call result:", class(glue_tables), "\n")
-    cat("✅ Table integration works!\n")
+    test_detail(sprintf("Direct Glue table call result: %s", class(glue_tables)))
   } else {
-    cat("ℹ️ No tables available for integration testing\n")
+    test_detail("ℹ️ No tables available for integration testing")
   }
 })

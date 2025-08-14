@@ -4,7 +4,26 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "utility-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("utility functions can be loaded and have proper signatures", {
   # Check that all utility functions exist
@@ -25,6 +44,7 @@ test_that("utility functions can be loaded and have proper signatures", {
 
 # Tests for ask_yes_no function
 test_that("ask_yes_no handles unattended options correctly", {
+  debug_log("Testing utility functions can be loaded and have proper signatures")
   # Test with "oui" unattended option
   result <- ask_yes_no("Test question?", unattended_option = "oui")
   expect_true(result)
@@ -57,6 +77,7 @@ test_that("ask_yes_no validates input parameters", {
 })
 
 test_that("ask_yes_no handles edge cases", {
+  debug_log("Testing ask_yes_no validates input parameters")
   # Test with case variations
   expect_true(ask_yes_no("Test?", "oui"))
   expect_true(ask_yes_no("Test?", "OUI")) # Should handle case
@@ -81,6 +102,7 @@ test_that("ask_1_2 handles unattended options correctly", {
 })
 
 test_that("ask_1_2 validates unattended options", {
+  debug_log("Testing ask_1_2 handles unattended options correctly")
   # Test with invalid unattended option
   expect_error(
     ask_1_2("Choose option:", unattended_option = "3"),
@@ -115,12 +137,13 @@ test_that("ask_1_2 handles edge cases", {
 
 # Tests for suppress_console_output function
 test_that("suppress_console_output suppresses output correctly", {
+  debug_log("Testing ask_1_2 handles edge cases")
   # Test that output is suppressed
   temp_file <- tempfile()
 
   # Function that would normally produce output
   test_expr <- {
-    cat("This should be suppressed\n")
+    test_detail("This should be suppressed\n")
     print("This too")
     message("And this message")
     "return_value"
@@ -140,8 +163,9 @@ test_that("suppress_console_output handles expressions with errors", {
   # Test that errors are still propagated
   expect_error(
     {
+  debug_log("Testing suppress_console_output handles expressions with errors")
       suppress_console_output({
-        cat("Some output\n")
+        test_detail("Some output\n")
         stop("Test error")
       })
     },
@@ -156,6 +180,7 @@ test_that("suppress_console_output handles different expression types", {
 
   # Test with function call
   result2 <- suppress_console_output({
+  debug_log("Testing suppress_console_output handles different expression types")
     x <- 1 + 1
     x * 2
   })
@@ -163,7 +188,7 @@ test_that("suppress_console_output handles different expression types", {
 
   # Test with NULL result
   result3 <- suppress_console_output({
-    cat("output\n")
+    test_detail("output\n")
     NULL
   })
   expect_null(result3)
@@ -196,6 +221,7 @@ test_that("print_list_with_nulls handles lists with NULL values", {
 })
 
 test_that("print_list_with_nulls handles different data types", {
+  debug_log("Testing print_list_with_nulls handles lists with NULL values")
   # Test list with various data types
   complex_list <- list(
     number = 123,
@@ -221,6 +247,7 @@ test_that("print_list_with_nulls handles unnamed lists", {
 
 # Tests for convert_url_to_key function
 test_that("convert_url_to_key converts URLs correctly", {
+  debug_log("Testing print_list_with_nulls handles unnamed lists")
   # Test basic HTTP URL
   url1 <- "https://example.com/path/to/file.html"
   result1 <- convert_url_to_key(url1)
@@ -257,6 +284,7 @@ test_that("convert_url_to_key handles special characters", {
 })
 
 test_that("convert_url_to_key handles edge cases", {
+  debug_log("Testing convert_url_to_key handles special characters")
   # Test empty string
   result_empty <- convert_url_to_key("")
   expect_equal(result_empty, "")
@@ -289,6 +317,7 @@ test_that("convert_url_to_key produces consistent results", {
 
 # Tests for pipe operator %>%
 test_that("pipe operator works correctly", {
+  debug_log("Testing convert_url_to_key produces consistent results")
   # Test basic piping
   result1 <- 1:5 %>% sum()
   expect_equal(result1, 15)
@@ -320,6 +349,7 @@ test_that("pipe operator handles different data types", {
 })
 
 test_that("utility functions handle error conditions gracefully", {
+  debug_log("Testing pipe operator handles different data types")
   # Test functions with invalid inputs
   expect_error(ask_1_2("test", "invalid")) # Should error on invalid option
 

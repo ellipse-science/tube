@@ -2,7 +2,26 @@
 # Tests for: list_landing_zone_bucket, upload_file_to_landing_zone, parse_landing_zone_input
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# DEBUGGING TESTS:
+# - Normal run: Routine output suppressed for clean results
+# - Verbose mode: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging
+# - Example: Sys.setenv(TUBE_TEST_VERBOSE = "TRUE"); devtools::test(filter = "landing-functions")
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
+
 
 test_that("landing zone functions can be loaded and have proper signatures", {
   # Check that all landing zone functions exist
@@ -19,6 +38,7 @@ test_that("landing zone functions can be loaded and have proper signatures", {
 
 # Tests for list_landing_zone_bucket function
 test_that("list_landing_zone_bucket validates input parameters", {
+  debug_log("Testing landing zone functions can be loaded and have proper signatures")
   # Test with NULL credentials
   expect_error(
     list_landing_zone_bucket(credentials = NULL),
@@ -38,6 +58,7 @@ test_that("list_landing_zone_bucket works with real AWS credentials", {
   # If bucket exists, verify it contains "landing" in name
   # (based on typical AWS naming patterns for landing zones)
   if (!is.null(result) && length(result) > 0) {
+  debug_log("Testing list_landing_zone_bucket works with real AWS credentials")
     expect_true(all(is.character(result)))
     expect_true(all(nzchar(result)))
     expect_true(length(result) >= 1)
@@ -64,6 +85,7 @@ test_that("parse_landing_zone_input validates input parameters", {
 })
 
 test_that("parse_landing_zone_input handles valid directory paths", {
+  debug_log("Testing parse_landing_zone_input validates input parameters")
   # Create temporary test directory and files
   temp_dir <- tempdir()
   test_folder <- file.path(temp_dir, "test_folder")
@@ -109,6 +131,7 @@ test_that("parse_landing_zone_input handles paths with special characters", {
 })
 
 test_that("parse_landing_zone_input normalizes path formats", {
+  debug_log("Testing parse_landing_zone_input handles paths with special characters")
   # Create temporary test files
   temp_dir <- tempdir()
   test_folder <- file.path(temp_dir, "test_normalization")
@@ -167,6 +190,7 @@ test_that("upload_file_to_landing_zone validates input parameters", {
 })
 
 test_that("upload_file_to_landing_zone handles non-existent files", {
+  debug_log("Testing upload_file_to_landing_zone validates input parameters")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -201,6 +225,7 @@ test_that("upload_file_to_landing_zone works with real AWS credentials and files
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 
   expect_no_error({
+  debug_log("Testing upload_file_to_landing_zone works with real AWS credentials and files")
     result <- upload_file_to_landing_zone(
       credentials = creds,
       filepath = temp_file,
@@ -224,6 +249,7 @@ test_that("upload_file_to_landing_zone handles different file types", {
   writeLines("Test text content", temp_txt)
 
   expect_no_error({
+  debug_log("Testing upload_file_to_landing_zone handles different file types")
     upload_file_to_landing_zone(
       credentials = creds,
       filepath = temp_txt,
@@ -258,6 +284,7 @@ test_that("landing zone functions integrate with each other properly", {
   landing_bucket <- list_landing_zone_bucket(creds)
 
   if (!is.null(landing_bucket) && length(landing_bucket) > 0) {
+  debug_log("Testing landing zone functions integrate with each other properly")
     # Create a test folder and parse it
     temp_dir <- tempdir()
     test_integration_folder <- file.path(temp_dir, "integration_test")
@@ -301,6 +328,7 @@ test_that("landing zone functions work with S3 integration", {
   all_buckets <- list_s3_buckets(creds, "landing") # Add required type parameter
 
   if (!is.null(landing_bucket) && !is.null(all_buckets)) {
+  debug_log("Testing landing zone functions work with S3 integration")
     expect_true(is.character(landing_bucket))
     expect_true(is.character(all_buckets))
 
@@ -320,6 +348,7 @@ test_that("landing zone functions handle AWS API errors gracefully", {
 
   # All landing zone functions should handle API errors gracefully
   expect_no_error({
+  debug_log("Testing landing zone functions handle AWS API errors gracefully")
     bucket_result <- list_landing_zone_bucket(creds)
     expect_true(is.character(bucket_result) || is.null(bucket_result))
   })
@@ -365,6 +394,7 @@ test_that("parse_landing_zone_input produces consistent output", {
 })
 
 test_that("landing zone functions return consistent data types", {
+  debug_log("Testing parse_landing_zone_input produces consistent output")
   skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
 
   creds <- get_real_aws_credentials_dev()
@@ -409,6 +439,7 @@ test_that("upload_file_to_landing_zone handles large file names and paths", {
   )
 
   expect_no_error({
+  debug_log("Testing upload_file_to_landing_zone handles large file names and paths")
     upload_file_to_landing_zone(
       credentials = creds,
       filepath = temp_file,

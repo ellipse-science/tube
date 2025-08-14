@@ -43,7 +43,6 @@ can_test_real_aws_dev <- function() {
   # cat("🔍 [TEST HELPER] can_test_real_aws_dev() called\n")
   creds <- get_real_aws_credentials_dev()
   result <- !is.null(creds)
-  cat("    Result: ", result, "\n")
   result
 }
 
@@ -101,7 +100,7 @@ setup_real_testing <- function() {
   }
 
   message("✅ Real testing credentials available and properly formatted")
-  TRUE
+  invisible(TRUE)
 }
 
 # REAL Environment Helper Functions
@@ -110,7 +109,7 @@ setup_real_testing <- function() {
 load_test_environment <- function() {
   if (file.exists(".Renviron")) {
     readRenviron(".Renviron")
-    TRUE
+    invisible(TRUE)
   } else {
     message("❌ .Renviron file not found")
     FALSE

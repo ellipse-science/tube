@@ -522,7 +522,7 @@ invoke_datalake_indexing_lambda <- function(creds) {
 
       if (success) {
         logger::log_debug("[invoke_datalake_indexing_lambda] lambda invoked successfully")
-        cli::cli_alert_info("🔄 Indexation déclenchée...")
+        cli::cli_text("🔄 Indexation déclenchée...")
       } else {
         logger::log_error(
           paste("[invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode)

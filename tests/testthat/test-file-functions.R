@@ -3,39 +3,23 @@
 # Following requirement: "use real life connections and data... Do not mock everything"
 
 # Load current source code (not published package)
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
+
+# Helper function for conditional output suppression following testing best practices
+# Usage: Set TUBE_TEST_VERBOSE=TRUE to see all output for debugging failed tests
+conditionally_suppress <- function(expr) {
+  if (Sys.getenv("TUBE_TEST_VERBOSE", "FALSE") == "TRUE") {
+    # Verbose mode: show all output for debugging
+    expr
+  } else {
+    # Normal mode: suppress messages and warnings but preserve return values
+    # Note: CLI alerts from cli::cli_alert_*() may still show as they bypass normal suppression
+    suppressMessages(suppressWarnings(expr))
+  }
+}
 
 test_that("file processing functions can be loaded and have proper signatures", {
-  cat("\n=== TESTING FILE PROCESSING FUNCTION SIGNATURES ===\n")
-
-  cat("PRODUCTION CODE BEING TESTED:\n")
-  cat("1. is_csv_file <- function(filename) {\n")
-  cat("     # Attempts to read CSV file with read.csv()\n")
-  cat("     # Returns TRUE if successful, FALSE if parsing fails\n")
-  cat("     tryCatch({\n")
-  cat("       read.csv(filename, header = TRUE)\n")
-  cat("       return(TRUE)\n")
-  cat("     }, error = function(e) return(FALSE))\n")
-  cat("   }\n\n")
-
-  cat("2. is_rtf_file <- function(filename) {\n")
-  cat("     # Checks RTF file format and readability\n")
-  cat("     # Returns TRUE if valid RTF, FALSE otherwise\n")
-  cat("   }\n\n")
-
-  cat("3. parse_landing_zone_input <- function(file_or_folder, folder_content) {\n")
-  cat("     # Validates landing zone data structure\n")
-  cat("     # Checks file types, data integrity, folder structure\n")
-  cat("     # Returns validation results and file information\n")
-  cat("   }\n\n")
-
-  cat("4. get_column_type <- function(column) {\n")
-  cat("     # Analyzes column data to determine appropriate AWS Glue type\n")
-  cat("     # Maps R data types to Glue/Athena compatible types\n")
-  cat("   }\n\n")
-
-  cat("DATA VALIDATION PATTERN: File → read/parse → validate structure → return boolean/info\n\n")
-  cat("TESTING: Function existence and signatures...\n")
+  debug_log("Testing file processing functions can be loaded and have proper signatures")
 
   # Check that all file processing functions exist
   expect_true(exists("is_csv_file", mode = "function"))
@@ -49,21 +33,12 @@ test_that("file processing functions can be loaded and have proper signatures", 
   expect_equal(length(formals(parse_landing_zone_input)), 2) # file_or_folder, folder_content
   expect_equal(length(formals(get_column_type)), 1) # column
 
-  cat("✅ File processing function signatures verified!\n")
+  test_detail("All file processing functions found with correct signatures")
 })
 
 # Tests for is_csv_file function
 test_that("is_csv_file validates CSV files correctly", {
-  cat("\n=== TESTING CSV FILE VALIDATION ===\n")
-
-  cat("PRODUCTION CODE FLOW:\n")
-  cat("is_csv_file(filename)\n")
-  cat("  └─> tryCatch({\n")
-  cat("      └─> read.csv(filename, header = TRUE)\n")
-  cat("      └─> return(TRUE) if successful\n")
-  cat("  }, error = function(e) return(FALSE))\n\n")
-
-  cat("TESTING: Valid CSV file creation and validation...\n")
+  debug_log("Testing is_csv_file validates CSV files correctly")
 
   # Create a valid CSV file
   temp_csv <- tempfile(fileext = ".csv")
@@ -75,20 +50,20 @@ test_that("is_csv_file validates CSV files correctly", {
   )
   write.csv(test_data, temp_csv, row.names = FALSE)
 
-  cat("Created test CSV with", nrow(test_data), "rows and", ncol(test_data), "columns\n")
+  test_detail(sprintf("Created test CSV with %d rows and %d columns", nrow(test_data), ncol(test_data)))
 
   # Test valid CSV file
   result <- is_csv_file(temp_csv)
   expect_true(result)
 
-  cat("CSV validation result:", result, "\n")
-  cat("✅ Valid CSV file correctly identified!\n")
+  test_detail(sprintf("CSV validation result: %s", result))
 
   # Clean up
   unlink(temp_csv)
 })
 
 test_that("is_csv_file handles invalid CSV files", {
+  debug_log("Testing is_csv_file validates CSV files correctly")
   # Create an invalid CSV file (not properly formatted)
   temp_invalid <- tempfile(fileext = ".csv")
   writeLines(c("name,age,city", "Alice,25", "Bob,30,London,Extra"), temp_invalid)
@@ -107,6 +82,8 @@ test_that("is_csv_file handles non-existent files", {
 })
 
 test_that("is_csv_file handles different CSV formats", {
+  debug_log("Testing is_csv_file handles different CSV formats")
+  
   # Test with semicolon-separated values
   temp_csv_semi <- tempfile(fileext = ".csv")
   writeLines(c("name;age;city", "Alice;25;New York", "Bob;30;London"), temp_csv_semi)
@@ -130,6 +107,8 @@ test_that("is_csv_file handles different CSV formats", {
 
 # Tests for is_rtf_file function
 test_that("is_rtf_file validates RTF files correctly", {
+  debug_log("Testing is_rtf_file validates RTF files correctly")
+  
   # Create a valid RTF file
   temp_rtf <- tempfile(fileext = ".rtf")
   rtf_content <- c(
@@ -146,6 +125,8 @@ test_that("is_rtf_file validates RTF files correctly", {
 })
 
 test_that("is_rtf_file handles invalid RTF files", {
+  debug_log("Testing is_rtf_file handles invalid RTF files")
+  
   # Create an invalid RTF file (doesn't start with {\\rtf)
   temp_invalid_rtf <- tempfile(fileext = ".rtf")
   writeLines("This is not a valid RTF file", temp_invalid_rtf)
@@ -163,6 +144,8 @@ test_that("is_rtf_file handles non-existent files", {
 })
 
 test_that("is_rtf_file handles binary RTF files", {
+  debug_log("Testing is_rtf_file handles binary RTF files")
+  
   # Create a minimal RTF file in binary mode
   temp_rtf_binary <- tempfile(fileext = ".rtf")
   rtf_header <- charToRaw("{\\rtf1 Hello}")
@@ -187,6 +170,8 @@ test_that("get_column_type identifies integer columns correctly", {
 })
 
 test_that("get_column_type identifies decimal columns correctly", {
+  debug_log("Testing get_column_type identifies decimal columns correctly")
+  
   # Test double/decimal column
   dec_col <- c(1.5, 2.7, 3.14, 4.0, 5.99)
   expect_equal(get_column_type(dec_col), "decimal")
@@ -207,6 +192,8 @@ test_that("get_column_type identifies character columns correctly", {
 })
 
 test_that("get_column_type identifies date columns correctly", {
+  debug_log("Testing get_column_type identifies date columns correctly")
+  
   # Test date column
   date_col <- as.Date(c("2023-01-01", "2023-02-01", "2023-03-01"))
   expect_equal(get_column_type(date_col), "date")
@@ -228,6 +215,8 @@ test_that("get_column_type handles unsupported types", {
 })
 
 test_that("get_column_type handles edge cases", {
+  debug_log("Testing get_column_type handles edge cases")
+  
   # Test with all NA column
   all_na_col <- c(NA, NA, NA)
   result <- get_column_type(all_na_col)
@@ -260,6 +249,8 @@ test_that("get_column_type distinguishes between integer and decimal", {
 
 # Tests for parse_landing_zone_input function
 test_that("parse_landing_zone_input handles single CSV files", {
+  debug_log("Testing parse_landing_zone_input handles single CSV files")
+  
   # Create a test CSV file
   temp_csv <- tempfile(fileext = ".csv")
   test_data <- data.frame(col1 = 1:3, col2 = letters[1:3])
@@ -274,6 +265,8 @@ test_that("parse_landing_zone_input handles single CSV files", {
 })
 
 test_that("parse_landing_zone_input handles single RTF files", {
+  debug_log("Testing parse_landing_zone_input handles single RTF files")
+  
   # Create a test RTF file
   temp_rtf <- tempfile(fileext = ".rtf")
   rtf_content <- "{\\rtf1\\ansi\\deff0 Test RTF content.}"
@@ -288,6 +281,8 @@ test_that("parse_landing_zone_input handles single RTF files", {
 })
 
 test_that("parse_landing_zone_input handles directories with CSV files", {
+  debug_log("Testing parse_landing_zone_input handles directories with CSV files")
+  
   # Create a temporary directory with CSV files
   temp_dir <- tempdir()
   csv_dir <- file.path(temp_dir, "test_csv_dir")
@@ -328,6 +323,8 @@ test_that("parse_landing_zone_input handles invalid inputs", {
 })
 
 test_that("parse_landing_zone_input validates file formats", {
+  debug_log("Testing parse_landing_zone_input validates file formats")
+  
   # Create a directory with mixed file types (should fail)
   temp_dir <- tempdir()
   mixed_dir <- file.path(temp_dir, "mixed_test_dir")
@@ -372,6 +369,8 @@ test_that("parse_landing_zone_input validates CSV file integrity", {
 })
 
 test_that("file processing functions handle concurrent access", {
+  debug_log("Testing file processing functions handle concurrent access")
+  
   # Test that functions handle file operations safely
   temp_csv <- tempfile(fileext = ".csv")
   write.csv(data.frame(a = 1:5, b = letters[1:5]), temp_csv, row.names = FALSE)

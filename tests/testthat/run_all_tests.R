@@ -9,7 +9,7 @@ cat("=== MASTER TEST RUNNER - ALL UNIT TESTS ===\n")
 readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all(".", quiet = TRUE)
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
 
 # Test sequence
 test_files <- c(
