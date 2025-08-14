@@ -133,7 +133,7 @@ read_file_by_extension <- function(filepath, extension) {
   ext <- tolower(extension)
 
   # Suppress messages from file reading functions
-  df <- suppressMessages({
+  df <- suppressWarnings({
     switch(ext,
       "csv" = read_csv_with_overflow_handling(filepath),
       "dta" = haven::read_dta(filepath),
