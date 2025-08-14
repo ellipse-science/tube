@@ -135,9 +135,20 @@ invoke_datalake_indexing_lambda <- function(credentials) {
   )
   
   tryCatch({
+    # Find the correct lambda function using the generic finder
+    lambda_name <- find_datalake_indexing_lambda(credentials)
+    
+    if (is.null(lambda_name)) {
+      logger::log_warn("[tube::invoke_datalake_indexing_lambda] no matching lambda function found")
+      cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
+      return(FALSE)
+    }
+    
+    logger::log_debug(paste("[tube::invoke_datalake_indexing_lambda] using lambda:", lambda_name))
     logger::log_debug("[tube::invoke_datalake_indexing_lambda] invoking lambda")
+    
     result <- lambda_client$invoke(
-      FunctionName = "public-data-lake-content-lambda",
+      FunctionName = lambda_name,
       InvocationType = "Event"  # Async invocation
     )
     

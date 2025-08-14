@@ -371,12 +371,23 @@ invoke_datalake_indexing_lambda <- function(creds) {
   logger::log_debug("[invoke_datalake_indexing_lambda] entering function")
   
   tryCatch({
+    # Find the correct lambda function using the generic finder
+    lambda_name <- find_datalake_indexing_lambda(creds)
+    
+    if (is.null(lambda_name)) {
+      logger::log_warn("[invoke_datalake_indexing_lambda] no matching lambda function found")
+      cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
+      return(FALSE)
+    }
+    
+    logger::log_debug(paste("[invoke_datalake_indexing_lambda] using lambda:", lambda_name))
+    
     # Setup Lambda client
     lambda_client <- paws.compute::lambda(config = creds)
     
     # Invoke the lambda function (no payload needed)
     result <- lambda_client$invoke(
-      FunctionName = "public-data-lake-content-lambda",
+      FunctionName = lambda_name,
       InvocationType = "Event"  # Async invocation
     )
     
@@ -396,6 +407,33 @@ invoke_datalake_indexing_lambda <- function(creds) {
     cli::cli_alert_warning("⚠️ Erreur lors du déclenchement de l'indexation: {e$message}")
     return(FALSE)
   })
+}
+
+#' Find the lambda function for datalake indexing
+#' @param credentials AWS credentials from get_aws_credentials()
+#' @return Lambda function name if found, NULL otherwise
+#' @keywords internal
+find_datalake_indexing_lambda <- function(credentials) {
+  logger::log_debug("[find_datalake_indexing_lambda] entering function")
+  
+  # Updated patterns based on actual infrastructure
+  patterns <- c(
+    "publicdatalakecontent",           # Primary pattern
+    "public.*datalake.*content",       # Backup pattern with separators
+    "datalake.*content",               # Fallback pattern
+    "public.*data.*lake.*index",       # Alternative index pattern
+    "content.*lambda"                  # Generic content lambda
+  )
+  
+  lambda_name <- find_lambda_by_pattern(credentials, patterns, return_first = TRUE)
+  
+  if (!is.null(lambda_name)) {
+    logger::log_debug(paste("[find_datalake_indexing_lambda] found datalake indexing lambda:", lambda_name))
+  } else {
+    logger::log_warn("[find_datalake_indexing_lambda] no datalake indexing lambda found")
+  }
+  
+  return(lambda_name)
 }
 
 #' Interactive file and folder selector with current directory browsing
