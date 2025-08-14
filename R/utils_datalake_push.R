@@ -81,16 +81,7 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   
   # File/folder selection
   if (is.null(file_or_folder)) {
-    cli::cli_h2("📁 Sélection des fichiers")
-    cli::cli_text("Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
-    cli::cli_text("")
-    
-    file_or_folder <- readline(prompt = "📂 Chemin vers fichier ou dossier: ")
-    
-    if (!file.exists(file_or_folder)) {
-      cli::cli_alert_danger("Le fichier ou dossier spécifié n'existe pas!")
-      stop("Fichier introuvable")
-    }
+    file_or_folder <- interactive_file_folder_selector()
   }
   
   # Dataset name
@@ -405,4 +396,285 @@ invoke_datalake_indexing_lambda <- function(creds) {
     cli::cli_alert_warning("⚠️ Erreur lors du déclenchement de l'indexation: {e$message}")
     return(FALSE)
   })
+}
+
+#' Interactive file and folder selector with current directory browsing
+#' @keywords internal
+interactive_file_folder_selector <- function() {
+  cli::cli_h2("📁 Sélection intelligente des fichiers")
+  cli::cli_text("Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
+  cli::cli_text("")
+  
+  current_dir <- getwd()
+  cli::cli_text("📂 Répertoire actuel: {cli::col_blue(current_dir)}")
+  
+  repeat {
+    # Show options for selection
+    display_file_selection_menu(current_dir)
+    
+    choice <- readline(prompt = "👆 Votre choix: ")
+    
+    # Handle the choice
+    result <- process_file_selection_choice(choice, current_dir)
+    
+    if (!is.null(result)) {
+      if (result == "navigate") {
+        # User chose to navigate - continue the loop
+        current_dir <- getwd()  # Update current directory
+        next
+      } else {
+        # User made a valid selection
+        return(result)
+      }
+    }
+  }
+}
+
+#' Display file selection menu with current directory contents
+#' @keywords internal
+display_file_selection_menu <- function(current_dir) {
+  cli::cli_rule("📋 Options de sélection")
+  
+  # Show current directory contents
+  items <- list.files(current_dir, include.dirs = TRUE, no.. = TRUE)
+  
+  if (length(items) == 0) {
+    cli::cli_text("💡 Répertoire vide")
+  } else {
+    # Separate files and directories
+    full_paths <- file.path(current_dir, items)
+    is_dir <- file.info(full_paths)$isdir
+    
+    dirs <- items[is_dir]
+    files <- items[!is_dir]
+    
+    # Show supported files first
+    supported_exts <- c("\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$", 
+                       "\\.xlsx$", "\\.xls$", "\\.dat$")
+    supported_pattern <- paste(supported_exts, collapse = "|")
+    
+    supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
+    other_files <- files[!grepl(supported_pattern, files, ignore.case = TRUE)]
+    
+    # Display supported files
+    if (length(supported_files) > 0) {
+      cli::cli_h3("📄 Fichiers supportés")
+      for (i in seq_along(supported_files)) {
+        file_path <- file.path(current_dir, supported_files[i])
+        file_size <- format_file_size(file.info(file_path)$size)
+        cli::cli_text("  {cli::col_green(i)}. {supported_files[i]} {cli::col_silver('({file_size})')}")
+      }
+      cli::cli_text("")
+    }
+    
+    # Display directories
+    if (length(dirs) > 0) {
+      cli::cli_h3("📁 Dossiers")
+      dir_start <- length(supported_files)
+      for (i in seq_along(dirs)) {
+        dir_num <- dir_start + i
+        dir_path <- file.path(current_dir, dirs[i])
+        file_count <- length(list.files(dir_path, recursive = TRUE))
+        cli::cli_text("  {cli::col_blue(dir_num)}. {dirs[i]}/ {cli::col_silver('({file_count} fichiers)')}")
+      }
+      cli::cli_text("")
+    }
+    
+    # Display other files (collapsed)
+    if (length(other_files) > 0) {
+      cli::cli_h3("📎 Autres fichiers")
+      cli::cli_text("  {cli::col_silver(paste(length(other_files), 'fichier(s) non-supporté(s)'))}")
+      cli::cli_text("")
+    }
+  }
+  
+  # Show navigation and action options
+  cli::cli_h3("🧭 Navigation et actions")
+  cli::cli_text("  {cli::col_yellow('p')}. 📁 Naviguer vers le dossier parent")
+  cli::cli_text("  {cli::col_yellow('cd')}. 📂 Changer de répertoire (tapez le chemin)")
+  cli::cli_text("  {cli::col_yellow('.')}. 📂 Sélectionner le dossier actuel")
+  cli::cli_text("  {cli::col_yellow('r')}. 🔄 Rafraîchir la liste")
+  cli::cli_text("  {cli::col_yellow('q')}. ❌ Annuler")
+  cli::cli_text("")
+}
+
+#' Process user's file selection choice
+#' @keywords internal
+process_file_selection_choice <- function(choice, current_dir) {
+  # Handle special commands
+  if (choice == "q") {
+    cli::cli_alert_info("Sélection annulée.")
+    stop("Sélection annulée par l'utilisateur")
+  }
+  
+  if (choice == "r") {
+    return("navigate")  # Signal to refresh
+  }
+  
+  if (choice == ".") {
+    if (confirm_directory_selection(current_dir)) {
+      return(current_dir)
+    } else {
+      return("navigate")
+    }
+  }
+  
+  if (choice == "p") {
+    parent_dir <- dirname(current_dir)
+    if (parent_dir != current_dir) {  # Not root
+      setwd(parent_dir)
+      cli::cli_alert_info("📁 Navigé vers: {parent_dir}")
+    } else {
+      cli::cli_alert_warning("⚠️ Déjà au répertoire racine")
+    }
+    return("navigate")
+  }
+  
+  if (choice == "cd") {
+    new_path <- readline(prompt = "📂 Nouveau chemin: ")
+    if (nchar(new_path) > 0 && dir.exists(new_path)) {
+      setwd(new_path)
+      cli::cli_alert_success("📁 Navigé vers: {new_path}")
+    } else {
+      cli::cli_alert_danger("❌ Chemin invalide ou inexistant")
+    }
+    return("navigate")
+  }
+  
+  # Handle numeric selection
+  choice_num <- suppressWarnings(as.integer(choice))
+  if (!is.na(choice_num)) {
+    return(handle_numeric_selection(choice_num, current_dir))
+  }
+  
+  # Handle direct path input
+  if (nchar(choice) > 0) {
+    # Check if it's a relative or absolute path
+    test_path <- if (file.exists(choice)) choice else file.path(current_dir, choice)
+    
+    if (file.exists(test_path)) {
+      if (file.info(test_path)$isdir) {
+        if (confirm_directory_selection(test_path)) {
+          return(test_path)
+        } else {
+          return("navigate")
+        }
+      } else {
+        return(test_path)
+      }
+    }
+  }
+  
+  cli::cli_alert_danger("❌ Choix invalide. Essayez à nouveau.")
+  return("navigate")
+}
+
+#' Handle numeric selection from the menu
+#' @keywords internal
+handle_numeric_selection <- function(choice_num, current_dir) {
+  items <- list.files(current_dir, include.dirs = TRUE, no.. = TRUE)
+  
+  if (length(items) == 0) {
+    cli::cli_alert_warning("⚠️ Aucun élément à sélectionner")
+    return("navigate")
+  }
+  
+  # Separate files and directories as in display function
+  full_paths <- file.path(current_dir, items)
+  is_dir <- file.info(full_paths)$isdir
+  
+  dirs <- items[is_dir]
+  files <- items[!is_dir]
+  
+  # Get supported files
+  supported_exts <- c("\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$", 
+                     "\\.xlsx$", "\\.xls$", "\\.dat$")
+  supported_pattern <- paste(supported_exts, collapse = "|")
+  supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
+  
+  # Calculate selection
+  if (choice_num <= length(supported_files)) {
+    # Selected a supported file
+    selected_file <- file.path(current_dir, supported_files[choice_num])
+    cli::cli_alert_success("✅ Fichier sélectionné: {basename(selected_file)}")
+    return(selected_file)
+  }
+  
+  dir_choice <- choice_num - length(supported_files)
+  if (dir_choice > 0 && dir_choice <= length(dirs)) {
+    # Selected a directory
+    selected_dir <- file.path(current_dir, dirs[dir_choice])
+    
+    # Ask if they want to navigate into it or select it
+    cli::cli_text("📁 Dossier sélectionné: {dirs[dir_choice]}")
+    action <- readline(prompt = "Voulez-vous (n)aviguer dedans ou le (s)électionner? [n/s]: ")
+    
+    if (tolower(action) == "s") {
+      if (confirm_directory_selection(selected_dir)) {
+        return(selected_dir)
+      } else {
+        return("navigate")
+      }
+    } else {
+      # Navigate into directory
+      setwd(selected_dir)
+      cli::cli_alert_info("📁 Navigé dans: {dirs[dir_choice]}")
+      return("navigate")
+    }
+  }
+  
+  cli::cli_alert_danger("❌ Numéro de sélection invalide")
+  return("navigate")
+}
+
+#' Confirm directory selection and show preview
+#' @keywords internal
+confirm_directory_selection <- function(dir_path) {
+  files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
+  supported_exts <- c("\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$", 
+                     "\\.xlsx$", "\\.xls$", "\\.dat$")
+  supported_pattern <- paste(supported_exts, collapse = "|")
+  supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
+  
+  cli::cli_rule("📁 Aperçu du dossier")
+  cli::cli_text("📂 Dossier: {dir_path}")
+  cli::cli_text("📄 Total fichiers: {length(files)}")
+  cli::cli_text("✅ Fichiers supportés: {length(supported_files)}")
+  
+  if (length(supported_files) == 0) {
+    cli::cli_alert_warning("⚠️ Aucun fichier supporté trouvé dans ce dossier")
+    return(ask_yes_no("Voulez-vous quand même sélectionner ce dossier?"))
+  }
+  
+  # Show first few supported files as preview
+  if (length(supported_files) > 0) {
+    cli::cli_text("📋 Aperçu des fichiers supportés:")
+    preview_count <- min(5, length(supported_files))
+    for (i in 1:preview_count) {
+      rel_path <- sub(paste0("^", dir_path, "/"), "", supported_files[i])
+      file_size <- format_file_size(file.info(supported_files[i])$size)
+      cli::cli_text("  • {rel_path} {cli::col_silver('({file_size})')}")
+    }
+    if (length(supported_files) > preview_count) {
+      cli::cli_text("  ... et {length(supported_files) - preview_count} autre(s)")
+    }
+  }
+  
+  return(ask_yes_no("Confirmer la sélection de ce dossier?"))
+}
+
+#' Format file size for display
+#' @keywords internal
+format_file_size <- function(size_bytes) {
+  if (is.na(size_bytes)) return("N/A")
+  
+  if (size_bytes < 1024) {
+    return(paste(size_bytes, "B"))
+  } else if (size_bytes < 1024^2) {
+    return(paste(round(size_bytes / 1024, 1), "KB"))
+  } else if (size_bytes < 1024^3) {
+    return(paste(round(size_bytes / 1024^2, 1), "MB"))
+  } else {
+    return(paste(round(size_bytes / 1024^3, 2), "GB"))
+  }
 }
