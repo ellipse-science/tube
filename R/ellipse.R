@@ -477,18 +477,20 @@ ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_ba
   folder_content <- parse_landing_zone_input(file_or_folder)
 
   cli::cli_alert_info("Les données sont en cours d'ingestion dans la landing zone...")
-  # Create a progress bar object
-  pb <- progress::progress_bar$new(
-    format = "  uploading files [:bar] :percent eta: :eta",
-    total = length(folder_content), # total number of iterations
-    clear = FALSE,
-    width = 60
+
+  # Initialize progress bar
+  total_files <- length(folder_content)
+  cli::cli_progress_bar(
+    name = "Upload des fichiers",
+    total = total_files,
+    format = "{cli::pb_name} {cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}",
+    clear = TRUE
   )
 
   # Loop with progress bar
   for (file in folder_content) {
     upload_file_to_landing_zone(creds, file, pipeline, file_batch, file_version)
-    pb$tick() # Update the progress bar
+    cli::cli_progress_update() # Update the progress bar
   }
 
   # TODO: do something better than the progress bar for 1 file : length(folder_content)

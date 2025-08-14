@@ -75,8 +75,22 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
       # check that the csv files are valid
       if (any(tools::file_ext(folder_content) == "csv")) {
         csv_files <- folder_content[tools::file_ext(folder_content) == "csv"]
-        # Use pblapply instead of sapply to apply is_csv_file with a progress bar
-        valid_csv_files <- unlist(pbapply::pblapply(csv_files, is_csv_file))
+
+        # Initialize progress bar for CSV validation
+        cli::cli_progress_bar(
+          name = "Validation des fichiers CSV",
+          total = length(csv_files),
+          format = "{cli::pb_name} {cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}",
+          clear = TRUE
+        )
+
+        # Apply is_csv_file with CLI progress bar
+        valid_csv_files <- logical(length(csv_files))
+        for (i in seq_along(csv_files)) {
+          valid_csv_files[i] <- is_csv_file(csv_files[i])
+          cli::cli_progress_update()
+        }
+
         if (!all(valid_csv_files)) {
           cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers CSV qui ne sont pas valides! 😅")
           return(NULL)
@@ -86,8 +100,22 @@ parse_landing_zone_input <- function(file_or_folder, folder_content) {
       # check that the rtf files are valid
       if (any(tools::file_ext(folder_content) == "rtf")) {
         rtf_files <- folder_content[tools::file_ext(folder_content) == "rtf"]
-        # Use pblapply instead of sapply to apply is_rtf_file with a progress bar
-        valid_rtf_files <- unlist(pbapply::pblapply(rtf_files, is_rtf_file))
+
+        # Initialize progress bar for RTF validation
+        cli::cli_progress_bar(
+          name = "Validation des fichiers RTF",
+          total = length(rtf_files),
+          format = "{cli::pb_name} {cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}",
+          clear = TRUE
+        )
+
+        # Apply is_rtf_file with CLI progress bar
+        valid_rtf_files <- logical(length(rtf_files))
+        for (i in seq_along(rtf_files)) {
+          valid_rtf_files[i] <- is_rtf_file(rtf_files[i])
+          cli::cli_progress_update()
+        }
+        
         if (!all(valid_rtf_files)) {
           cli::cli_alert_danger("Oups, le répertoire fourni contient des fichiers RTF qui ne sont pas valides! 😅")
           return(NULL)

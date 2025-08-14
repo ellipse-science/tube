@@ -368,12 +368,13 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
 
   cli::cli_alert_info("📤 Upload en cours vers s3://{bucket}")
 
-  # Create progress bar
-  pb <- progress::progress_bar$new(
-    format = "  uploading [:bar] :percent (:current/:total) eta: :eta",
-    total = length(files),
-    clear = FALSE,
-    width = 70
+  # Initialize progress bar
+  total_files <- length(files)
+  cli::cli_progress_bar(
+    name = "Upload des fichiers",
+    total = total_files,
+    format = "{cli::pb_name} {cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}",
+    clear = TRUE
   )
 
   success_count <- 0
@@ -405,7 +406,7 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
       FALSE  # Stop on first error
     })
 
-    pb$tick()
+    cli::cli_progress_update()
   }
 
   if (success_count == length(files)) {
