@@ -138,7 +138,6 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
 collect_all_metadata_interactive <- function() {
   cli::cli_h2("📊 Métadonnées du dataset")
   cli::cli_text("Ces informations sont importantes pour la gouvernance des données")
-  cli::cli_text("")
   
   metadata <- list()
   
