@@ -1,3 +1,45 @@
+# tube 0.6.0 (BETA)
+
+## 🚀 Major New Features
+
+### Public Datalake Integration
+* **NEW**: `ellipse_push()` - Upload data files to the public datalake with full metadata support
+* **NEW**: `ellipse_query()` - Query and download data from the public datalake
+* **NEW**: `ellipse_discover()` enhanced with public datalake dataset discovery
+* **NEW**: Interactive file browser for `ellipse_push()` with intuitive navigation
+* **NEW**: Comprehensive metadata collection including ethics, consent, and data governance
+
+### Enhanced User Experience
+* **NEW**: CLI-based progress bars for all file operations
+* **NEW**: Smart file format detection (CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT)
+* **NEW**: Automatic AWS Lambda indexing trigger for uploaded data
+* **NEW**: Rich metadata formatting and display
+
+### Data Governance & Compliance
+* **NEW**: Built-in data sensitivity levels (1-5 scale)
+* **NEW**: Consent expiry date tracking
+* **NEW**: Data destruction date management
+* **NEW**: Ethical approval stamp system
+* **NEW**: Custom metadata fields support
+
+## 🐛 Bug Fixes
+* Fixed progress bar display issues across different terminal environments
+* Improved error handling for AWS credential validation
+* Enhanced file validation with better user feedback
+
+## 📚 Documentation
+* Added comprehensive [CONCEPTS.md](CONCEPTS.md) explaining platform architecture
+* Updated README with public datalake usage examples
+* Enhanced function documentation with real-world examples
+
+## 🔧 Technical Improvements
+* Unified error handling patterns across all functions
+* Improved logging for debugging and monitoring
+* Enhanced test coverage for new functionality
+* Better AWS service integration and reliability
+
+---
+
 # tube 0.5.6
 
 * Support for double data type in datamarts tables

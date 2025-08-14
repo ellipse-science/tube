@@ -254,18 +254,18 @@ test_that("S3 metadata preparation works correctly", {
   s3_meta <- prepare_s3_metadata(custom_meta)
 
   # Should have system fields
-  expect_true("creation-date" %in% names(s3_meta))
-  expect_true("consent-expiry-date" %in% names(s3_meta))
-  expect_true("data-destruction-date" %in% names(s3_meta))
-  expect_true("sensitivity-level" %in% names(s3_meta))
-  expect_true("ethical-stamp" %in% names(s3_meta))
+  expect_true("creation_date" %in% names(s3_meta))
+  expect_true("consent_expiry_date" %in% names(s3_meta))
+  expect_true("data_destruction_date" %in% names(s3_meta))
+  expect_true("sensitivity_level" %in% names(s3_meta))
+  expect_true("ethical_stamp" %in% names(s3_meta))
 
   # Should have custom metadata as JSON
-  expect_true("user-metadata-json" %in% names(s3_meta))
+  expect_true("user_metadata_json" %in% names(s3_meta))
 
   # Test with no custom metadata
   s3_meta_empty <- prepare_s3_metadata(NULL)
-  expect_false("user-metadata-json" %in% names(s3_meta_empty))
+  expect_false("user_metadata_json" %in% names(s3_meta_empty))
 
   cat("✅ S3 metadata preparation tested!\n")
 })
@@ -313,7 +313,7 @@ test_that("Interactive mode functions exist", {
   cat("\n=== TESTING INTERACTIVE MODE FUNCTIONS ===\n")
 
   expect_true(exists("interactive_datalake_push_flow", mode = "function"))
-  expect_true(exists("collect_custom_metadata_interactive", mode = "function"))
+  expect_true(exists("collect_all_metadata_interactive", mode = "function"))
   expect_true(exists("display_upload_summary", mode = "function"))
 
   cat("✅ Interactive mode functions exist!\n")
