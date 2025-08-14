@@ -117,6 +117,8 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   
   # Confirmation
   display_upload_summary(file_or_folder, dataset_name, tag, metadata)
+
+  cli::cli_text("")
   
   if (!ask_yes_no("Confirmer l'upload?")) {
     cli::cli_alert_info("Upload annulé.")
@@ -178,8 +180,8 @@ collect_required_system_metadata <- function(metadata) {
   
   # Sensitivity level (1-5)
   repeat {
-    sensitivity <- readline(prompt = "🔒 Niveau de sensibilité des données [1-5] [3]: ")
-    if (nchar(sensitivity) == 0) sensitivity <- "3"
+    sensitivity <- readline(prompt = "🔒 Niveau de sensibilité des données [1-5] [1]: ")
+    if (nchar(sensitivity) == 0) sensitivity <- "1"
     if (sensitivity %in% c("1", "2", "3", "4", "5")) {
       metadata$sensitivity_level <- as.numeric(sensitivity)
       break
@@ -236,6 +238,7 @@ collect_optional_custom_metadata <- function(metadata) {
 #' Display upload summary before confirmation (enhanced with system metadata)
 #' @keywords internal
 display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) {
+  cli::cli_text("")
   cli::cli_rule("📋 Résumé de l'upload")
   
   # File info
@@ -251,22 +254,21 @@ display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) 
   cli::cli_text("🔖 Tag: {tag}")
   
   # System metadata
-  cli::cli_text("")
   cli::cli_text("🔒 Métadonnées système:")
   if (!is.null(metadata$creation_date)) {
-    cli::cli_text("   📅 Date de création: {metadata$creation_date}")
+    cli::cli_text("\t   📅 Date de création: {metadata$creation_date}")
   }
   if (!is.null(metadata$sensitivity_level)) {
-    cli::cli_text("   🔒 Niveau de sensibilité: {metadata$sensitivity_level}")
+    cli::cli_text("\t   🔒 Niveau de sensibilité: {metadata$sensitivity_level}")
   }
   if (!is.null(metadata$consent_expiry_date)) {
-    cli::cli_text("   ⏰ Expiration consentement: {metadata$consent_expiry_date}")
+    cli::cli_text("\t   ⏰ Expiration consentement: {metadata$consent_expiry_date}")
   }
   if (!is.null(metadata$data_destruction_date)) {
-    cli::cli_text("   🗑️ Destruction données: {metadata$data_destruction_date}")
+    cli::cli_text("\t   🗑️ Destruction données: {metadata$data_destruction_date}")
   }
   if (!is.null(metadata$ethical_stamp)) {
-    cli::cli_text("   ✅ Tampon éthique: {metadata$ethical_stamp}")
+    cli::cli_text("\t   ✅ Tampon éthique: {metadata$ethical_stamp}")
   }
   
   # Custom metadata
