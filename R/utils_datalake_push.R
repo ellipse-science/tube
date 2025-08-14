@@ -267,17 +267,7 @@ collect_optional_custom_metadata <- function(metadata) {
     }
   }
   
-  return(metadata)
-}
-      break
-    }
-    
-    field_value <- readline(prompt = paste0("📝 Valeur pour '", field_name, "': "))
-    
-    if (nchar(field_value) > 0) {
-      metadata[[field_name]] <- field_value
-      cli::cli_alert_success("✅ Ajouté: {field_name} = {field_value}")
-  return(metadata)
+  metadata
 }
 
 #' Display upload summary before confirmation (enhanced with system metadata)
