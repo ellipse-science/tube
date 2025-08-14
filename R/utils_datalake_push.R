@@ -426,18 +426,18 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
 prepare_s3_metadata <- function(custom_metadata) {
   # System metadata (required by the platform)
   s3_metadata <- list(
-    "creation-date" = format(Sys.Date(), "%Y-%m-%d"),
-    "consent-expiry-date" = format(Sys.Date() + 365, "%Y-%m-%d"), # Default 1 year
-    "data-destruction-date" = format(Sys.Date() + 365*10, "%Y-%m-%d"), # Default 10 years
-    "sensitivity-level" = "2", # Default medium sensitivity
-    "ethical-stamp" = "true" # Default approved
+    "creation_date" = format(Sys.Date(), "%Y-%m-%d"),
+    "consent_expiry_date" = format(Sys.Date() + 365, "%Y-%m-%d"), # Default 1 year
+    "data_destruction_date" = format(Sys.Date() + 365*10, "%Y-%m-%d"), # Default 10 years
+    "sensitivity_level" = "2", # Default medium sensitivity
+    "ethical_stamp" = "true" # Default approved
   )
   
   # Add custom metadata
   if (!is.null(custom_metadata) && length(custom_metadata) > 0) {
     # Convert custom metadata to JSON string
     custom_json <- jsonlite::toJSON(custom_metadata, auto_unbox = TRUE)
-    s3_metadata[["user-metadata-json"]] <- custom_json
+    s3_metadata[["user_metadata_json"]] <- custom_json
   }
   
   return(s3_metadata)
