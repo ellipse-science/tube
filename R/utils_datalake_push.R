@@ -579,21 +579,19 @@ simple_file_folder_selector <- function() {
       choice_map <- list()
       choice_num <- 1
       
-      # Add parent directory option (..) - with legend
+      # Add current directory option (.) - literal option first
+      cli::cli_text("     📂 . {cli::col_silver('(sélectionner ce dossier)')}")
+      choice_map[["."]] <- list(type = "current", path = current_dir, name = ".")
+      
+      # Add parent directory option (..) - literal option second
       parent_dir <- dirname(current_dir)
       if (parent_dir != current_dir) {
-        cli::cli_text("  {cli::col_yellow(choice_num)}.    .. {cli::col_silver('(dossier parent)')}")
-        choice_map[[as.character(choice_num)]] <- list(type = "parent", path = parent_dir, name = "..")
-        choice_num <- choice_num + 1
+        cli::cli_text("     📁 .. {cli::col_silver('(dossier parent)')}")
+        choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
       }
       
-      # Add current directory option (.)
-      cli::cli_text("  {cli::col_yellow(choice_num)}.    . {cli::col_silver('(sélectionner ce dossier)')}")
-      choice_map[[as.character(choice_num)]] <- list(type = "current", path = current_dir, name = ".")
-      choice_num <- choice_num + 1
-      
       # Add quit option
-      cli::cli_text("  {cli::col_red(choice_num)}. ❌ Annuler")
+      cli::cli_text("  {cli::col_red(sprintf('%2d', choice_num))}. ❌ Annuler")
       choice_map[[as.character(choice_num)]] <- list(type = "quit", path = NULL, name = "quit")
       
       cli::cli_text("")
@@ -671,13 +669,13 @@ display_simple_file_menu <- function(items) {
   choice_num <- 1
   
   # Add current directory option (.) - literal option first
-  cli::cli_text("  \t   . {cli::col_silver('(sélectionner ce dossier)')}")
+  cli::cli_text("     📂 . {cli::col_silver('(sélectionner ce dossier)')}")
   choice_map[["."]] <- list(type = "current", path = items$current_dir, name = ".")
   
   # Add parent directory option (..) - literal option second  
   parent_dir <- dirname(items$current_dir)
   if (parent_dir != items$current_dir) {
-    cli::cli_text("  \t   .. {cli::col_silver('(dossier parent)')}")
+    cli::cli_text("     📁 .. {cli::col_silver('(dossier parent)')}")
     choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
   }
   
