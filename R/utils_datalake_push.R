@@ -86,11 +86,11 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   
   # Dataset name
   if (is.null(dataset_name)) {
-    cli::cli_h2("🏷️ Nom du dataset")
+    cli::cli_h2("📦 Nom du dataset")
     cli::cli_text("Choisissez un nom descriptif pour votre dataset")
     cli::cli_text("")
     
-    dataset_name <- readline(prompt = "📋 Nom du dataset: ")
+    dataset_name <- readline(prompt = "📦 Nom du dataset: ")
     
     if (nchar(dataset_name) == 0) {
       cli::cli_alert_danger("Le nom du dataset est requis!")
@@ -100,11 +100,11 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   
   # Tag
   if (is.null(tag)) {
-    cli::cli_h2("🏷️ Tag de version")
+    cli::cli_h2("🏷️ Tag")
     cli::cli_text("Ex: v1.0, 2025-prod, pilot-test")
     cli::cli_text("")
     
-    tag <- readline(prompt = "🔖 Tag: ")
+    tag <- readline(prompt = "🏷️ Tag: ")
     
     if (nchar(tag) == 0) {
       cli::cli_alert_danger("Le tag est requis!")
@@ -263,7 +263,7 @@ display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) 
     cli::cli_text("   📅 Date de création: {metadata$creation_date}")
   }
   if (!is.null(metadata$sensitivity_level)) {
-    cli::cli_text("   � Niveau de sensibilité: {metadata$sensitivity_level}")
+    cli::cli_text("   🔒 Niveau de sensibilité: {metadata$sensitivity_level}")
   }
   if (!is.null(metadata$consent_expiry_date)) {
     cli::cli_text("   ⏰ Expiration consentement: {metadata$consent_expiry_date}")
@@ -671,13 +671,13 @@ display_simple_file_menu <- function(items) {
   choice_num <- 1
   
   # Add current directory option (.) - literal option first
-  cli::cli_text("  \t� . {cli::col_silver('(sélectionner ce dossier)')}")
+  cli::cli_text("  \t📂 . {cli::col_silver('(sélectionner ce dossier)')}")
   choice_map[["."]] <- list(type = "current", path = items$current_dir, name = ".")
   
   # Add parent directory option (..) - literal option second  
   parent_dir <- dirname(items$current_dir)
   if (parent_dir != items$current_dir) {
-    cli::cli_text("  \t� .. {cli::col_silver('(dossier parent)')}")
+    cli::cli_text("  \t📂 .. {cli::col_silver('(dossier parent)')}")
     choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
   }
   
