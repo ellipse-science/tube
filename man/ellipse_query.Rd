@@ -4,16 +4,21 @@
 \alias{ellipse_query}
 \title{Lire et exploiter une table contenue dans l'entrepôt de données ellipse}
 \usage{
-ellipse_query(con, table)
+ellipse_query(con, dataset, tag = NULL)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
-\item{table}{Une table que l'on souhaite interroger avec \code{dplyr}.}
+\item{dataset}{Pour les connexions datawarehouse/datamarts: nom d'une table.
+Pour les connexions datalake: nom d'un dataset à agréger.}
+
+\item{tag}{Optionnel. Pour les connexions datalake seulement: tag spécifique
+à filtrer. Si NULL, agrège tous les tags du dataset.}
 }
 \value{
-Une table Athena qui peut être interrogée dans un \emph{pipeline}
-\code{dplyr}.
+Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
+dans un pipeline \code{dplyr}. Pour datalake: Un dataframe agrégé de tous les
+fichiers du dataset.
 }
 \description{
 Lire et exploiter une table contenue dans l'entrepôt de données ellipse

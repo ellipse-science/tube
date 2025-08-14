@@ -78,3 +78,11 @@ merge_dataframes_with_schema_union <- function(df_list) {
 
   merged_df
 }
+
+#' Null coalescing operator
+#' @param x Left-hand side
+#' @param y Right-hand side
+#' @keywords internal
+`%||%` <- function(x, y) {
+  if (is.null(x)) y else x
+}

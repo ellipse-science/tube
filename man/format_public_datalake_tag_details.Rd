@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_public_datalake_discovery.R
 \name{format_public_datalake_tag_details}
 \alias{format_public_datalake_tag_details}
-\title{Format public datalake discovery results for specific dataset and tag}
+\title{Format public datalake discovery results for specific dataset and tag (CONDENSED VERSION)}
 \usage{
 format_public_datalake_tag_details(con, dataset_name, tag_name)
 }
@@ -17,6 +17,6 @@ format_public_datalake_tag_details(con, dataset_name, tag_name)
 List with specific tag information
 }
 \description{
-Format public datalake discovery results for specific dataset and tag
+Format public datalake discovery results for specific dataset and tag (CONDENSED VERSION)
 }
 \keyword{internal}

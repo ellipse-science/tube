@@ -3,7 +3,8 @@ utils::globalVariables(c(
   "is_partition", "col_name", "table_name", "location", "table_tags",
   "categorie", "datamart", "description", "create_time", "update_time",
   "format_public_datalake_all_datasets", "format_public_datalake_pattern_search",
-  "format_public_datalake_dataset_details", "format_public_datalake_tag_details"
+  "format_public_datalake_dataset_details", "format_public_datalake_tag_details",
+  "ellipse_push_datalake_mode", "ellipse_push_landingzone_mode"
 ))
 
 #' Se connecter à la plateforme de données ellipse
@@ -382,26 +383,47 @@ ellipse_query <- function(con, dataset, tag = NULL) {
   }
 }
 
-#' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#' Injecter/Pousser de nouvelles données dans la plateforme tube
 #'
-#' Le processus consiste à envoyer un fichier unique ou un dossier contenant plusieurs fichiers
-#' vers la plateforme de données pour qu'ils soient transformés en données structurées (lignes/colonnes)
-#' dans une table de la datawarehouse.
+#' Cette fonction unifie l'injection de données vers différentes destinations:
+#' - Datalake public (pour connexions "datalake"): Upload direct avec métadonnées
+#' - Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
-#' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
-#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.
-#'   Cela va va déterminer dans quelle table de données les données vont être injectées.
-#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de
-#'   données. Utilisé pour les données factuelles seulement, NULL sinon.
-#'   Si NULL, il faut fournir un file_version.
-#' @param file_version La version des données qui doit être accollée aux données dans
-#'   l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires
-#'   seulement, NULL sinon.  Si NULL, il faut fournir un file_batch.
+#' @param file_or_folder Le chemin vers le fichier ou répertoire à charger
+#' @param dataset_name Pour connexions datalake: nom du dataset (obligatoire)
+#' @param tag Pour connexions datalake: tag de version (obligatoire)  
+#' @param metadata Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel)
+#' @param interactive Pour connexions datalake: mode interactif (défaut: TRUE)
+#' @param pipeline Pour connexions datawarehouse: nom du pipeline (obligatoire)
+#' @param file_batch Pour connexions datawarehouse: nom du batch (optionnel, NULL sinon)
+#' @param file_version Pour connexions datawarehouse: version des données (optionnel, NULL sinon)
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export
-ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
+ellipse_push <- function(con, file_or_folder, dataset_name = NULL, tag = NULL, 
+                        metadata = NULL, interactive = TRUE,
+                        pipeline = NULL, file_batch = NULL, file_version = NULL) {
+  logger::log_debug("[ellipse_push] entering function")
+  
+  # Detect connection type (same logic as ellipse_query)
+  schema_name <- DBI::dbGetInfo(con)$dbms.name
+  is_datalake <- grepl("publicdatalake", schema_name, ignore.case = TRUE)
+  
+  if (is_datalake) {
+    # Route to public datalake upload mode
+    logger::log_debug("[ellipse_push] datalake mode - public datalake upload")
+    return(ellipse_push_datalake_mode(con, file_or_folder, dataset_name, tag, metadata, interactive))
+  } else {
+    # Route to traditional landing zone mode
+    logger::log_debug("[ellipse_push] traditional mode - landing zone upload")
+    return(ellipse_push_landingzone_mode(con, file_or_folder, pipeline, file_batch, file_version))
+  }
+}
+
+#' Traditional landing zone upload mode (legacy ellipse_ingest logic)
+#' @keywords internal
+ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
 
   if (!check_env(env)) {
@@ -467,6 +489,28 @@ ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, fil
   cli::cli_alert_info("Les données ont été injectées dans la landing zone.\
   N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
   return(invisible(folder_content))
+}
+
+#' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
+#'
+#' @description DEPRECATED: Utilisez `ellipse_push()` à la place. 
+#' Cette fonction est maintenue pour la compatibilité descendante.
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#' @param file_or_folder Le chemin vers le répertoire qui contient les fichiers à charger dans tube
+#' @param pipeline Le nom du pipeline qui doit être exécuté pour charger les données.
+#' @param file_batch Le nom du batch qui doit être accollé aux données dans l'entrepôt de
+#'   données. Utilisé pour les données factuelles seulement, NULL sinon.
+#' @param file_version La version des données qui doit être accollée aux données dans
+#'   l'entrepôt de données. Utilisé pour les données dimensionnelles et les dictionnaires
+#'   seulement, NULL sinon.
+#'
+#' @returns La liste des fichiers qui ont été injectés dans tube
+#' @export
+ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
+  # Delegate to ellipse_push for backward compatibility
+  ellipse_push(con, file_or_folder, pipeline = pipeline, file_batch = file_batch, 
+               file_version = file_version, interactive = FALSE)
 }
 
 
