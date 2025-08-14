@@ -536,8 +536,8 @@ find_datalake_indexing_lambda <- function(credentials) {
 #' Simple file and folder selector with numbered choices
 #' @keywords internal
 simple_file_folder_selector <- function() {
-  cli::cli_h2("📁 Sélection de fichier ou dossier")
-  cli::cli_text("📄 Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
+  cli::cli_h2("📁 Sélectionnez un fichier ou dossier")
+  cli::cli_text("📄 Formats: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
   cli::cli_text("")
   
   current_dir <- getwd()
@@ -627,33 +627,30 @@ display_simple_file_menu <- function(items) {
   choice_map <- list()
   choice_num <- 1
   
-  # Show supported files first
-  if (length(items$supported_files) > 0) {
-    cli::cli_h3("📄 Fichiers supportés")
-    for (file in items$supported_files) {
-      file_path <- file.path(items$current_dir, file)
-      file_size <- format_file_size(file.info(file_path)$size)
-      cli::cli_text("  {cli::col_green(choice_num)}. {file} {cli::col_silver('({file_size})')}")
-      choice_map[[as.character(choice_num)]] <- list(type = "file", path = file_path, name = file)
+  # Combine all items in a single list (files and directories together)
+  all_items <- c(items$supported_files, items$dirs)
+  
+  if (length(all_items) > 0) {
+    for (item in all_items) {
+      item_path <- file.path(items$current_dir, item)
+      
+      # Check if it's a directory
+      if (item %in% items$dirs) {
+        file_count <- length(list.files(item_path, recursive = FALSE))
+        cli::cli_text("  {cli::col_blue(choice_num)}. 📁 {item}/ {cli::col_silver(paste0('(', file_count, ' éléments)'))}")
+        choice_map[[as.character(choice_num)]] <- list(type = "dir", path = item_path, name = item)
+      } else {
+        # It's a supported file
+        file_size <- format_file_size(file.info(item_path)$size)
+        cli::cli_text("  {cli::col_green(choice_num)}. 📄 {item} {cli::col_silver('({file_size})')}")
+        choice_map[[as.character(choice_num)]] <- list(type = "file", path = item_path, name = item)
+      }
       choice_num <- choice_num + 1
     }
     cli::cli_text("")
   }
   
-  # Show directories
-  if (length(items$dirs) > 0) {
-    cli::cli_h3("📁 Dossiers")
-    for (dir in items$dirs) {
-      dir_path <- file.path(items$current_dir, dir)
-      file_count <- length(list.files(dir_path, recursive = FALSE))
-      cli::cli_text("  {cli::col_blue(choice_num)}. {dir}/ {cli::col_silver('({file_count} éléments)')}")
-      choice_map[[as.character(choice_num)]] <- list(type = "dir", path = dir_path, name = dir)
-      choice_num <- choice_num + 1
-    }
-    cli::cli_text("")
-  }
-  
-  # Show other files (collapsed)
+  # Show other files count if any (collapsed)
   if (length(items$other_files) > 0) {
     cli::cli_text("📎 {length(items$other_files)} autre(s) fichier(s) non-supporté(s)")
     cli::cli_text("")
@@ -665,11 +662,7 @@ display_simple_file_menu <- function(items) {
 #' Show navigation options
 #' @keywords internal
 show_navigation_options <- function() {
-  cli::cli_h3("🧭 Options de navigation")
-  cli::cli_text("  {cli::col_yellow('p')}. 📁 Dossier parent")
-  cli::cli_text("  {cli::col_yellow('h')}. 🏠 Répertoire personnel")
-  cli::cli_text("  {cli::col_yellow('.')}. 📂 Sélectionner le dossier actuel")
-  cli::cli_text("  {cli::col_yellow('q')}. ❌ Annuler")
+  cli::cli_text("  {cli::col_yellow('p')} - 📁 Dossier parent  |  {cli::col_yellow('h')} - 🏠 Accueil  |  {cli::col_yellow('.')} - 📂 Dossier actuel  |  {cli::col_yellow('q')} - ❌ Annuler")
   cli::cli_text("")
 }
 
@@ -677,7 +670,7 @@ show_navigation_options <- function() {
 #' @keywords internal
 get_user_choice <- function() {
   repeat {
-    choice <- readline(prompt = "👆 Votre choix (numéro ou lettre): ")
+    choice <- readline(prompt = "👆 Choix: ")
     
     if (nchar(choice) > 0) {
       return(trimws(choice))
@@ -733,7 +726,7 @@ handle_simple_choice <- function(choice, choice_map, current_dir) {
     }
   }
   
-  cli::cli_alert_warning("⚠️ Choix invalide. Utilisez un numéro affiché ou p/h/./q")
+  cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro ou p/h/./q)")
   return(list(action = "continue"))
 }
 
