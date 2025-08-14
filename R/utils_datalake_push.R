@@ -171,7 +171,7 @@ collect_required_system_metadata <- function(metadata) {
 
   # Data destruction date (optional but important)
   default_destruction <- ""
-  destruction_date <- readline(prompt = paste0("🗑️ Date de destruction des données [", default_destruction, "]: "))
+  destruction_date <- readline(prompt = paste0("🗑️  Date de destruction des données [", default_destruction, "]: "))
   if (nchar(destruction_date) == 0) destruction_date <- default_destruction
   if (tolower(destruction_date) != "none") {
     metadata$data_destruction_date <- destruction_date
@@ -264,7 +264,7 @@ display_upload_summary <- function(file_or_folder, dataset_name, tag, metadata) 
     cli::cli_text("\t   ⏰ Expiration consentement: {metadata$consent_expiry_date}")
   }
   if (!is.null(metadata$data_destruction_date)) {
-    cli::cli_text("\t   🗑️ Destruction données: {metadata$data_destruction_date}")
+    cli::cli_text("\t   🗑️  Destruction données: {metadata$data_destruction_date}")
   }
   if (!is.null(metadata$ethical_stamp)) {
     cli::cli_text("\t   ✅ Tampon éthique: {metadata$ethical_stamp}")

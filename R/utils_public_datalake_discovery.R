@@ -798,7 +798,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
         "N/A"
       }
     }),
-    `🏷️Custom Metadata` = sapply(all_files_data, function(f) {
+    `🏷️ Custom Metadata` = sapply(all_files_data, function(f) {
       if (!is.null(f$user_metadata) && length(f$user_metadata) > 0) {
         metadata_summary <- paste(names(f$user_metadata)[1:min(2, length(f$user_metadata))], collapse = ",")
         if (length(f$user_metadata) > 2) {
