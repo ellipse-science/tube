@@ -133,7 +133,7 @@ read_file_by_extension <- function(filepath, extension) {
   ext <- tolower(extension)
 
   # Suppress messages from file reading functions
-  df <- suppressWarnings({
+  df <- suppressMessages(suppressWarnings({
     switch(ext,
       "csv" = read_csv_with_overflow_handling(filepath),
       "dta" = haven::read_dta(filepath),
@@ -145,7 +145,7 @@ read_file_by_extension <- function(filepath, extension) {
       "dat" = read_dat_with_overflow_handling(filepath),
       stop("Format de fichier non supporté: ", ext)
     )
-  })
+  }))
 
   # Convert to tibble for consistency
   tibble::as_tibble(df)
