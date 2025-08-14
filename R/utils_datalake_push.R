@@ -418,11 +418,7 @@ find_datalake_indexing_lambda <- function(credentials) {
   
   # Updated patterns based on actual infrastructure
   patterns <- c(
-    "publicdatalakecontent",           # Primary pattern
-    "public.*datalake.*content",       # Backup pattern with separators
-    "datalake.*content",               # Fallback pattern
-    "public.*data.*lake.*index",       # Alternative index pattern
-    "content.*lambda"                  # Generic content lambda
+    "publicdatalakecontent"           # Primary pattern
   )
   
   lambda_name <- find_lambda_by_pattern(credentials, patterns, return_first = TRUE)
