@@ -163,8 +163,7 @@ collect_required_system_metadata <- function(metadata) {
   metadata$creation_date <- creation_date
   
   # Consent expiry (optional but important)
-  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
-  default_consent <- format(Sys.Date() + 365, "%Y-%m-%d")
+  default_consent <- ""
   consent_expiry <- readline(prompt = paste0("🤝 Date d'expiration du consentement [", default_consent, "]: "))
   if (nchar(consent_expiry) == 0) consent_expiry <- default_consent
   if (tolower(consent_expiry) != "none") {
@@ -172,8 +171,7 @@ collect_required_system_metadata <- function(metadata) {
   }
   
   # Data destruction date (optional but important) 
-  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
-  default_destruction <- format(Sys.Date() + 365*10, "%Y-%m-%d")
+  default_destruction <- ""
   destruction_date <- readline(prompt = paste0("🗑️ Date de destruction des données [", default_destruction, "]: "))
   if (nchar(destruction_date) == 0) destruction_date <- default_destruction
   if (tolower(destruction_date) != "none") {
@@ -192,8 +190,8 @@ collect_required_system_metadata <- function(metadata) {
   }
   
   # Ethical approval
-  ethical_response <- readline(prompt = "✅ Approbation éthique [y]: ")
-  if (nchar(ethical_response) == 0) ethical_response <- "y"
+  ethical_response <- readline(prompt = "✅ Approbation éthique [o/n]: ")
+  if (nchar(ethical_response) == 0) ethical_response <- "n"
   if (tolower(ethical_response) %in% c("y", "yes", "oui", "o")) {
     metadata$ethical_stamp <- "approved"
   } else {
