@@ -552,13 +552,37 @@ simple_file_folder_selector <- function() {
     if (length(items) == 0) {
       cli::cli_text("💡 Répertoire vide")
       cli::cli_text("")
-      show_navigation_options()
+      
+      # Create minimal choice map for empty directories
+      choice_map <- list()
+      choice_num <- 1
+      
+      # Add parent directory option (..)
+      parent_dir <- dirname(current_dir)
+      if (parent_dir != current_dir) {
+        cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 ../")
+        choice_map[[as.character(choice_num)]] <- list(type = "parent", path = parent_dir, name = "..")
+        choice_num <- choice_num + 1
+      }
+      
+      # Add current directory option (.)
+      cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 ./ {cli::col_silver('(sélectionner ce dossier)')}")
+      choice_map[[as.character(choice_num)]] <- list(type = "current", path = current_dir, name = ".")
+      choice_num <- choice_num + 1
+      
+      # Add quit option
+      cli::cli_text("  {cli::col_red(choice_num)}. ❌ Annuler")
+      choice_map[[as.character(choice_num)]] <- list(type = "quit", path = NULL, name = "quit")
+      
+      cli::cli_text("")
       choice <- get_user_choice()
-      result <- handle_navigation_choice(choice, current_dir)
+      result <- handle_simple_choice(choice, choice_map, current_dir)
       if (result$action == "update_dir") {
         current_dir <- result$path
       } else if (result$action == "select") {
         return(result$path)
+      } else if (result$action == "quit") {
+        stop("Sélection annulée par l'utilisateur")
       }
       next
     }
@@ -568,9 +592,6 @@ simple_file_folder_selector <- function() {
     
     # Display options with simple numbers
     choice_map <- display_simple_file_menu(categorized_items)
-    
-    # Show navigation options
-    show_navigation_options()
     
     # Get user choice
     choice <- get_user_choice()
@@ -627,7 +648,20 @@ display_simple_file_menu <- function(items) {
   choice_map <- list()
   choice_num <- 1
   
-  # Combine all items in a single list (files and directories together)
+  # Add parent directory option (..)
+  parent_dir <- dirname(items$current_dir)
+  if (parent_dir != items$current_dir) {
+    cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 ../")
+    choice_map[[as.character(choice_num)]] <- list(type = "parent", path = parent_dir, name = "..")
+    choice_num <- choice_num + 1
+  }
+  
+  # Add current directory option (.)
+  cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 ./ {cli::col_silver('(sélectionner ce dossier)')}")
+  choice_map[[as.character(choice_num)]] <- list(type = "current", path = items$current_dir, name = ".")
+  choice_num <- choice_num + 1
+  
+  # Combine supported files and directories
   all_items <- c(items$supported_files, items$dirs)
   
   if (length(all_items) > 0) {
@@ -642,29 +676,24 @@ display_simple_file_menu <- function(items) {
       } else {
         # It's a supported file
         file_size <- format_file_size(file.info(item_path)$size)
-        cli::cli_text("  {cli::col_green(choice_num)}. 📄 {item} {cli::col_silver('({file_size})')}")
+        cli::cli_text("  {cli::col_green(choice_num)}. 📄 {item} {cli::col_silver(paste0('(', file_size, ')'))}")
         choice_map[[as.character(choice_num)]] <- list(type = "file", path = item_path, name = item)
       }
       choice_num <- choice_num + 1
     }
-    cli::cli_text("")
   }
   
-  # Show other files count if any (collapsed)
-  if (length(items$other_files) > 0) {
-    cli::cli_text("📎 {length(items$other_files)} autre(s) fichier(s) non-supporté(s)")
-    cli::cli_text("")
-  }
+  # Add quit option
+  cli::cli_text("  {cli::col_red(choice_num)}. ❌ Annuler")
+  choice_map[[as.character(choice_num)]] <- list(type = "quit", path = NULL, name = "quit")
   
+  cli::cli_text("")
   return(choice_map)
 }
 
-#' Show navigation options
-#' @keywords internal
-show_navigation_options <- function() {
-  cli::cli_text("  {cli::col_yellow('p')} - 📁 Dossier parent  |  {cli::col_yellow('h')} - 🏠 Accueil  |  {cli::col_yellow('.')} - 📂 Dossier actuel  |  {cli::col_yellow('q')} - ❌ Annuler")
-  cli::cli_text("")
-}
+# ==============================================================================
+
+#' Handle numeric selection from the menu
 
 #' Get user choice with validation
 #' @keywords internal
@@ -683,36 +712,6 @@ get_user_choice <- function() {
 #' Handle simple user choice
 #' @keywords internal
 handle_simple_choice <- function(choice, choice_map, current_dir) {
-  # Handle navigation commands
-  if (choice == "q") {
-    return(list(action = "quit"))
-  }
-  
-  if (choice == "p") {
-    parent_dir <- dirname(current_dir)
-    if (parent_dir != current_dir) {
-      cli::cli_alert_info("📁 Remontée vers: {basename(parent_dir)}")
-      return(list(action = "update_dir", path = parent_dir))
-    } else {
-      cli::cli_alert_warning("⚠️ Déjà au répertoire racine")
-      return(list(action = "continue"))
-    }
-  }
-  
-  if (choice == "h") {
-    home_dir <- path.expand("~")
-    cli::cli_alert_info("🏠 Retour au répertoire personnel")
-    return(list(action = "update_dir", path = home_dir))
-  }
-  
-  if (choice == ".") {
-    if (confirm_simple_directory_selection(current_dir)) {
-      return(list(action = "select", path = current_dir))
-    } else {
-      return(list(action = "continue"))
-    }
-  }
-  
   # Handle numbered choices
   if (choice %in% names(choice_map)) {
     item <- choice_map[[choice]]
@@ -723,10 +722,21 @@ handle_simple_choice <- function(choice, choice_map, current_dir) {
     } else if (item$type == "dir") {
       cli::cli_alert_info("📁 Navigation vers: {item$name}")
       return(list(action = "update_dir", path = item$path))
+    } else if (item$type == "parent") {
+      cli::cli_alert_info("📁 Remontée vers le dossier parent")
+      return(list(action = "update_dir", path = item$path))
+    } else if (item$type == "current") {
+      if (confirm_simple_directory_selection(item$path)) {
+        return(list(action = "select", path = item$path))
+      } else {
+        return(list(action = "continue"))
+      }
+    } else if (item$type == "quit") {
+      return(list(action = "quit"))
     }
   }
   
-  cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro ou p/h/./q)")
+  cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro affiché)")
   return(list(action = "continue"))
 }
 
@@ -902,4 +912,75 @@ format_file_size <- function(size_bytes) {
   } else {
     return(paste(round(size_bytes / 1024^3, 2), "GB"))
   }
+}
+
+#' Get user choice with validation
+#' @keywords internal
+get_user_choice <- function() {
+  repeat {
+    choice <- readline(prompt = "👆 Choix: ")
+    
+    if (nchar(choice) > 0) {
+      return(trimws(choice))
+    }
+    
+    cli::cli_alert_warning("⚠️ Veuillez entrer un choix valide")
+  }
+}
+
+#' Handle simple user choice
+#' @keywords internal
+handle_simple_choice <- function(choice, choice_map, current_dir) {
+  # Handle numbered choices
+  if (choice %in% names(choice_map)) {
+    item <- choice_map[[choice]]
+    
+    if (item$type == "file") {
+      cli::cli_alert_success("✅ Fichier sélectionné: {item$name}")
+      return(list(action = "select", path = item$path))
+    } else if (item$type == "dir") {
+      cli::cli_alert_info("📁 Navigation vers: {item$name}")
+      return(list(action = "update_dir", path = item$path))
+    } else if (item$type == "parent") {
+      cli::cli_alert_info("📁 Remontée vers le dossier parent")
+      return(list(action = "update_dir", path = item$path))
+    } else if (item$type == "current") {
+      if (confirm_simple_directory_selection(item$path)) {
+        return(list(action = "select", path = item$path))
+      } else {
+        return(list(action = "continue"))
+      }
+    } else if (item$type == "quit") {
+      return(list(action = "quit"))
+    }
+  }
+  
+  cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro affiché)")
+  return(list(action = "continue"))
+}
+
+#' Confirm directory selection with simple preview
+#' @keywords internal
+confirm_simple_directory_selection <- function(dir_path) {
+  files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
+  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
+  
+  supported_count <- 0
+  for (file in files) {
+    if (tools::file_ext(tolower(file)) %in% supported_exts) {
+      supported_count <- supported_count + 1
+    }
+  }
+  
+  cli::cli_rule("📁 Aperçu du dossier")
+  cli::cli_text("📂 Dossier: {basename(dir_path)}")
+  cli::cli_text("📄 Total fichiers: {length(files)}")
+  cli::cli_text("✅ Fichiers supportés: {supported_count}")
+  cli::cli_rule()
+  
+  if (supported_count == 0) {
+    cli::cli_alert_warning("⚠️ Aucun fichier supporté trouvé dans ce dossier")
+  }
+  
+  return(ask_yes_no("Confirmer la sélection de ce dossier?"))
 }
