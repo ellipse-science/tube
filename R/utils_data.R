@@ -79,10 +79,13 @@ merge_dataframes_with_schema_union <- function(df_list) {
   merged_df
 }
 
-#' Null coalescing operator
+#' @title Null coalescing operator
+#' @description Returns the left-hand side if it is not NULL, otherwise returns the right-hand side.
 #' @param x Left-hand side
 #' @param y Right-hand side
 #' @keywords internal
+# nolint start
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
+# nolint end
