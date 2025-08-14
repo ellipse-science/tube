@@ -575,10 +575,6 @@ find_datalake_indexing_lambda <- function(credentials) {
 # The interactive file browser has been simplified to a direct path input
 # All the complex navigation functions have been removed for better UX
 # ==============================================================================
-  
-  cli::cli_alert_danger("❌ Choix invalide. Essayez à nouveau.")
-  return("navigate")
-}
 
 #' Handle numeric selection from the menu
 #' @keywords internal
