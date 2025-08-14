@@ -154,12 +154,36 @@ collect_all_metadata_interactive <- function() {
 #' Collect required system metadata fields
 #' @keywords internal
 collect_required_system_metadata <- function(metadata) {
-  cli::cli_h3("🔒 Métadonnées système requises")
+  cli::cli_h3("� Métadonnées système requises")
   
-  # Sensitivity level (1-5, no legend)
-  cli::cli_text("� Niveau de sensibilité des données")
+  # Creation date (default to today)
+  default_date <- format(Sys.Date(), "%Y-%m-%d")
+  creation_date <- readline(prompt = paste0("📅 Date de création des données [", default_date, "]: "))
+  if (nchar(creation_date) == 0) creation_date <- default_date
+  metadata$creation_date <- creation_date
+  
+  # Consent expiry (optional but important)
+  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
+  default_consent <- format(Sys.Date() + 365, "%Y-%m-%d")
+  consent_expiry <- readline(prompt = paste0("🤝 Date d'expiration du consentement [", default_consent, "]: "))
+  if (nchar(consent_expiry) == 0) consent_expiry <- default_consent
+  if (tolower(consent_expiry) != "none") {
+    metadata$consent_expiry_date <- consent_expiry
+  }
+  
+  # Data destruction date (optional but important) 
+  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
+  default_destruction <- format(Sys.Date() + 365*10, "%Y-%m-%d")
+  destruction_date <- readline(prompt = paste0("🗑️ Date de destruction des données [", default_destruction, "]: "))
+  if (nchar(destruction_date) == 0) destruction_date <- default_destruction
+  if (tolower(destruction_date) != "none") {
+    metadata$data_destruction_date <- destruction_date
+  }
+  
+  # Sensitivity level (1-5)
   repeat {
-    sensitivity <- readline(prompt = "� Niveau de sensibilité [1-5]: ")
+    sensitivity <- readline(prompt = "🔒 Niveau de sensibilité des données [1-5] [3]: ")
+    if (nchar(sensitivity) == 0) sensitivity <- "3"
     if (sensitivity %in% c("1", "2", "3", "4", "5")) {
       metadata$sensitivity_level <- as.numeric(sensitivity)
       break
@@ -168,40 +192,14 @@ collect_required_system_metadata <- function(metadata) {
   }
   
   # Ethical approval
-  cli::cli_text("")
-  if (ask_yes_no("✅ Approbation éthique?")) {
+  ethical_response <- readline(prompt = "✅ Approbation éthique [y]: ")
+  if (nchar(ethical_response) == 0) ethical_response <- "y"
+  if (tolower(ethical_response) %in% c("y", "yes", "oui", "o")) {
     metadata$ethical_stamp <- "approved"
   } else {
     metadata$ethical_stamp <- "pending"
   }
   
-  # Creation date (default to today)
-  cli::cli_text("")
-  cli::cli_text("� Date de création des données")
-  default_date <- format(Sys.Date(), "%Y-%m-%d")
-  creation_date <- readline(prompt = paste0("� Date de création [", default_date, "]: "))
-  if (nchar(creation_date) == 0) creation_date <- default_date
-  metadata$creation_date <- creation_date
-  
-  # Consent expiry (optional but important)
-  cli::cli_text("")
-  cli::cli_text("⏰ Date d'expiration du consentement (optionnel)")
-  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
-  consent_expiry <- readline(prompt = "⏰ Date d'expiration du consentement: ")
-  if (nchar(consent_expiry) > 0 && tolower(consent_expiry) != "none") {
-    metadata$consent_expiry_date <- consent_expiry
-  }
-  
-  # Data destruction date (optional but important)
-  cli::cli_text("")
-  cli::cli_text("🗑️ Date de destruction des données (optionnel)")
-  cli::cli_text("Format: YYYY-MM-DD ou tapez 'none' si pas applicable")
-  destruction_date <- readline(prompt = "🗑️ Date de destruction: ")
-  if (nchar(destruction_date) > 0 && tolower(destruction_date) != "none") {
-    metadata$data_destruction_date <- destruction_date
-  }
-  
-  cli::cli_text("")
   cli::cli_alert_success("✅ Métadonnées système collectées")
   
   return(metadata)
@@ -580,13 +578,13 @@ simple_file_folder_selector <- function() {
       choice_num <- 1
       
       # Add current directory option (.) - literal option first
-      cli::cli_text("     📂 . {cli::col_silver('(sélectionner ce dossier)')}")
+      cli::cli_text("        .  {cli::col_silver('(sélectionner ce dossier)')}")
       choice_map[["."]] <- list(type = "current", path = current_dir, name = ".")
       
       # Add parent directory option (..) - literal option second
       parent_dir <- dirname(current_dir)
       if (parent_dir != current_dir) {
-        cli::cli_text("     📁 .. {cli::col_silver('(dossier parent)')}")
+        cli::cli_text("        .. {cli::col_silver('(dossier parent)')}")
         choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
       }
       
@@ -669,13 +667,13 @@ display_simple_file_menu <- function(items) {
   choice_num <- 1
   
   # Add current directory option (.) - literal option first
-  cli::cli_text("     📂 . {cli::col_silver('(sélectionner ce dossier)')}")
+  cli::cli_text("        .  {cli::col_silver('(sélectionner ce dossier)')}")
   choice_map[["."]] <- list(type = "current", path = items$current_dir, name = ".")
   
   # Add parent directory option (..) - literal option second  
   parent_dir <- dirname(items$current_dir)
   if (parent_dir != items$current_dir) {
-    cli::cli_text("     📁 .. {cli::col_silver('(dossier parent)')}")
+    cli::cli_text("        .. {cli::col_silver('(dossier parent)')}")
     choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
   }
   
