@@ -671,13 +671,13 @@ display_simple_file_menu <- function(items) {
   choice_num <- 1
   
   # Add current directory option (.) - literal option first
-  cli::cli_text("  \t📂 . {cli::col_silver('(sélectionner ce dossier)')}")
+  cli::cli_text("  \t   . {cli::col_silver('(sélectionner ce dossier)')}")
   choice_map[["."]] <- list(type = "current", path = items$current_dir, name = ".")
   
   # Add parent directory option (..) - literal option second  
   parent_dir <- dirname(items$current_dir)
   if (parent_dir != items$current_dir) {
-    cli::cli_text("  \t📂 .. {cli::col_silver('(dossier parent)')}")
+    cli::cli_text("  \t   .. {cli::col_silver('(dossier parent)')}")
     choice_map[[".."]] <- list(type = "parent", path = parent_dir, name = "..")
   }
   
