@@ -156,25 +156,32 @@ collect_all_metadata_interactive <- function() {
 collect_required_system_metadata <- function(metadata) {
   cli::cli_h3("🔒 Métadonnées système requises")
   
-  # Creation date (default to today)
-  cli::cli_text("📅 Date de création des données")
-  default_date <- format(Sys.Date(), "%Y-%m-%d")
-  creation_date <- readline(prompt = paste0("📅 Date de création [", default_date, "]: "))
-  if (nchar(creation_date) == 0) creation_date <- default_date
-  metadata$creation_date <- creation_date
-  
-  # Sensitivity level
-  cli::cli_text("")
-  cli::cli_text("🔐 Niveau de sensibilité des données")
-  cli::cli_text("1 = Public, 2 = Interne, 3 = Confidentiel, 4 = Restreint")
+  # Sensitivity level (1-5, no legend)
+  cli::cli_text("� Niveau de sensibilité des données")
   repeat {
-    sensitivity <- readline(prompt = "🔐 Niveau de sensibilité [1-4]: ")
-    if (sensitivity %in% c("1", "2", "3", "4")) {
+    sensitivity <- readline(prompt = "� Niveau de sensibilité [1-5]: ")
+    if (sensitivity %in% c("1", "2", "3", "4", "5")) {
       metadata$sensitivity_level <- as.numeric(sensitivity)
       break
     }
-    cli::cli_alert_danger("Veuillez entrer un niveau entre 1 et 4")
+    cli::cli_alert_danger("Veuillez entrer un niveau entre 1 et 5")
   }
+  
+  # Ethical approval
+  cli::cli_text("")
+  if (ask_yes_no("✅ Approbation éthique?")) {
+    metadata$ethical_stamp <- "approved"
+  } else {
+    metadata$ethical_stamp <- "pending"
+  }
+  
+  # Creation date (default to today)
+  cli::cli_text("")
+  cli::cli_text("� Date de création des données")
+  default_date <- format(Sys.Date(), "%Y-%m-%d")
+  creation_date <- readline(prompt = paste0("� Date de création [", default_date, "]: "))
+  if (nchar(creation_date) == 0) creation_date <- default_date
+  metadata$creation_date <- creation_date
   
   # Consent expiry (optional but important)
   cli::cli_text("")
@@ -192,14 +199,6 @@ collect_required_system_metadata <- function(metadata) {
   destruction_date <- readline(prompt = "🗑️ Date de destruction: ")
   if (nchar(destruction_date) > 0 && tolower(destruction_date) != "none") {
     metadata$data_destruction_date <- destruction_date
-  }
-  
-  # Ethical stamp
-  cli::cli_text("")
-  if (ask_yes_no("✅ Ce dataset a-t-il reçu un tampon éthique/approbation?")) {
-    metadata$ethical_stamp <- "approved"
-  } else {
-    metadata$ethical_stamp <- "pending"
   }
   
   cli::cli_text("")
@@ -429,15 +428,38 @@ prepare_s3_metadata <- function(custom_metadata) {
     "creation_date" = format(Sys.Date(), "%Y-%m-%d"),
     "consent_expiry_date" = format(Sys.Date() + 365, "%Y-%m-%d"), # Default 1 year
     "data_destruction_date" = format(Sys.Date() + 365*10, "%Y-%m-%d"), # Default 10 years
-    "sensitivity_level" = "2", # Default medium sensitivity
+    "sensitivity_level" = "3", # Default medium sensitivity (1-5 scale)
     "ethical_stamp" = "true" # Default approved
   )
   
-  # Add custom metadata
-  if (!is.null(custom_metadata) && length(custom_metadata) > 0) {
-    # Convert custom metadata to JSON string
-    custom_json <- jsonlite::toJSON(custom_metadata, auto_unbox = TRUE)
-    s3_metadata[["user_metadata_json"]] <- custom_json
+  # Override with actual values from collected metadata
+  if (!is.null(custom_metadata)) {
+    if (!is.null(custom_metadata$creation_date)) {
+      s3_metadata[["creation_date"]] <- custom_metadata$creation_date
+    }
+    if (!is.null(custom_metadata$consent_expiry_date)) {
+      s3_metadata[["consent_expiry_date"]] <- custom_metadata$consent_expiry_date
+    }
+    if (!is.null(custom_metadata$data_destruction_date)) {
+      s3_metadata[["data_destruction_date"]] <- custom_metadata$data_destruction_date
+    }
+    if (!is.null(custom_metadata$sensitivity_level)) {
+      s3_metadata[["sensitivity_level"]] <- as.character(custom_metadata$sensitivity_level)
+    }
+    if (!is.null(custom_metadata$ethical_stamp)) {
+      s3_metadata[["ethical_stamp"]] <- ifelse(custom_metadata$ethical_stamp == "approved", "true", "false")
+    }
+    
+    # Add only non-system custom metadata to user_metadata_json
+    system_fields <- c("creation_date", "consent_expiry_date", "data_destruction_date", 
+                       "sensitivity_level", "ethical_stamp")
+    user_metadata <- custom_metadata[!names(custom_metadata) %in% system_fields]
+    
+    if (length(user_metadata) > 0) {
+      # Convert only user custom metadata to JSON string
+      custom_json <- jsonlite::toJSON(user_metadata, auto_unbox = TRUE)
+      s3_metadata[["user_metadata_json"]] <- custom_json
+    }
   }
   
   return(s3_metadata)
@@ -557,16 +579,16 @@ simple_file_folder_selector <- function() {
       choice_map <- list()
       choice_num <- 1
       
-      # Add parent directory option (..)
+      # Add parent directory option (..) - with legend
       parent_dir <- dirname(current_dir)
       if (parent_dir != current_dir) {
-        cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 ../")
+        cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 .. {cli::col_silver('(dossier parent)')}")
         choice_map[[as.character(choice_num)]] <- list(type = "parent", path = parent_dir, name = "..")
         choice_num <- choice_num + 1
       }
       
       # Add current directory option (.)
-      cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 ./ {cli::col_silver('(sélectionner ce dossier)')}")
+      cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 . {cli::col_silver('(sélectionner ce dossier)')}")
       choice_map[[as.character(choice_num)]] <- list(type = "current", path = current_dir, name = ".")
       choice_num <- choice_num + 1
       
@@ -648,21 +670,21 @@ display_simple_file_menu <- function(items) {
   choice_map <- list()
   choice_num <- 1
   
-  # Add parent directory option (..)
+  # Add parent directory option (..) - with legend
   parent_dir <- dirname(items$current_dir)
   if (parent_dir != items$current_dir) {
-    cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 ../")
+    cli::cli_text("  {cli::col_yellow(choice_num)}. 📁 .. {cli::col_silver('(dossier parent)')}")
     choice_map[[as.character(choice_num)]] <- list(type = "parent", path = parent_dir, name = "..")
     choice_num <- choice_num + 1
   }
   
   # Add current directory option (.)
-  cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 ./ {cli::col_silver('(sélectionner ce dossier)')}")
+  cli::cli_text("  {cli::col_yellow(choice_num)}. 📂 . {cli::col_silver('(sélectionner ce dossier)')}")
   choice_map[[as.character(choice_num)]] <- list(type = "current", path = items$current_dir, name = ".")
   choice_num <- choice_num + 1
   
-  # Combine supported files and directories
-  all_items <- c(items$supported_files, items$dirs)
+  # Combine directories first, then supported files (folders first)
+  all_items <- c(items$dirs, items$supported_files)
   
   if (length(all_items) > 0) {
     for (item in all_items) {
