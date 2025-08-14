@@ -1,0 +1,11 @@
+respondent_id,age,gender,education,income_bracket,satisfaction_score,preferred_contact,survey_date,location,employment_status
+R011,39,Female,Master's,75000-100000,8,Email,2025-02-01,Toronto,Full-time
+R012,33,Male,Bachelor's,50000-75000,7,Phone,2025-02-02,Montreal,Part-time
+R013,47,Female,PhD,100000+,9,Email,2025-02-03,Vancouver,Full-time
+R014,29,Non-binary,College,25000-50000,6,SMS,2025-02-04,Calgary,Unemployed
+R015,52,Male,High School,50000-75000,5,Phone,2025-02-05,Ottawa,Full-time
+R016,36,Female,Master's,75000-100000,8,Email,2025-02-06,Toronto,Self-employed
+R017,41,Male,Bachelor's,50000-75000,7,SMS,2025-02-07,Montreal,Full-time
+R018,28,Female,College,25000-50000,6,Email,2025-02-08,Vancouver,Part-time
+R019,58,Male,PhD,100000+,9,Phone,2025-02-09,Calgary,Full-time
+R020,32,Female,Bachelor's,50000-75000,8,Email,2025-02-10,Ottawa,Full-time

@@ -1,0 +1,11 @@
+respondent_id,age,gender,education,satisfaction_score,preferred_contact,survey_date,product_rating,likelihood_recommend
+R021,35,Female,Bachelor's,8,Email,2025-03-01,4,9
+R022,44,Male,Master's,7,Phone,2025-03-02,3,7
+R023,29,Female,High School,6,SMS,2025-03-03,4,8
+R024,56,Non-binary,PhD,9,Email,2025-03-04,5,10
+R025,32,Male,Bachelor's,8,Email,2025-03-05,4,9
+R026,46,Female,College,7,Phone,2025-03-06,3,6
+R027,30,Male,Bachelor's,5,SMS,2025-03-07,2,5
+R028,39,Female,Master's,9,Email,2025-03-08,5,10
+R029,52,Male,High School,6,Phone,2025-03-09,3,7
+R030,27,Female,Bachelor's,7,Email,2025-03-10,4,8

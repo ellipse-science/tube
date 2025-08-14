@@ -390,7 +390,8 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #' - Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
-#' @param file_or_folder Le chemin vers le fichier ou répertoire à charger
+#' @param file_or_folder Le chemin vers le fichier ou répertoire à charger.
+#'   Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.
 #' @param dataset_name Pour connexions datalake: nom du dataset (obligatoire)
 #' @param tag Pour connexions datalake: tag de version (obligatoire)  
 #' @param metadata Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel)
@@ -401,7 +402,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export
-ellipse_push <- function(con, file_or_folder, dataset_name = NULL, tag = NULL, 
+ellipse_push <- function(con, file_or_folder = NULL, dataset_name = NULL, tag = NULL, 
                         metadata = NULL, interactive = TRUE,
                         pipeline = NULL, file_batch = NULL, file_version = NULL) {
   logger::log_debug("[ellipse_push] entering function")
@@ -416,6 +417,11 @@ ellipse_push <- function(con, file_or_folder, dataset_name = NULL, tag = NULL,
     return(ellipse_push_datalake_mode(con, file_or_folder, dataset_name, tag, metadata, interactive))
   } else {
     # Route to traditional landing zone mode
+    # For datawarehouse mode, file_or_folder is still required
+    if (is.null(file_or_folder)) {
+      cli::cli_alert_danger("Oups, il faut fournir un fichier ou répertoire pour l'upload vers la landing zone! 😅")
+      return(invisible(NULL))
+    }
     logger::log_debug("[ellipse_push] traditional mode - landing zone upload")
     return(ellipse_push_landingzone_mode(con, file_or_folder, pipeline, file_batch, file_version))
   }

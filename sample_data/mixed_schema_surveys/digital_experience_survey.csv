@@ -1,0 +1,11 @@
+user_id,age_group,gender,education_level,satisfaction_rating,contact_preference,completion_date,device_type,session_duration_min
+U001,30-39,Female,University,8,Email,2025-05-01,Mobile,12
+U002,40-49,Male,Graduate,7,Phone,2025-05-02,Desktop,18
+U003,20-29,Female,High School,6,SMS,2025-05-03,Tablet,8
+U004,50-59,Non-binary,Graduate,9,Email,2025-05-04,Mobile,15
+U005,30-39,Male,University,8,Email,2025-05-05,Desktop,22
+U006,40-49,Female,College,7,Phone,2025-05-06,Mobile,10
+U007,20-29,Male,University,5,SMS,2025-05-07,Tablet,6
+U008,30-39,Female,Graduate,9,Email,2025-05-08,Desktop,25
+U009,50-59,Male,High School,6,Phone,2025-05-09,Mobile,14
+U010,20-29,Female,University,7,Email,2025-05-10,Tablet,11

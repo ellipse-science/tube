@@ -1,0 +1,11 @@
+participant_id,age,gender,education,income_bracket,satisfaction_score,contact_method,date_completed,region,years_customer
+P001,37,Female,Master's,75000-100000,8,Email,2025-04-01,Eastern,3
+P002,43,Male,Bachelor's,50000-75000,7,Phone,2025-04-02,Central,5
+P003,31,Female,PhD,100000+,9,Email,2025-04-03,Western,2
+P004,48,Non-binary,College,25000-50000,6,SMS,2025-04-04,Eastern,7
+P005,35,Male,High School,50000-75000,5,Phone,2025-04-05,Central,4
+P006,40,Female,Master's,75000-100000,8,Email,2025-04-06,Western,6
+P007,33,Male,Bachelor's,50000-75000,7,SMS,2025-04-07,Eastern,1
+P008,50,Female,College,25000-50000,6,Email,2025-04-08,Central,8
+P009,45,Male,PhD,100000+,9,Phone,2025-04-09,Western,3
+P010,29,Female,Bachelor's,50000-75000,8,Email,2025-04-10,Eastern,2

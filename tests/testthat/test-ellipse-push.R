@@ -22,11 +22,27 @@ test_that("ellipse_push function exists and has correct signature", {
 test_that("ellipse_push detects connection type correctly", {
   # Test with NULL connection
   expect_error(
-    ellipse_push(connection = NULL, file_or_folder = "test.csv", dataset_name = "test"),
+    ellipse_push(con = NULL, file_or_folder = "test.csv", dataset_name = "test"),
     class = "error"
   )
   
   cat("✅ Connection validation works!\n")
+})
+
+test_that("ellipse_push allows NULL file_or_folder in interactive mode", {
+  # Test that file_or_folder can be NULL when interactive = TRUE for datalake connections
+  # This would normally prompt the user, but we'll test the function signature accepts it
+  
+  # Test with valid parameters but without actually running interactive mode
+  expect_no_error({
+    # This should not error on parameter validation
+    args_list <- formals(ellipse_push)
+    expect_true("file_or_folder" %in% names(args_list))
+    expect_equal(args_list$file_or_folder, NULL)  # Default should be NULL
+    expect_equal(args_list$interactive, TRUE)     # Default should be TRUE
+  })
+  
+  cat("✅ Interactive file selection parameter validation works!\n")
 })
 
 test_that("ellipse_push works with datalake connections", {
