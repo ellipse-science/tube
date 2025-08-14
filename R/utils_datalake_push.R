@@ -88,9 +88,8 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   if (is.null(dataset_name)) {
     cli::cli_h2("📦 Nom du dataset")
     cli::cli_text("Choisissez un nom descriptif pour votre dataset")
-    cli::cli_text("")
     
-    dataset_name <- readline(prompt = "📦 Nom du dataset: ")
+    dataset_name <- readline(prompt = "📦: ")
     
     if (nchar(dataset_name) == 0) {
       cli::cli_alert_danger("Le nom du dataset est requis!")
@@ -102,9 +101,8 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   if (is.null(tag)) {
     cli::cli_h2("🏷️ Tag")
     cli::cli_text("Ex: v1.0, 2025-prod, pilot-test")
-    cli::cli_text("")
     
-    tag <- readline(prompt = "🏷️ Tag: ")
+    tag <- readline(prompt = "🏷️: ")
     
     if (nchar(tag) == 0) {
       cli::cli_alert_danger("Le tag est requis!")
@@ -154,7 +152,7 @@ collect_all_metadata_interactive <- function() {
 #' Collect required system metadata fields
 #' @keywords internal
 collect_required_system_metadata <- function(metadata) {
-  cli::cli_h3("� Métadonnées système requises")
+  cli::cli_h3("📝 Métadonnées système requises")
   
   # Creation date (default to today)
   default_date <- format(Sys.Date(), "%Y-%m-%d")
