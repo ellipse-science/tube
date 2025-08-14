@@ -9,7 +9,7 @@ cat("=== Public Datalake Feature 007 Testing ===\n")
 readRenviron(".Renviron")
 
 # Load package
-devtools::load_all(".")
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
 
 cat("\n1. Environment Check:\n")
 env_check <- can_test_real_aws_dev()

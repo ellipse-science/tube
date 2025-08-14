@@ -9,7 +9,7 @@ cat("=== TESTING ellipse_* FUNCTIONS ===\n")
 readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all(".", quiet = TRUE)
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
 
 # Run ONLY the ellipse tests
 cat("Running test-ellipse-main.R...\n")

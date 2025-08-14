@@ -9,7 +9,7 @@ cat("=== TESTING get_aws_credentials() FUNCTION ===\n")
 readRenviron(".Renviron")
 library(testthat, quietly = TRUE)
 library(devtools, quietly = TRUE)
-load_all(".", quiet = TRUE)
+suppressMessages(suppressWarnings(devtools::load_all(".", quiet = TRUE)))
 
 # Run ONLY the AWS credentials tests
 cat("Running test-aws-credentials.R...\n")
