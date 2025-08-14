@@ -143,7 +143,7 @@ download_and_aggregate_files <- function(files_metadata, credentials) {
   for (i in seq_len(nrow(files_metadata))) {
     file_info <- files_metadata[i, ]
 
-    # Process file and suppress messages, but update progress outside
+    # Process file based on its extension
     tryCatch(
       {
         # Download file to temp location
