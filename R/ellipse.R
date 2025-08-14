@@ -393,7 +393,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #' @param file_or_folder Le chemin vers le fichier ou répertoire à charger.
 #'   Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.
 #' @param dataset_name Pour connexions datalake: nom du dataset (obligatoire)
-#' @param tag Pour connexions datalake: tag de version (obligatoire)  
+#' @param tag Pour connexions datalake: tag de version (obligatoire)
 #' @param metadata Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel)
 #' @param interactive Pour connexions datalake: mode interactif (défaut: TRUE)
 #' @param pipeline Pour connexions datawarehouse: nom du pipeline (obligatoire)
@@ -402,28 +402,28 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'
 #' @returns La liste des fichiers qui ont été injectés dans tube
 #' @export
-ellipse_push <- function(con, file_or_folder = NULL, dataset_name = NULL, tag = NULL, 
-                        metadata = NULL, interactive = TRUE,
-                        pipeline = NULL, file_batch = NULL, file_version = NULL) {
+ellipse_push <- function(con, file_or_folder = NULL, dataset_name = NULL, tag = NULL,
+  metadata = NULL, interactive = TRUE,
+  pipeline = NULL, file_batch = NULL, file_version = NULL) {
   logger::log_debug("[ellipse_push] entering function")
-  
+
   # Detect connection type (same logic as ellipse_query)
   schema_name <- DBI::dbGetInfo(con)$dbms.name
   is_datalake <- grepl("publicdatalake", schema_name, ignore.case = TRUE)
-  
+
   if (is_datalake) {
     # Route to public datalake upload mode
     logger::log_debug("[ellipse_push] datalake mode - public datalake upload")
-    return(ellipse_push_datalake_mode(con, file_or_folder, dataset_name, tag, metadata, interactive))
+    ellipse_push_datalake_mode(con, file_or_folder, dataset_name, tag, metadata, interactive)
   } else {
     # Route to traditional landing zone mode
     # For datawarehouse mode, file_or_folder is still required
     if (is.null(file_or_folder)) {
       cli::cli_alert_danger("Oups, il faut fournir un fichier ou répertoire pour l'upload vers la landing zone! 😅")
-      return(invisible(NULL))
+      invisible(NULL)
     }
     logger::log_debug("[ellipse_push] traditional mode - landing zone upload")
-    return(ellipse_push_landingzone_mode(con, file_or_folder, pipeline, file_batch, file_version))
+    ellipse_push_landingzone_mode(con, file_or_folder, pipeline, file_batch, file_version)
   }
 }
 
@@ -499,7 +499,7 @@ ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_ba
 
 #' Injecter de nouvelles données brutes manuellement dans tube via la landing zone
 #'
-#' @description DEPRECATED: Utilisez `ellipse_push()` à la place. 
+#' @description DEPRECATED: Utilisez `ellipse_push()` à la place.
 #' Cette fonction est maintenue pour la compatibilité descendante.
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
@@ -515,8 +515,8 @@ ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_ba
 #' @export
 ellipse_ingest <- function(con, file_or_folder, pipeline, file_batch = NULL, file_version = NULL) {
   # Delegate to ellipse_push for backward compatibility
-  ellipse_push(con, file_or_folder, pipeline = pipeline, file_batch = file_batch, 
-               file_version = file_version, interactive = FALSE)
+  ellipse_push(con, file_or_folder, pipeline = pipeline, file_batch = file_batch,
+    file_version = file_version, interactive = FALSE)
 }
 
 

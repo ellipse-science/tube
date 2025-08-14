@@ -136,9 +136,9 @@ check_params_before_publish <- function(env, dataframe, datamart, table, data_ta
   logger::log_debug("[tube::check_params_before_publish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 
@@ -225,9 +225,9 @@ check_params_before_unpublish <- function(env, datamart, table) {
   logger::log_debug("[tube::check_params_before_unpublish] Checking the env parameter")
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 
@@ -264,9 +264,9 @@ check_params_before_describe <- function(env, schema, table, new_table_tags, new
   # Check env
   if (!check_env(env)) {
     cli::cli_alert_danger(paste("Oups, il faut choisir un environnement! 😅\n\n",
-      "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
-      sep = ""
-    ))
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      ))
     return(FALSE)
   }
 

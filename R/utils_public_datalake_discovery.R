@@ -6,8 +6,15 @@
 format_public_datalake_all_datasets <- function(con) {
   # Query the public datalake table for all datasets
   query <- 'SELECT name as table_name, tag, file_count, creation_date, consent_expiry_date,
-            data_destruction_date, sensitivity_level, ethical_stamp,
-            substr(user_metadata_json, 1, 50) || \'...\' as user_metadata_preview
+            data_destruction_date, sensitivity_level, ethica  # Display summary
+  cli::cli_h3("📋 Tag Summary")
+  total_size <- sum(sapply(all_files_data, function(f) as.numeric(f$size_bytes)), na.rm = TRUE)
+  if (total_size >= 1024^3) {
+    total_size_display <- paste(round(total_size / 1024^3, 2), "GB")
+  } else if (total_size >= 1024^2) {
+    total_size_display <- paste(round(total_size / 1024^2, 2), "MB")
+  } else if (total_size >= 1024) {
+    total_size_display <- paste(round(total_size / 1024, 2), "KB")            substr(user_metadata_json, 1, 50) || \'...\' as user_metadata_preview
             FROM "public-data-lake-content" ORDER BY name, tag'
 
   result <- DBI::dbGetQuery(con, query)
@@ -375,19 +382,27 @@ format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_n
       # Parse file arrays for this record
       file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
         jsonlite::fromJSON(tag_result$file_paths)
-      } else { character(0) }
+      } else {
+        character(0)
+      }
 
       file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
         jsonlite::fromJSON(tag_result$file_names)
-      } else { character(0) }
+      } else {
+        character(0)
+      }
 
       file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
         jsonlite::fromJSON(tag_result$file_extensions)
-      } else { character(0) }
+      } else {
+        character(0)
+      }
 
       file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
         jsonlite::fromJSON(tag_result$file_sizes_bytes)
-      } else { numeric(0) }
+      } else {
+        numeric(0)
+      }
 
       # Parse user metadata for this record
       user_metadata <- NULL
@@ -404,7 +419,9 @@ format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_n
             user_metadata <- full_metadata[!names(full_metadata) %in% system_fields]
             if (length(user_metadata) == 0) user_metadata <- NULL
           }
-        }, error = function(e) { user_metadata <<- NULL })
+        }, error = function(e) {
+          user_metadata <<- NULL
+        })
       }
 
       # Store file data with metadata for each file in this record
@@ -666,19 +683,27 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       # Parse file arrays
       file_paths <- if (!is.null(tag_result$file_paths) && nzchar(tag_result$file_paths)) {
         jsonlite::fromJSON(tag_result$file_paths)
-      } else { character(0) }
+      } else {
+        character(0)
+      }
 
       file_names <- if (!is.null(tag_result$file_names) && nzchar(tag_result$file_names)) {
         jsonlite::fromJSON(tag_result$file_names)
-      } else { character(0) }
+      } else {
+        character(0)
+      }
 
       file_extensions <- if (!is.null(tag_result$file_extensions) && nzchar(tag_result$file_extensions)) {
         jsonlite::fromJSON(tag_result$file_extensions)
-      } else { character(0) }
-      
+      } else {
+        character(0)
+      }
+
       file_sizes <- if (!is.null(tag_result$file_sizes_bytes) && nzchar(tag_result$file_sizes_bytes)) {
         jsonlite::fromJSON(tag_result$file_sizes_bytes)
-      } else { numeric(0) }
+      } else {
+        numeric(0)
+      }
       
       # Parse user metadata
       user_metadata <- NULL

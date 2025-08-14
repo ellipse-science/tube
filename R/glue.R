@@ -385,9 +385,9 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
           setNames(
             table_tags,
             ifelse(!sapply(table_tags, is.null) &
-              !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
-            paste0("x-amz-meta-", names(table_tags)),
-            names(table_tags)
+                !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+              paste0("x-amz-meta-", names(table_tags)),
+              names(table_tags)
             )
           )
 
@@ -554,9 +554,9 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
     setNames(
       custom_table_properties,
       ifelse(!sapply(custom_table_properties, is.null) &
-        !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
-      paste0("x-amz-meta-", names(custom_table_properties)),
-      names(custom_table_properties)
+          !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
+        paste0("x-amz-meta-", names(custom_table_properties)),
+        names(custom_table_properties)
       )
     )
 

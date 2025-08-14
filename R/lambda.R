@@ -6,14 +6,14 @@
 #' @keywords internal
 list_lambda_functions <- function(credentials) {
   logger::log_debug("[tube::list_lambda_functions] entering function")
-  
+
   lambda_client <- paws.compute::lambda(
     config = c(
       credentials,
       close_connection = TRUE
     )
   )
-  
+
   tryCatch({
     # Raw API call with comprehensive error handling and pagination
     all_lambda_functions <- list()
@@ -49,8 +49,8 @@ list_lambda_functions <- function(credentials) {
       # Check if there are more pages with safe evaluation
       has_next_marker <- tryCatch({
         !is.null(lambda_functions_page$NextMarker) &&
-        !is.na(lambda_functions_page$NextMarker) &&
-        nchar(lambda_functions_page$NextMarker) > 0
+          !is.na(lambda_functions_page$NextMarker) &&
+          nchar(lambda_functions_page$NextMarker) > 0
       }, error = function(e) {
         logger::log_error(paste("Error checking NextMarker:", e$message))
         FALSE
@@ -88,19 +88,21 @@ list_lambda_functions <- function(credentials) {
       })
     }, error = function(e) {
       logger::log_error(paste("Error extracting function names:", e$message))
-      return(character(0))
+      character(0)
     })
 
     # Filter out empty names
     function_names <- function_names[function_names != ""]
-    
-    logger::log_debug(paste("[tube::list_lambda_functions] found", length(function_names), "lambda functions across", page_count, "pages"))
-    
+
+    logger::log_debug(paste(
+      "[tube::list_lambda_functions] found", length(function_names), "lambda functions across", page_count, "pages")
+    )
+
     return(function_names)
-    
+
   }, error = function(e) {
     logger::log_error(paste("[tube::list_lambda_functions] error listing lambdas:", e$message))
-    return(character(0))
+    character(0)
   })
 }
 
@@ -112,17 +114,17 @@ list_lambda_functions <- function(credentials) {
 #' @keywords internal
 find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
   logger::log_debug("[tube::find_lambda_by_pattern] entering function")
-  
+
   lambda_client <- paws.compute::lambda(
     config = c(
       credentials,
       close_connection = TRUE
     )
   )
-  
+
   tryCatch({
     logger::log_debug("Starting Lambda function search with patterns...")
-    
+
     # Raw API call with comprehensive error handling and pagination
     all_lambda_functions <- list()
     next_marker <- NULL
@@ -163,8 +165,8 @@ find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
       # Check if there are more pages with safe evaluation
       has_next_marker <- tryCatch({
         !is.null(lambda_functions_page$NextMarker) &&
-        !is.na(lambda_functions_page$NextMarker) &&
-        nchar(lambda_functions_page$NextMarker) > 0
+          !is.na(lambda_functions_page$NextMarker) &&
+          nchar(lambda_functions_page$NextMarker) > 0
       }, error = function(e) {
         logger::log_error(paste("Error checking NextMarker:", e$message))
         FALSE
@@ -196,14 +198,14 @@ find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
 
     # Search for matches with each pattern using robust logic
     all_matches <- character(0)
-    
+
     for (pattern in patterns) {
       logger::log_debug(paste("Searching for pattern:", pattern))
-      
+
       # Search through all functions for this pattern
       for (i in seq_along(all_lambda_functions)) {
         func <- all_lambda_functions[[i]]
-        
+
         # Safety check for function structure
         if (is.null(func$FunctionName) || is.na(func$FunctionName)) {
           next
@@ -219,7 +221,7 @@ find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
 
         if (isTRUE(match_result)) {
           logger::log_debug(paste("MATCH found! Function:", func$FunctionName, "matches pattern:", pattern))
-          
+
           if (return_first) {
             logger::log_debug(paste("[tube::find_lambda_by_pattern] returning first match:", func$FunctionName))
             return(func$FunctionName)
@@ -229,7 +231,7 @@ find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
         }
       }
     }
-    
+
     if (return_first) {
       logger::log_debug("[tube::find_lambda_by_pattern] no matches found across all pages")
       return(NULL)
@@ -242,7 +244,7 @@ find_lambda_by_pattern <- function(credentials, patterns, return_first = TRUE) {
         return(NULL)
       }
     }
-    
+
   }, error = function(e) {
     logger::log_error(paste("[tube::find_lambda_by_pattern] error:", e$message))
     return(NULL)

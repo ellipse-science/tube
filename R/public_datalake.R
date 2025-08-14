@@ -54,44 +54,46 @@ list_public_datalake_database <- function(credentials) {
 #' @keywords internal
 upload_file_to_public_datalake <- function(credentials, file_path, dataset_name, tag, metadata) {
   logger::log_debug("[tube::upload_file_to_public_datalake] entering function")
-  
+
   # Get public datalake bucket
   bucket <- list_public_datalake_bucket(credentials)
   if (is.null(bucket) || length(bucket) == 0) {
     cli::cli_alert_danger("Impossible de trouver le bucket public datalake")
     return(FALSE)
   }
-  
+
   # If multiple buckets, use the first one
   if (length(bucket) > 1) {
     bucket <- bucket[1]
   }
-  
+
   # Create S3 key: dataset_name/tag/filename
   filename <- basename(file_path)
   key <- paste(dataset_name, tag, filename, sep = "/")
-  
+
   # Prepare AWS metadata (must be strings)
   aws_metadata <- list(
     name = dataset_name,
     tag = tag
   )
-  
+
   # Add system metadata if provided
-  system_fields <- c("creation_date", "consent_expiry_date", "data_destruction_date", 
-                     "sensitivity_level", "ethical_stamp")
+  system_fields <- c(
+    "creation_date", "consent_expiry_date", "data_destruction_date",
+    "sensitivity_level", "ethical_stamp"
+  )
   for (field in system_fields) {
     if (!is.null(metadata[[field]])) {
       aws_metadata[[field]] <- as.character(metadata[[field]])
     }
   }
-  
+
   # Add custom user metadata as JSON if provided
   user_metadata <- metadata[!names(metadata) %in% system_fields]
   if (length(user_metadata) > 0) {
     aws_metadata[["user_metadata_json"]] <- jsonlite::toJSON(user_metadata, auto_unbox = TRUE)
   }
-  
+
   # Upload file with metadata
   s3_client <- paws.storage::s3(
     config = c(
@@ -99,7 +101,7 @@ upload_file_to_public_datalake <- function(credentials, file_path, dataset_name,
       close_connection = TRUE
     )
   )
-  
+
   tryCatch({
     logger::log_debug(paste("[tube::upload_file_to_public_datalake] uploading to key:", key))
     s3_client$put_object(
@@ -125,7 +127,7 @@ upload_file_to_public_datalake <- function(credentials, file_path, dataset_name,
 #' @keywords internal
 invoke_datalake_indexing_lambda <- function(credentials) {
   logger::log_debug("[tube::invoke_datalake_indexing_lambda] entering function")
-  
+
   # Create lambda client
   lambda_client <- paws.compute::lambda(
     config = c(
@@ -133,34 +135,36 @@ invoke_datalake_indexing_lambda <- function(credentials) {
       close_connection = TRUE
     )
   )
-  
+
   tryCatch({
     # Find the correct lambda function using the generic finder
     lambda_name <- find_datalake_indexing_lambda(credentials)
-    
+
     if (is.null(lambda_name)) {
       logger::log_warn("[tube::invoke_datalake_indexing_lambda] no matching lambda function found")
       cli::cli_alert_warning("⚠️ Fonction lambda d'indexation introuvable - indexation manuelle requise")
       return(FALSE)
     }
-    
+
     logger::log_debug(paste("[tube::invoke_datalake_indexing_lambda] using lambda:", lambda_name))
     logger::log_debug("[tube::invoke_datalake_indexing_lambda] invoking lambda")
-    
+
     result <- lambda_client$invoke(
       FunctionName = lambda_name,
       InvocationType = "Event"  # Async invocation
     )
-    
+
     success <- result$StatusCode %in% c(200, 202)
     if (success) {
       logger::log_debug("[tube::invoke_datalake_indexing_lambda] lambda invocation successful")
       cli::cli_alert_success("Indexation des données déclenchée avec succès")
     } else {
-      logger::log_error(paste("[tube::invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode))
+      logger::log_error(paste(
+        "[tube::invoke_datalake_indexing_lambda] lambda invocation failed, status:", result$StatusCode
+      ))
       cli::cli_alert_warning("L'indexation a été déclenchée mais le statut est incertain")
     }
-    
+
     success
   }, error = function(e) {
     logger::log_error(paste("[tube::invoke_datalake_indexing_lambda] lambda invocation error:", e$message))
