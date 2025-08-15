@@ -6,7 +6,7 @@
 \usage{
 ellipse_push(
   con,
-  file_or_folder,
+  file_or_folder = NULL,
   dataset_name = NULL,
   tag = NULL,
   metadata = NULL,
@@ -19,7 +19,8 @@ ellipse_push(
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
 
-\item{file_or_folder}{Le chemin vers le fichier ou répertoire à charger}
+\item{file_or_folder}{Le chemin vers le fichier ou répertoire à charger.
+Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.}
 
 \item{dataset_name}{Pour connexions datalake: nom du dataset (obligatoire)}
 

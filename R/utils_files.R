@@ -171,6 +171,7 @@ read_file_by_extension <- function(filepath, extension) {
       "xlsx" = readxl::read_excel(filepath),
       "xls" = readxl::read_excel(filepath),
       "dat" = read_dat_with_overflow_handling(filepath),
+      "xml" = read_xml_as_tabular(filepath),
       stop("Format de fichier non supporté: ", ext)
     )
   }))
@@ -282,4 +283,205 @@ read_csv_with_manual_overflow <- function(filepath) {
   names(df) <- header
 
   tibble::as_tibble(df)
+}
+
+#' Read XML file and convert to tabular format intelligently
+#' @param filepath Path to XML file
+#' @keywords internal
+read_xml_as_tabular <- function(filepath) {
+  tryCatch({
+    # Read XML document
+    xml_doc <- xml2::read_xml(filepath)
+    
+    # Strategy 1: Look for repeating elements that could form rows
+    tabular_data <- extract_xml_tabular_data(xml_doc)
+    
+    if (!is.null(tabular_data) && nrow(tabular_data) > 0) {
+      return(tabular_data)
+    }
+    
+    # Strategy 2: If no clear tabular structure, flatten the XML
+    flattened_data <- flatten_xml_to_tabular(xml_doc)
+    
+    return(flattened_data)
+    
+  }, error = function(e) {
+    # Fallback: create a single-row dataframe with raw XML content
+    cli::cli_alert_warning("XML parsing failed, storing as raw content: {e$message}")
+    
+    raw_content <- tryCatch({
+      readLines(filepath, warn = FALSE)
+    }, error = function(e2) {
+      "Error reading XML file"
+    })
+    
+    tibble::tibble(
+      xml_content = paste(raw_content, collapse = "\n"),
+      parse_error = e$message
+    )
+  })
+}
+
+#' Extract tabular data from XML by finding repeating elements
+#' @param xml_doc XML document object
+#' @keywords internal
+extract_xml_tabular_data <- function(xml_doc) {
+  # Find all element names in the document
+  all_nodes <- xml2::xml_find_all(xml_doc, "//*")
+  element_names <- xml2::xml_name(all_nodes)
+  
+  # Count occurrences of each element name
+  element_counts <- table(element_names)
+  
+  # Look for elements that appear multiple times (potential rows)
+  repeated_elements <- names(element_counts[element_counts > 1])
+  
+  if (length(repeated_elements) == 0) {
+    return(NULL)
+  }
+  
+  # Try each repeated element as potential row data
+  for (element_name in repeated_elements) {
+    xpath <- paste0("//", element_name)
+    elements <- xml2::xml_find_all(xml_doc, xpath)
+    
+    if (length(elements) < 2) next  # Need at least 2 rows
+    
+    # Try to convert these elements to tabular data
+    row_data <- extract_rows_from_elements(elements)
+    
+    if (!is.null(row_data) && nrow(row_data) > 1) {
+      # Add metadata about the source element
+      row_data$xml_source_element <- element_name
+      return(row_data)
+    }
+  }
+  
+  return(NULL)
+}
+
+#' Extract rows from XML elements
+#' @param elements XML nodes that represent potential rows
+#' @keywords internal
+extract_rows_from_elements <- function(elements) {
+  tryCatch({
+    # Extract data from each element
+    rows <- lapply(elements, function(element) {
+      # Get all child elements and their values
+      children <- xml2::xml_children(element)
+      
+      if (length(children) == 0) {
+        # If no children, use the element's text content
+        element_text <- xml2::xml_text(element)
+        if (nchar(trimws(element_text)) > 0) {
+          return(list(content = element_text))
+        } else {
+          return(NULL)
+        }
+      }
+      
+      # Create a named list from child elements
+      row_data <- list()
+      for (child in children) {
+        child_name <- xml2::xml_name(child)
+        child_value <- xml2::xml_text(child)
+        
+        # Handle duplicate column names by adding suffix
+        if (child_name %in% names(row_data)) {
+          counter <- 1
+          while (paste0(child_name, "_", counter) %in% names(row_data)) {
+            counter <- counter + 1
+          }
+          child_name <- paste0(child_name, "_", counter)
+        }
+        
+        row_data[[child_name]] <- child_value
+      }
+      
+      return(row_data)
+    })
+    
+    # Filter out NULL rows
+    rows <- rows[!sapply(rows, is.null)]
+    
+    if (length(rows) == 0) {
+      return(NULL)
+    }
+    
+    # Get all unique column names
+    all_columns <- unique(unlist(lapply(rows, names)))
+    
+    # Ensure all rows have the same columns (fill missing with NA)
+    standardized_rows <- lapply(rows, function(row) {
+      missing_cols <- setdiff(all_columns, names(row))
+      if (length(missing_cols) > 0) {
+        row[missing_cols] <- NA
+      }
+      return(row[all_columns])  # Reorder columns consistently
+    })
+    
+    # Convert to data frame
+    df <- data.frame(
+      do.call(rbind, lapply(standardized_rows, function(x) as.data.frame(x, stringsAsFactors = FALSE))),
+      stringsAsFactors = FALSE
+    )
+    
+    return(tibble::as_tibble(df))
+    
+  }, error = function(e) {
+    return(NULL)
+  })
+}
+
+#' Flatten XML to tabular format when no clear row structure exists
+#' @param xml_doc XML document object
+#' @keywords internal
+flatten_xml_to_tabular <- function(xml_doc) {
+  tryCatch({
+    # Get root element
+    root <- xml2::xml_root(xml_doc)
+    
+    # Extract all text nodes with their paths
+    all_nodes <- xml2::xml_find_all(xml_doc, "//*[text()]")
+    
+    if (length(all_nodes) == 0) {
+      # No text content found
+      return(tibble::tibble(
+        xml_structure = "No text content found",
+        root_element = xml2::xml_name(root)
+      ))
+    }
+    
+    # Create a flattened representation
+    flattened_data <- data.frame(
+      element_path = character(length(all_nodes)),
+      element_name = character(length(all_nodes)),
+      element_value = character(length(all_nodes)),
+      stringsAsFactors = FALSE
+    )
+    
+    for (i in seq_along(all_nodes)) {
+      node <- all_nodes[[i]]
+      flattened_data$element_name[i] <- xml2::xml_name(node)
+      flattened_data$element_value[i] <- xml2::xml_text(node)
+      
+      # Create a simple path representation
+      path_elements <- character()
+      current <- node
+      while (!is.null(current) && xml2::xml_name(current) != xml2::xml_name(root)) {
+        path_elements <- c(xml2::xml_name(current), path_elements)
+        current <- xml2::xml_parent(current)
+      }
+      flattened_data$element_path[i] <- paste(c(xml2::xml_name(root), path_elements), collapse = "/")
+    }
+    
+    return(tibble::as_tibble(flattened_data))
+    
+  }, error = function(e) {
+    # Ultimate fallback
+    tibble::tibble(
+      error = "XML flattening failed",
+      error_message = e$message
+    )
+  })
 }

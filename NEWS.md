@@ -1,3 +1,26 @@
+# tube 0.6.1 (BETA)
+
+## 🆕 New Features
+
+### XML File Support
+* **NEW**: XML file format support for public datalake uploads
+* **NEW**: Intelligent XML-to-tabular conversion with multiple parsing strategies
+* **NEW**: Support for both simple repeating elements and complex nested XML structures
+* **NEW**: Graceful error handling for malformed XML files
+* **NEW**: Added `xml2` package dependency for robust XML processing
+
+### File Format Support
+* **ENHANCED**: File format detection now includes XML files
+* **ENHANCED**: Updated all user-facing prompts to mention XML support
+* **ENHANCED**: Content type mapping for XML files (`text/xml`)
+
+## 🔧 Technical Improvements
+* **IMPROVED**: Extended `read_file_by_extension()` function with XML parsing capability
+* **IMPROVED**: Updated supported file extensions across all public datalake functions
+* **IMPROVED**: Comprehensive test coverage for XML file processing scenarios
+
+---
+
 # tube 0.6.0 (BETA)
 
 ## 🚀 Major New Features
@@ -11,7 +34,7 @@
 
 ### Enhanced User Experience
 * **NEW**: CLI-based progress bars for all file operations
-* **NEW**: Smart file format detection (CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT)
+* **NEW**: Smart file format detection (CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML)
 * **NEW**: Automatic AWS Lambda indexing trigger for uploaded data
 * **NEW**: Rich metadata formatting and display
 

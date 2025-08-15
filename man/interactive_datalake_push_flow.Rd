@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_datalake_push.R
 \name{interactive_datalake_push_flow}
 \alias{interactive_datalake_push_flow}
-\title{Interactive flow for collecting push parameters}
+\title{Interactive flow for collecting push parameters (SIMPLIFIED)}
 \usage{
 interactive_datalake_push_flow(file_or_folder, dataset_name, tag, metadata)
 }
@@ -16,6 +16,6 @@ interactive_datalake_push_flow(file_or_folder, dataset_name, tag, metadata)
 \item{metadata}{Initial metadata (may be NULL)}
 }
 \description{
-Interactive flow for collecting push parameters
+Interactive flow for collecting push parameters (SIMPLIFIED)
 }
 \keyword{internal}

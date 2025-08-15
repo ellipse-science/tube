@@ -331,7 +331,7 @@ prepare_files_for_upload <- function(file_or_folder) {
     all_files <- list.files(file_or_folder, recursive = TRUE, full.names = TRUE)
 
     # Filter for supported formats
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
+    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
     files <- all_files[tools::file_ext(tolower(all_files)) %in% supported_extensions]
 
     if (length(files) == 0) {
@@ -344,7 +344,7 @@ prepare_files_for_upload <- function(file_or_folder) {
   } else {
     # Single file
     extension <- tools::file_ext(tolower(file_or_folder))
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
+    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
 
     if (!extension %in% supported_extensions) {
       cli::cli_alert_danger("Format de fichier non supporté: {extension}")
@@ -485,7 +485,8 @@ get_content_type <- function(file_path) {
     "rda" = "application/x-r-data",
     "xlsx" = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "xls" = "application/vnd.ms-excel",
-    "dat" = "application/octet-stream"
+    "dat" = "application/octet-stream",
+    "xml" = "text/xml"
   )
 
   content_types[[extension]] %||% "application/octet-stream"
@@ -570,7 +571,7 @@ find_datalake_indexing_lambda <- function(credentials) {
 #' @keywords internal
 simple_file_folder_selector <- function() {
   cli::cli_h2("📁 Sélectionnez un fichier ou dossier")
-  cli::cli_text("📄 Formats: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT")
+  cli::cli_text("📄 Formats: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML")
   cli::cli_text("")
 
   current_dir <- getwd()
@@ -652,7 +653,7 @@ categorize_directory_items <- function(current_dir, items) {
   files <- items[!is_dir]
 
   # Identify supported files
-  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
+  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
   supported_files <- character(0)
   other_files <- character(0)
 
@@ -828,7 +829,7 @@ handle_navigation_choice <- function(choice, current_dir) {
 #' @keywords internal
 confirm_simple_directory_selection <- function(dir_path) {
   files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
-  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
+  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
 
   supported_count <- 0
   for (file in files) {
@@ -872,7 +873,7 @@ handle_numeric_selection <- function(choice_num, current_dir) {
   # Get supported files
   supported_exts <- c(
     "\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$",
-    "\\.xlsx$", "\\.xls$", "\\.dat$"
+    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$"
   )
   supported_pattern <- paste(supported_exts, collapse = "|")
   supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
@@ -918,7 +919,7 @@ confirm_directory_selection <- function(dir_path) {
   files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
   supported_exts <- c(
     "\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$",
-    "\\.xlsx$", "\\.xls$", "\\.dat$"
+    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$"
   )
   supported_pattern <- paste(supported_exts, collapse = "|")
   supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
@@ -1011,30 +1012,4 @@ handle_simple_choice <- function(choice, choice_map, current_dir) {
 
   cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro affiché)")
   return(list(action = "continue"))
-}
-
-#' Confirm directory selection with simple preview
-#' @keywords internal
-confirm_simple_directory_selection <- function(dir_path) {
-  files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
-  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat")
-
-  supported_count <- 0
-  for (file in files) {
-    if (tools::file_ext(tolower(file)) %in% supported_exts) {
-      supported_count <- supported_count + 1
-    }
-  }
-
-  cli::cli_rule("📁 Aperçu du dossier")
-  cli::cli_text("📂 Dossier: {basename(dir_path)}")
-  cli::cli_text("📄 Total fichiers: {length(files)}")
-  cli::cli_text("✅ Fichiers supportés: {supported_count}")
-  cli::cli_rule()
-
-  if (supported_count == 0) {
-    cli::cli_alert_warning("⚠️ Aucun fichier supporté trouvé dans ce dossier")
-  }
-
-  ask_yes_no("Confirmer la sélection de ce dossier?")
 }

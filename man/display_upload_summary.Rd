@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils_datalake_push.R
 \name{display_upload_summary}
 \alias{display_upload_summary}
-\title{Display upload summary before confirmation}
+\title{Display upload summary before confirmation (enhanced with system metadata)}
 \usage{
 display_upload_summary(file_or_folder, dataset_name, tag, metadata)
 }
 \description{
-Display upload summary before confirmation
+Display upload summary before confirmation (enhanced with system metadata)
 }
 \keyword{internal}
