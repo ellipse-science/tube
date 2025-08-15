@@ -26,7 +26,16 @@ Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.}
 
 \item{tag}{Pour connexions datalake: tag de version (obligatoire)}
 
-\item{metadata}{Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel)}
+\item{metadata}{Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel).
+Pour métadonnées système, utilisez les noms de champs suivants:
+\itemize{
+\item \code{creation_date} - Date de création des données (YYYY-MM-DD)
+\item \code{consent_expiry_date} - Date d'expiration du consentement (YYYY-MM-DD)
+\item \code{data_destruction_date} - Date de destruction des données (YYYY-MM-DD)
+\item \code{sensitivity_level} - Niveau de sensibilité (numérique 1-5)
+\item \code{ethical_stamp} - Tampon éthique (chaîne "true" ou "false")
+}
+Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1, ethical_stamp = "false", custom_field = "valeur personnalisée")}}
 
 \item{interactive}{Pour connexions datalake: mode interactif (défaut: TRUE)}
 

@@ -2,6 +2,16 @@
 
 ## 🆕 New Features
 
+### Enhanced Data Deletion Control
+* **NEW**: `ellipse_unpush()` now supports granular file deletion with `filename` parameter
+* **NEW**: Three deletion modes available:
+  - Full dataset deletion: `ellipse_unpush(con, "dataset")`
+  - Tag-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1")`
+  - File-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1", filename = "file.csv")`
+* **NEW**: Parameter validation ensures `filename` requires `tag` to be specified
+* **NEW**: File existence validation before deletion attempts
+* **ENHANCED**: Improved user confirmation dialogs with specific deletion details
+
 ### XML File Support
 * **NEW**: XML file format support for public datalake uploads
 * **NEW**: Intelligent XML-to-tabular conversion with multiple parsing strategies
@@ -18,6 +28,9 @@
 * **IMPROVED**: Extended `read_file_by_extension()` function with XML parsing capability
 * **IMPROVED**: Updated supported file extensions across all public datalake functions
 * **IMPROVED**: Comprehensive test coverage for XML file processing scenarios
+* **IMPROVED**: Enhanced `ellipse_unpush()` with improved error handling and validation
+* **IMPROVED**: Added comprehensive parameter validation for file deletion operations
+* **IMPROVED**: Backward compatibility maintained for all existing `ellipse_unpush()` usage patterns
 
 ---
 

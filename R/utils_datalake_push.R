@@ -31,7 +31,7 @@ ellipse_push_datalake_mode <- function(
 
       # Validate all parameters
       if (!validate_datalake_push_params(file_or_folder, dataset_name, tag, metadata)) {
-        invisible(NULL)
+        return(invisible(NULL))
       }
 
       # Process files
@@ -334,7 +334,19 @@ validate_datalake_push_params <- function(file_or_folder, dataset_name, tag, met
 #' Prepare files for upload (handle both files and folders)
 #' @keywords internal
 prepare_files_for_upload <- function(file_or_folder) {
-  if (file.info(file_or_folder)$isdir) {
+  # Check if file/folder exists first
+  if (!file.exists(file_or_folder)) {
+    cli::cli_alert_danger("Le fichier ou dossier spécifié n'existe pas!")
+    return(character(0))
+  }
+  
+  file_info <- file.info(file_or_folder)
+  if (is.na(file_info$isdir)) {
+    cli::cli_alert_danger("Impossible de déterminer le type de fichier/dossier!")
+    return(character(0))
+  }
+  
+  if (file_info$isdir) {
     # Get all files in directory
     all_files <- list.files(file_or_folder, recursive = TRUE, full.names = TRUE)
 
