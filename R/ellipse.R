@@ -1047,19 +1047,21 @@ ellipse_process <- function(con, table) {
 
 #' Retirer des données du datalake public
 #'
-#' Cette fonction permet de supprimer des datasets ou des tags spécifiques
-#' du datalake public. Elle peut supprimer un tag spécifique d'un dataset
-#' ou le dataset entier avec tous ses tags.
+#' Cette fonction permet de supprimer des datasets, des tags spécifiques,
+#' ou des fichiers individuels du datalake public. Elle peut supprimer
+#' un fichier spécifique, un tag complet, ou le dataset entier avec tous ses tags.
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #'   Doit être une connexion au datalake public.
 #' @param dataset_name Le nom du dataset à supprimer (obligatoire).
 #' @param tag Le tag spécifique à supprimer. Si NULL, supprime le dataset entier
 #'   avec tous ses tags (optionnel).
+#' @param filename Le nom du fichier spécifique à supprimer dans le tag
+#'   (partie après tag/). Si spécifié, le paramètre tag devient obligatoire (optionnel).
 #'
 #' @returns TRUE si la suppression a été effectuée avec succès, FALSE sinon.
 #' @export
-ellipse_unpush <- function(con, dataset_name, tag = NULL) {
+ellipse_unpush <- function(con, dataset_name, tag = NULL, filename = NULL) {
   logger::log_debug("[ellipse_unpush] entering function")
   
   # Validate connection type - must be datalake
@@ -1092,6 +1094,12 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     return(invisible(FALSE))
   }
   
+  # If filename is specified, tag is required
+  if (!is.null(filename) && (is.null(tag) || nchar(tag) == 0)) {
+    cli::cli_alert_danger("Le paramètre 'tag' est requis quand 'filename' est spécifié! 😅")
+    return(invisible(FALSE))
+  }
+  
   creds <- get_aws_credentials(env)
   bucket <- list_public_datalake_bucket(creds)
   
@@ -1120,6 +1128,30 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     if (is.null(tags) || !tag %in% tags) {
       cli::cli_alert_danger("Le tag '{tag}' n'existe pas dans le dataset '{dataset_name}'! 😅")
       return(invisible(FALSE))
+    }
+    
+    # If specific filename requested, validate it exists
+    if (!is.null(filename)) {
+      s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
+      prefix <- paste0(dataset_name, "/", tag, "/")
+      
+      r <- tryCatch({
+        s3_client$list_objects_v2(Bucket = bucket, Prefix = prefix)
+      }, error = function(e) NULL)
+      
+      if (is.null(r) || is.null(r$Contents) || length(r$Contents) == 0) {
+        cli::cli_alert_danger("Aucun fichier trouvé dans le tag '{tag}' du dataset '{dataset_name}'! 😅")
+        return(invisible(FALSE))
+      }
+      
+      # Check if the specific filename exists
+      file_keys <- sapply(r$Contents, function(obj) obj$Key)
+      target_key <- paste0(dataset_name, "/", tag, "/", filename)
+      
+      if (!target_key %in% file_keys) {
+        cli::cli_alert_danger("Le fichier '{filename}' n'existe pas dans le tag '{tag}' du dataset '{dataset_name}'! 😅")
+        return(invisible(FALSE))
+      }
     }
   }
   
@@ -1177,8 +1209,8 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
       "Êtes-vous certain.e de vouloir supprimer TOUT le dataset", dataset_name, "et TOUS ses tags?"
     )
 
-  } else {
-    # Specific tag deletion
+  } else if (is.null(filename)) {
+    # Specific tag deletion (but not specific file)
     cli::cli_alert_info("🏷️ SUPPRESSION D'UN TAG SPÉCIFIQUE")
     cli::cli_text("Dataset: {dataset_name}")
     cli::cli_text("Tag: {tag}")
@@ -1208,6 +1240,18 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     
     deletion_target <- paste0(dataset_name, "/", tag, "/")
     confirmation_msg <- "Êtes-vous certain.e de vouloir supprimer le tag '{tag}' du dataset '{dataset_name}'?"
+  } else {
+    # Specific file deletion
+    cli::cli_alert_info("📄 SUPPRESSION D'UN FICHIER SPÉCIFIQUE")
+    cli::cli_text("Dataset: {dataset_name}")
+    cli::cli_text("Tag: {tag}")
+    cli::cli_text("Fichier: {filename}")
+    
+    deletion_target <- paste0(dataset_name, "/", tag, "/", filename)
+    confirmation_msg <- paste0(
+      "Êtes-vous certain.e de vouloir supprimer le fichier '", filename, 
+      "' du tag '", tag, "' dans le dataset '", dataset_name, "'?"
+    )
   }
   
   cli::cli_rule()
@@ -1221,7 +1265,21 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
   # Execute deletion
   cli::cli_alert_info("Suppression en cours...")
   
-  deletion_success <- delete_s3_folder(creds, bucket, deletion_target)
+  if (!is.null(filename)) {
+    # Single file deletion - use direct S3 object deletion
+    s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
+    
+    deletion_success <- tryCatch({
+      s3_client$delete_object(Bucket = bucket, Key = deletion_target)
+      TRUE
+    }, error = function(e) {
+      logger::log_error(paste("Failed to delete file:", e$message))
+      FALSE
+    })
+  } else {
+    # Folder deletion - use existing delete_s3_folder function
+    deletion_success <- delete_s3_folder(creds, bucket, deletion_target)
+  }
   
   if (!deletion_success) {
     cli::cli_alert_danger("❌ Erreur lors de la suppression des fichiers S3!")
@@ -1246,8 +1304,10 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
   
   if (is.null(tag)) {
     cli::cli_alert_success("Dataset '{dataset_name}' supprimé complètement.")
-  } else {
+  } else if (is.null(filename)) {
     cli::cli_alert_success("Tag '{tag}' supprimé du dataset '{dataset_name}'.")
+  } else {
+    cli::cli_alert_success("Fichier '{filename}' supprimé du tag '{tag}' dans le dataset '{dataset_name}'.")
   }
   
   cli::cli_alert_info("Les données ne seront plus disponibles dans ellipse_discover() dans quelques minutes.")

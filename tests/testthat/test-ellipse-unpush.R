@@ -45,13 +45,15 @@ test_that("ellipse_unpush function exists and has correct signature", {
   
   # Check function signature
   formals_list <- formals(ellipse_unpush)
-  expect_equal(length(formals_list), 3) # con, dataset_name, tag
+  expect_equal(length(formals_list), 4) # con, dataset_name, tag, filename
   expect_true("con" %in% names(formals_list))
   expect_true("dataset_name" %in% names(formals_list))
   expect_true("tag" %in% names(formals_list))
+  expect_true("filename" %in% names(formals_list))
   
   # Check default values
   expect_equal(formals_list$tag, NULL) # tag should default to NULL
+  expect_equal(formals_list$filename, NULL) # filename should default to NULL
 })
 
 # Test parameter validation
@@ -67,6 +69,37 @@ test_that("ellipse_unpush validates input parameters", {
   # Test with missing dataset_name
   # We can't easily test this with real connections in unit tests
   # This would be covered in integration tests
+})
+
+# Test filename parameter validation
+test_that("ellipse_unpush validates filename parameter requirements", {
+  skip_if_not(can_test_real_aws_dev(), "Real AWS testing not available")
+  
+  debug_log("Testing filename parameter validation")
+  
+  expect_no_error({
+    # Test with real datalake connection
+    datalake_con <- conditionally_suppress({
+      ellipse_connect(env = "DEV", database = "datalake")
+    })
+    
+    if (!is.null(datalake_con) && !inherits(datalake_con, "error")) {
+      # Test filename without tag should fail
+      result <- conditionally_suppress({
+        ellipse_unpush(datalake_con, 
+                      dataset_name = "test-dataset", 
+                      filename = "test.csv")  # filename without tag
+      })
+      
+      # Should get an error about tag being required
+      expect_true(
+        is.null(result) || inherits(result, "error") || identical(result, FALSE),
+        info = "Expected ellipse_unpush with filename but no tag to fail"
+      )
+      
+      conditionally_suppress(ellipse_disconnect(datalake_con))
+    }
+  })
 })
 
 # Test connection type validation
