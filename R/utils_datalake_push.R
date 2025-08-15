@@ -166,40 +166,48 @@ collect_required_system_metadata <- function(metadata) {
   if (nchar(creation_date) == 0) creation_date <- default_date
   metadata$creation_date <- creation_date
 
-  # Consent expiry (optional but important)
-  default_consent <- ""
-  consent_expiry <- readline(prompt = paste0("🤝 Date d'expiration du consentement [", default_consent, "]: "))
-  if (nchar(consent_expiry) == 0) consent_expiry <- default_consent
-  if (tolower(consent_expiry) != "none") {
-    metadata$consent_expiry_date <- consent_expiry
-  }
-
-  # Data destruction date (optional but important)
-  default_destruction <- ""
-  destruction_date <- readline(prompt = paste0("🗑️  Date de destruction des données [", default_destruction, "]: "))
-  if (nchar(destruction_date) == 0) destruction_date <- default_destruction
-  if (tolower(destruction_date) != "none") {
-    metadata$data_destruction_date <- destruction_date
-  }
-
-  # Sensitivity level (1-5)
-  repeat {
-    sensitivity <- readline(prompt = "🔒 Niveau de sensibilité des données [1-5] [1]: ")
-    if (nchar(sensitivity) == 0) sensitivity <- "1"
-    if (sensitivity %in% c("1", "2", "3", "4", "5")) {
-      metadata$sensitivity_level <- as.numeric(sensitivity)
-      break
-    }
-    cli::cli_alert_danger("Veuillez entrer un niveau entre 1 et 5")
-  }
-
-  # Ethical approval
-  ethical_response <- readline(prompt = "✅ Approbation éthique [o/n]: ")
+  # Ethical approval - MOVED UP
+  ethical_response <- readline(prompt = "✅ Approbation éthique requise [o/n]: ")
   if (nchar(ethical_response) == 0) ethical_response <- "n"
   if (tolower(ethical_response) %in% c("y", "yes", "oui", "o")) {
     metadata$ethical_stamp <- "true"
+    
+    # CONDITIONAL GOVERNANCE QUESTIONS - Only if ethical stamp = YES
+    # Consent expiry (REQUIRED)
+    repeat {
+      consent_expiry <- readline(prompt = "🤝 Date d'expiration du consentement (YYYY-MM-DD): ")
+      if (nchar(consent_expiry) > 0) {
+        metadata$consent_expiry_date <- consent_expiry
+        break
+      }
+      cli::cli_alert_danger("La date d'expiration du consentement est requise")
+    }
+
+    # Data destruction date (REQUIRED)
+    repeat {
+      destruction_date <- readline(prompt = "🗑️ Date de destruction des données (YYYY-MM-DD): ")
+      if (nchar(destruction_date) > 0) {
+        metadata$data_destruction_date <- destruction_date
+        break
+      }
+      cli::cli_alert_danger("La date de destruction des données est requise")
+    }
+
+    # Sensitivity level (REQUIRED, 1-5)
+    repeat {
+      sensitivity <- readline(prompt = "🔒 Niveau de sensibilité des données [1-5]: ")
+      if (sensitivity %in% c("1", "2", "3", "4", "5")) {
+        metadata$sensitivity_level <- as.numeric(sensitivity)
+        break
+      }
+      cli::cli_alert_danger("Veuillez entrer un niveau entre 1 et 5")
+    }
   } else {
     metadata$ethical_stamp <- "false"
+    # Set default values for non-ethical datasets
+    metadata$consent_expiry_date <- "9999-12-31"
+    metadata$data_destruction_date <- "9999-12-31"
+    metadata$sensitivity_level <- 1
   }
 
   cli::cli_alert_success("✅ Métadonnées système collectées")
@@ -431,11 +439,13 @@ prepare_s3_metadata <- function(custom_metadata) {
   # System metadata (required by the platform)
   s3_metadata <- list(
     "creation_date" = format(Sys.Date(), "%Y-%m-%d"),
-    "consent_expiry_date" = format(Sys.Date() + 365, "%Y-%m-%d"), # Default 1 year
-    "data_destruction_date" = format(Sys.Date() + 365 * 10, "%Y-%m-%d"), # Default 10 years
-    "sensitivity_level" = "1", # Default medium sensitivity (1-5 scale)
-    "ethical_stamp" = "false" # Default approved
+    "ethical_stamp" = "false"
   )
+
+  # Default governance values for non-ethical datasets
+  s3_metadata[["consent_expiry_date"]] <- "9999-12-31"
+  s3_metadata[["data_destruction_date"]] <- "9999-12-31"
+  s3_metadata[["sensitivity_level"]] <- "1"
 
   # Override with actual values from collected metadata
   if (!is.null(custom_metadata)) {
