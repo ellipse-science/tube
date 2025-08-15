@@ -71,7 +71,7 @@ format_public_datalake_all_datasets <- function(con) {
     Tag = paste("🏷️", result$tag),
     Files = result$file_count,
     Created = result$creation_date,
-    Sensitivity = paste("Level", result$sensitivity_level),
+    Sensitivity = result$sensitivity_level,
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
@@ -544,7 +544,7 @@ format_public_datalake_tag_details_detailed <- function(con, dataset_name, tag_n
     if (!is.na(file_data$sensitivity_level)) {
       metadata_info <- rbind(metadata_info, data.frame(
         Property = "🔒Sensitivity level",
-        Value = paste("Level", file_data$sensitivity_level),
+        Value = file_data$sensitivity_level,
         stringsAsFactors = FALSE,
         check.names = FALSE
       ))
@@ -805,7 +805,11 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
       }
     }),
     `🔒Sensitivity Level` = sapply(all_files_data, function(f) {
-      if (!is.na(f$sensitivity_level)) paste("Level", f$sensitivity_level) else "N/A"
+      if (!is.na(f$sensitivity_level)) {
+        f$sensitivity_level
+      } else {
+        "N/A"
+      }
     }),
     `✅Ethical Stamp` = sapply(all_files_data, function(f) {
       if (!is.na(f$ethical_stamp)) {

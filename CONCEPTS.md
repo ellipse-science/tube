@@ -283,7 +283,7 @@ s3://publicdatalakebucket/dataset_name/tag/files
 - `consent_expiry_date` - When consent expires
 - `data_destruction_date` - When data should be destroyed
 - `sensitivity_level` - Data sensitivity classification
-- `ethical_stamp` - Ethical approval status
+- `ethical_stamp` - Whether the dataset had to go through an ethical stamping process or not
 - `user_metadata_json` - Additional custom metadata as JSON
 
 #### **Discovery Patterns**

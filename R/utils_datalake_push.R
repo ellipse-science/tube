@@ -197,9 +197,9 @@ collect_required_system_metadata <- function(metadata) {
   ethical_response <- readline(prompt = "✅ Approbation éthique [o/n]: ")
   if (nchar(ethical_response) == 0) ethical_response <- "n"
   if (tolower(ethical_response) %in% c("y", "yes", "oui", "o")) {
-    metadata$ethical_stamp <- "approved"
+    metadata$ethical_stamp <- "true"
   } else {
-    metadata$ethical_stamp <- "pending"
+    metadata$ethical_stamp <- "false"
   }
 
   cli::cli_alert_success("✅ Métadonnées système collectées")
@@ -433,8 +433,8 @@ prepare_s3_metadata <- function(custom_metadata) {
     "creation_date" = format(Sys.Date(), "%Y-%m-%d"),
     "consent_expiry_date" = format(Sys.Date() + 365, "%Y-%m-%d"), # Default 1 year
     "data_destruction_date" = format(Sys.Date() + 365 * 10, "%Y-%m-%d"), # Default 10 years
-    "sensitivity_level" = "3", # Default medium sensitivity (1-5 scale)
-    "ethical_stamp" = "true" # Default approved
+    "sensitivity_level" = "1", # Default medium sensitivity (1-5 scale)
+    "ethical_stamp" = "false" # Default approved
   )
 
   # Override with actual values from collected metadata
@@ -452,7 +452,7 @@ prepare_s3_metadata <- function(custom_metadata) {
       s3_metadata[["sensitivity_level"]] <- as.character(custom_metadata$sensitivity_level)
     }
     if (!is.null(custom_metadata$ethical_stamp)) {
-      s3_metadata[["ethical_stamp"]] <- ifelse(custom_metadata$ethical_stamp == "approved", "true", "false")
+      s3_metadata[["ethical_stamp"]] <- custom_metadata$ethical_stamp
     }
 
     # Add only non-system custom metadata to user_metadata_json
