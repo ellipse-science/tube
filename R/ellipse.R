@@ -1143,8 +1143,9 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
       cli::cli_text("  • {tag_name}")
     }
     
-    # Count total files across all tags
+    # Count total files across all tags and collect file paths
     total_files <- 0
+    all_file_paths <- c()
     s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
     
     for (tag_name in tags) {
@@ -1155,11 +1156,22 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
       
       if (!is.null(r) && !is.null(r$Contents)) {
         total_files <- total_files + length(r$Contents)
+        # Extract file paths relative to dataset
+        tag_files <- sapply(r$Contents, function(obj) {
+          # Remove dataset_name/ prefix to show relative path
+          gsub(paste0("^", dataset_name, "/"), "", obj$Key)
+        })
+        all_file_paths <- c(all_file_paths, tag_files)
       }
     }
     
     cli::cli_text("Fichiers totaux: {total_files}")
-    cli::cli_text("Chemin S3: s3://{bucket}/{dataset_name}/")
+    if (length(all_file_paths) > 0) {
+      cli::cli_text("Fichiers à supprimer:")
+      for (file_path in all_file_paths) {
+        cli::cli_text("  • {file_path}")
+      }
+    }
     
     deletion_target <- paste0(dataset_name, "/")
     confirmation_msg <- paste(
@@ -1172,7 +1184,7 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     cli::cli_text("Dataset: {dataset_name}")
     cli::cli_text("Tag: {tag}")
     
-    # Count files in this tag
+    # Count files in this tag and collect file paths
     prefix <- paste0(dataset_name, "/", tag, "/")
     s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
     
@@ -1185,7 +1197,15 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     # Force variable usage for linter
     message_text <- sprintf("Fichiers à supprimer: %d", files_to_delete)
     cli::cli_text(message_text)
-    cli::cli_text("Chemin S3: s3://{bucket}/{dataset_name}/{tag}/")
+    
+    if (!is.null(r) && !is.null(r$Contents) && length(r$Contents) > 0) {
+      cli::cli_text("Fichiers concernés:")
+      for (obj in r$Contents) {
+        # Remove dataset_name/ prefix to show relative path
+        relative_path <- gsub(paste0("^", dataset_name, "/"), "", obj$Key)
+        cli::cli_text("  • {relative_path}")
+      }
+    }
     
     deletion_target <- paste0(dataset_name, "/", tag, "/")
     confirmation_msg <- "Êtes-vous certain.e de vouloir supprimer le tag '{tag}' du dataset '{dataset_name}'?"
