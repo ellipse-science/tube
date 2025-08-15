@@ -277,26 +277,38 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       tag_metadata <- metadata_by_tag[[tag_name]]
       field_names <- names(tag_metadata)
 
-      # First row shows the tag name
-      metadata_display_list <- append(metadata_display_list, list(data.frame(
-        Tag = paste("🏷️ Tag", tag_name),
-        Field = field_names[1],
-        Value = tag_metadata[[field_names[1]]],
-        stringsAsFactors = FALSE,
-        check.names = FALSE
-      )))
+      # Check if there are any custom metadata fields
+      if (length(field_names) > 0) {
+        # First row shows the tag name
+        metadata_display_list <- append(metadata_display_list, list(data.frame(
+          Tag = paste("🏷️ Tag", tag_name),
+          Field = field_names[1],
+          Value = tag_metadata[[field_names[1]]],
+          stringsAsFactors = FALSE,
+          check.names = FALSE
+        )))
 
-      # Subsequent rows for this tag have empty tag column
-      if (length(field_names) > 1) {
-        for (i in 2:length(field_names)) {
-          metadata_display_list <- append(metadata_display_list, list(data.frame(
-            Tag = "",
-            Field = field_names[i],
-            Value = tag_metadata[[field_names[i]]],
-            stringsAsFactors = FALSE,
-            check.names = FALSE
-          )))
+        # Subsequent rows for this tag have empty tag column
+        if (length(field_names) > 1) {
+          for (i in 2:length(field_names)) {
+            metadata_display_list <- append(metadata_display_list, list(data.frame(
+              Tag = "",
+              Field = field_names[i],
+              Value = tag_metadata[[field_names[i]]],
+              stringsAsFactors = FALSE,
+              check.names = FALSE
+            )))
+          }
         }
+      } else {
+        # No custom metadata for this tag, show a placeholder message
+        metadata_display_list <- append(metadata_display_list, list(data.frame(
+          Tag = paste("🏷️ Tag", tag_name),
+          Field = "No custom metadata",
+          Value = "Only system metadata available",
+          stringsAsFactors = FALSE,
+          check.names = FALSE
+        )))
       }
     }
 
@@ -818,7 +830,7 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     }),
     `🏷️ Custom Metadata` = sapply(all_files_data, function(f) {
       if (!is.null(f$user_metadata) && length(f$user_metadata) > 0) {
-        metadata_summary <- paste(names(f$user_metadata)[1:min(2, length(f$user_metadata))], collapse = ",")
+        metadata_summary <- paste(names(f$user_metadata)[seq_len(min(2, length(f$user_metadata)))], collapse = ",")
         if (length(f$user_metadata) > 2) {
           paste0(metadata_summary, "...")
         } else {

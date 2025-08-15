@@ -991,26 +991,26 @@ handle_simple_choice <- function(choice, choice_map, current_dir) {
 
     if (item$type == "file") {
       cli::cli_alert_success("✅ Fichier sélectionné: {item$name}")
-      list(action = "select", path = item$path)
+      return(list(action = "select", path = item$path))
     } else if (item$type == "dir") {
       cli::cli_alert_info("📁 Navigation vers: {item$name}")
-      list(action = "update_dir", path = item$path)
+      return(list(action = "update_dir", path = item$path))
     } else if (item$type == "parent") {
       cli::cli_alert_info("📁 Remontée vers le dossier parent")
-      list(action = "update_dir", path = item$path)
+      return(list(action = "update_dir", path = item$path))
     } else if (item$type == "current") {
       if (confirm_simple_directory_selection(item$path)) {
-        list(action = "select", path = item$path)
+        return(list(action = "select", path = item$path))
       } else {
-        list(action = "continue")
+        return(list(action = "continue"))
       }
     } else if (item$type == "quit") {
-      list(action = "quit")
+      return(list(action = "quit"))
     }
   }
 
   cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro affiché)")
-  list(action = "continue")
+  return(list(action = "continue"))
 }
 
 #' Confirm directory selection with simple preview
