@@ -1044,3 +1044,193 @@ ellipse_process <- function(con, table) {
     invisible(FALSE)
   }
 }
+
+#' Retirer des données du datalake public
+#'
+#' Cette fonction permet de supprimer des datasets ou des tags spécifiques
+#' du datalake public. Elle peut supprimer un tag spécifique d'un dataset
+#' ou le dataset entier avec tous ses tags.
+#'
+#' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
+#'   Doit être une connexion au datalake public.
+#' @param dataset_name Le nom du dataset à supprimer (obligatoire).
+#' @param tag Le tag spécifique à supprimer. Si NULL, supprime le dataset entier
+#'   avec tous ses tags (optionnel).
+#'
+#' @returns TRUE si la suppression a été effectuée avec succès, FALSE sinon.
+#' @export
+ellipse_unpush <- function(con, dataset_name, tag = NULL) {
+  logger::log_debug("[ellipse_unpush] entering function")
+  
+  # Validate connection type - must be datalake
+  schema_name <- DBI::dbGetInfo(con)$dbms.name
+  is_datalake <- grepl("publicdatalake", schema_name, ignore.case = TRUE)
+  
+  if (!is_datalake) {
+    cli::cli_alert_danger(
+      "L'opération ellipse_unpush fonctionne seulement avec les connexions datalake! 😅"
+    )
+    return(invisible(FALSE))
+  }
+  
+  # Get environment and credentials
+  env <- DBI::dbGetInfo(con)$profile_name
+  
+  if (!check_env(env)) {
+    cli::cli_alert_danger(
+      paste("Oups, il faut choisir un environnement! 😅\n\n",
+        "Le paramètre `env` peut être \"PROD\" ou \"DEV\"",
+        sep = ""
+      )
+    )
+    return(invisible(FALSE))
+  }
+  
+  # Validate required parameters
+  if (is.null(dataset_name) || nchar(dataset_name) == 0) {
+    cli::cli_alert_danger("Le nom du dataset est requis! 😅")
+    return(invisible(FALSE))
+  }
+  
+  creds <- get_aws_credentials(env)
+  bucket <- list_public_datalake_bucket(creds)
+  
+  if (is.null(bucket) || length(bucket) == 0) {
+    cli::cli_alert_danger("Impossible de trouver le bucket du datalake public! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # Use first bucket if multiple
+  if (length(bucket) > 1) {
+    bucket <- bucket[1]
+  }
+  
+  # Check if dataset exists
+  datasets <- list_s3_folders(creds, bucket, "")
+  
+  if (is.null(datasets) || !dataset_name %in% datasets) {
+    cli::cli_alert_danger("Le dataset '{dataset_name}' n'existe pas! 😅")
+    return(invisible(FALSE))
+  }
+  
+  # If specific tag requested, validate it exists
+  if (!is.null(tag)) {
+    tags <- list_s3_folders(creds, bucket, paste0(dataset_name, "/"))
+    
+    if (is.null(tags) || !tag %in% tags) {
+      cli::cli_alert_danger("Le tag '{tag}' n'existe pas dans le dataset '{dataset_name}'! 😅")
+      return(invisible(FALSE))
+    }
+  }
+  
+  # Prepare deletion summary
+  cli::cli_rule()
+  
+  if (is.null(tag)) {
+    # Full dataset deletion
+    tags <- list_s3_folders(creds, bucket, paste0(dataset_name, "/"))
+    
+    if (is.null(tags) || length(tags) == 0) {
+      cli::cli_alert_warning("Le dataset '{dataset_name}' semble vide.")
+      return(invisible(TRUE))
+    }
+    
+    cli::cli_alert_warning("⚠️ SUPPRESSION COMPLÈTE DU DATASET")
+    cli::cli_text("Dataset: {dataset_name}")
+    cli::cli_text("Tags à supprimer: {length(tags)}")
+    
+    for (tag_name in tags) {
+      cli::cli_text("  • {tag_name}")
+    }
+    
+    # Count total files across all tags
+    total_files <- 0
+    s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
+    
+    for (tag_name in tags) {
+      prefix <- paste0(dataset_name, "/", tag_name, "/")
+      r <- tryCatch({
+        s3_client$list_objects_v2(Bucket = bucket, Prefix = prefix)
+      }, error = function(e) NULL)
+      
+      if (!is.null(r) && !is.null(r$Contents)) {
+        total_files <- total_files + length(r$Contents)
+      }
+    }
+    
+    cli::cli_text("Fichiers totaux: {total_files}")
+    cli::cli_text("Chemin S3: s3://{bucket}/{dataset_name}/")
+    
+    deletion_target <- paste0(dataset_name, "/")
+    confirmation_msg <- "Êtes-vous certain.e de vouloir supprimer TOUT le dataset '{dataset_name}' et TOUS ses tags?"
+    
+  } else {
+    # Specific tag deletion
+    cli::cli_alert_info("🏷️ SUPPRESSION D'UN TAG SPÉCIFIQUE")
+    cli::cli_text("Dataset: {dataset_name}")
+    cli::cli_text("Tag: {tag}")
+    
+    # Count files in this tag
+    prefix <- paste0(dataset_name, "/", tag, "/")
+    s3_client <- paws.storage::s3(config = c(creds, close_connection = TRUE))
+    
+    r <- tryCatch({
+      s3_client$list_objects_v2(Bucket = bucket, Prefix = prefix)
+    }, error = function(e) NULL)
+    
+    files_to_delete <- if (!is.null(r) && !is.null(r$Contents)) length(r$Contents) else 0
+    
+    # Force variable usage for linter
+    message_text <- sprintf("Fichiers à supprimer: %d", files_to_delete)
+    cli::cli_text(message_text)
+    cli::cli_text("Chemin S3: s3://{bucket}/{dataset_name}/{tag}/")
+    
+    deletion_target <- paste0(dataset_name, "/", tag, "/")
+    confirmation_msg <- "Êtes-vous certain.e de vouloir supprimer le tag '{tag}' du dataset '{dataset_name}'?"
+  }
+  
+  cli::cli_rule()
+  
+  # User confirmation
+  if (!ask_yes_no(confirmation_msg)) {
+    cli::cli_alert_info("Suppression annulée.")
+    return(invisible(FALSE))
+  }
+  
+  # Execute deletion
+  cli::cli_alert_info("Suppression en cours...")
+  
+  deletion_success <- delete_s3_folder(creds, bucket, deletion_target)
+  
+  if (!deletion_success) {
+    cli::cli_alert_danger("❌ Erreur lors de la suppression des fichiers S3!")
+    return(invisible(FALSE))
+  }
+  
+  cli::cli_alert_success("✅ Fichiers supprimés avec succès.")
+  
+  # Trigger lambda re-indexing (required)
+  cli::cli_alert_info("Déclenchement de la réindexation...")
+  
+  lambda_success <- invoke_datalake_indexing_lambda(creds)
+  
+  if (!lambda_success) {
+    cli::cli_alert_danger("❌ Erreur lors de la réindexation!")
+    cli::cli_alert_danger("Les fichiers ont été supprimés mais l'index n'a pas été mis à jour.")
+    cli::cli_alert_danger("Contactez votre ingénieur de données.")
+    return(invisible(FALSE))
+  }
+  
+  cli::cli_alert_success("✅ Réindexation déclenchée avec succès!")
+  
+  if (is.null(tag)) {
+    cli::cli_alert_success("Dataset '{dataset_name}' supprimé complètement.")
+  } else {
+    cli::cli_alert_success("Tag '{tag}' supprimé du dataset '{dataset_name}'.")
+  }
+  
+  cli::cli_alert_info("Les données ne seront plus disponibles dans ellipse_discover() dans quelques minutes.")
+  cli::cli_alert_info("N'oubliez pas de vous déconnecter avec ellipse_disconnect(con) 👋")
+  
+  invisible(TRUE)
+}
