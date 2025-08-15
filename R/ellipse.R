@@ -1165,9 +1165,8 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
       }
     }
     
-    cli::cli_text("Fichiers totaux: {total_files}")
+    cli::cli_text("Fichiers à supprimer: {total_files}")
     if (length(all_file_paths) > 0) {
-      cli::cli_text("Fichiers à supprimer:")
       for (file_path in all_file_paths) {
         cli::cli_text("  • {file_path}")
       }
