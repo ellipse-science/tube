@@ -141,7 +141,19 @@ list_s3_folders <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::list_s3_folders] wrangling result")
   folder_list <- r$CommonPrefixes
   folder_list <- lapply(folder_list, function(x) x$Prefix)
-  folder_list <- lapply(folder_list, function(x) regmatches(x, regexec(".*/(.*)/$", x))[[1]][2])
+  # Fix regex to handle both root-level and nested folders
+  folder_list <- lapply(folder_list, function(x) {
+    # Remove trailing slash first
+    cleaned <- gsub("/$", "", x)
+    # Extract the last part after the last slash (or the whole string if no slash)
+    if (grepl("/", cleaned)) {
+      # Has slashes - extract last part
+      regmatches(cleaned, regexec(".*/(.*)$", cleaned))[[1]][2]
+    } else {
+      # No slashes - return as is
+      cleaned
+    }
+  })
   folder_list <- unlist(folder_list)
   logger::log_debug("[tube::list_s3_folders] returning results")
   folder_list
