@@ -461,31 +461,62 @@ prepare_s3_metadata <- function(custom_metadata) {
 
   # Override with actual values from collected metadata
   if (!is.null(custom_metadata)) {
+    # Handle creation_date
     if (!is.null(custom_metadata$creation_date)) {
       s3_metadata[["creation_date"]] <- custom_metadata$creation_date
     }
-    if (!is.null(custom_metadata$consent_expiry_date)) {
-      s3_metadata[["consent_expiry_date"]] <- custom_metadata$consent_expiry_date
+    
+    # Handle consent expiry date (support both field names)
+    consent_expiry_value <- custom_metadata$consent_expiry_date %||% 
+                           custom_metadata$consent_expiration_date
+    if (!is.null(consent_expiry_value)) {
+      s3_metadata[["consent_expiry_date"]] <- consent_expiry_value
     }
-    if (!is.null(custom_metadata$data_destruction_date)) {
-      s3_metadata[["data_destruction_date"]] <- custom_metadata$data_destruction_date
+    
+    # Handle data destruction date (support both field names)
+    destruction_date_value <- custom_metadata$data_destruction_date %||% 
+                             custom_metadata$data_expiration_date
+    if (!is.null(destruction_date_value)) {
+      s3_metadata[["data_destruction_date"]] <- destruction_date_value
     }
+    
+    # Handle sensitivity level
     if (!is.null(custom_metadata$sensitivity_level)) {
       s3_metadata[["sensitivity_level"]] <- as.character(custom_metadata$sensitivity_level)
     }
+    
+    # Handle ethical stamp (convert logical to string)
     if (!is.null(custom_metadata$ethical_stamp)) {
-      s3_metadata[["ethical_stamp"]] <- custom_metadata$ethical_stamp
+      if (is.logical(custom_metadata$ethical_stamp)) {
+        s3_metadata[["ethical_stamp"]] <- if (custom_metadata$ethical_stamp) "true" else "false"
+      } else {
+        s3_metadata[["ethical_stamp"]] <- custom_metadata$ethical_stamp
+      }
     }
 
     # Add only non-system custom metadata to user_metadata_json
     system_fields <- c(
+      # Standard English field names
       "creation_date", "consent_expiry_date", "data_destruction_date",
-      "sensitivity_level", "ethical_stamp"
+      "sensitivity_level", "ethical_stamp",
+      # Common alternative/incorrect field names users might use
+      "data_expiration_date", "consent_expiration_date",
+      # Reserved field that should not be included in user metadata
+      "user_metadata_json"
     )
     user_metadata <- custom_metadata[!names(custom_metadata) %in% system_fields]
 
-    if (length(user_metadata) > 0) {
-      # Convert only user custom metadata to JSON string
+    # Handle direct user_metadata_json field if provided (for backward compatibility)
+    if (!is.null(custom_metadata$user_metadata_json)) {
+      if (is.list(custom_metadata$user_metadata_json)) {
+        # If it's a list, convert to JSON
+        s3_metadata[["user_metadata_json"]] <- jsonlite::toJSON(custom_metadata$user_metadata_json, auto_unbox = TRUE)
+      } else if (is.character(custom_metadata$user_metadata_json)) {
+        # If it's already a JSON string, use as-is
+        s3_metadata[["user_metadata_json"]] <- custom_metadata$user_metadata_json
+      }
+    } else if (length(user_metadata) > 0) {
+      # Convert other custom metadata to JSON string
       custom_json <- jsonlite::toJSON(user_metadata, auto_unbox = TRUE)
       s3_metadata[["user_metadata_json"]] <- custom_json
     }
