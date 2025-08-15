@@ -1135,7 +1135,7 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
       return(invisible(TRUE))
     }
     
-    cli::cli_alert_warning("⚠️ SUPPRESSION COMPLÈTE DU DATASET")
+    cli::cli_text("⚠️ SUPPRESSION COMPLÈTE DU DATASET")
     cli::cli_text("Dataset: {dataset_name}")
     cli::cli_text("Tags à supprimer: {length(tags)}")
     
@@ -1162,8 +1162,10 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL) {
     cli::cli_text("Chemin S3: s3://{bucket}/{dataset_name}/")
     
     deletion_target <- paste0(dataset_name, "/")
-    confirmation_msg <- "Êtes-vous certain.e de vouloir supprimer TOUT le dataset '{dataset_name}' et TOUS ses tags?"
-    
+    confirmation_msg <- paste(
+      "Êtes-vous certain.e de vouloir supprimer TOUT le dataset", dataset_name, "et TOUS ses tags?"
+    )
+
   } else {
     # Specific tag deletion
     cli::cli_alert_info("🏷️ SUPPRESSION D'UN TAG SPÉCIFIQUE")
