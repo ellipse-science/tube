@@ -208,6 +208,8 @@ list_glue_jobs <- function(credentials) {
 #' level partition in the datawarehouse or datamart bucket
 #' in the datawarehouse, it represents the pipeline name
 #' in the datamart, it represents the datamart and table name separates with a /
+#' @param table_tags Optional tags to associate with the table
+#' @param table_description Optional description for the table
 #' @returns A boolean indicating wether or not the job was started
 run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(

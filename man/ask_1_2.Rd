@@ -8,6 +8,8 @@ ask_1_2(question, unattended_option = NULL)
 }
 \arguments{
 \item{question}{La question à poser}
+
+\item{unattended_option}{Option pour mode non-interactif (doit être "1" ou "2")}
 }
 \value{
 La réponse de l'utilisateur

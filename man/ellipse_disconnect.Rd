@@ -6,6 +6,9 @@
 \usage{
 ellipse_disconnect(con = NULL)
 }
+\arguments{
+\item{con}{L'objet de connexion à fermer}
+}
 \value{
 TRUE if the connexion was closed or FALSE if no connexion existed
 }

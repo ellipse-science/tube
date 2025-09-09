@@ -9,6 +9,8 @@ invoke_datalake_indexing_lambda(creds)
 invoke_datalake_indexing_lambda(creds)
 }
 \arguments{
+\item{creds}{AWS credentials from get_aws_credentials()}
+
 \item{credentials}{AWS credentials from get_aws_credentials()}
 }
 \value{

@@ -2,6 +2,7 @@
 #' @description Fonctions pour poser des questions à l'utilisateur à laquelle
 #' il peut répondre par oui ou non
 #' @param question La question à poser
+#' @param unattended_option Option pour mode non-interactif ("oui"/"non")
 #' @return La réponse de l'utilisateur
 ask_yes_no <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
@@ -15,6 +16,7 @@ ask_yes_no <- function(question, unattended_option = NULL) {
 #' @description Fonctions pour poser des questions à l'utilisateur à laquelle
 #' il peut répondre par 1 ou 2
 #' @param question La question à poser
+#' @param unattended_option Option pour mode non-interactif (doit être "1" ou "2")
 #' @return La réponse de l'utilisateur
 ask_1_2 <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {

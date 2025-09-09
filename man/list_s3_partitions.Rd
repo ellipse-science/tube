@@ -8,8 +8,9 @@ list_s3_partitions(credentials, bucket)
 }
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant
-with the paws package
-#' @param bucket The bucket to list partitions from}
+with the paws package}
+
+\item{bucket}{The bucket to list partitions from}
 }
 \value{
 A character vector of S3 partitions

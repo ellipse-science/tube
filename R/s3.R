@@ -2,7 +2,7 @@
 #' @description List all the S3 buckets that match the type
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param type The type of bucket to list
+#' @param type The type of bucket to list
 #' @return A list of S3 buckets
 list_s3_buckets <- function(credentials, type) {
   logger::log_debug("[tube::list_s3_buckets] entering function")
@@ -40,7 +40,7 @@ list_s3_buckets <- function(credentials, type) {
 #' @description List all the S3 partitions in a bucket even the empty ones (containing no object)
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to list partitions from
+#' @param bucket The bucket to list partitions from
 #' @return A character vector of S3 partitions
 list_s3_partitions <- function(credentials, bucket) {
   logger::log_debug("[tube::list_s3_partitions] entering function")
@@ -94,7 +94,7 @@ list_s3_partitions <- function(credentials, bucket) {
 #' @description List all the S3 folders within a particular prefix (or partition) in a bucket
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to list folders from
+#' @param bucket The bucket to list folders from
 #' @param prefix The prefix (or partition) to list folders from
 #' @return A character vector of S3 folders
 list_s3_folders <- function(credentials, bucket, prefix) {
@@ -162,8 +162,8 @@ list_s3_folders <- function(credentials, bucket, prefix) {
 #' Upload a file to an S3 bucket
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to upload the file to
 #' @param file The file to upload
+#' @param bucket The bucket to upload the file to
 #' @param key The key to use for the file
 #' @return TRUE if the file was uploaded successfully
 upload_file_to_s3 <- function(credentials, file, bucket, key) {

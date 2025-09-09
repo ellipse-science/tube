@@ -128,8 +128,12 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
 #' @title Check the parameters provided to the ellipse_publish function
 #' @description Check if the parameters are valid before publishing the data
 #' @param env The environment to publish the data to
-#' @param table The table to publish the data to
 #' @param dataframe The dataframe to publish
+#' @param datamart The datamart to publish the data to
+#' @param table The table to publish the data to
+#' @param data_tag The data tag for the published data
+#' @param table_tags The table tags to associate with the published table
+#' @param table_description The description to associate with the published table
 #' @return TRUE if the parameters are valid, FALSE otherwise
 check_params_before_publish <- function(env, dataframe, datamart, table, data_tag, table_tags, table_description) {
   logger::log_debug("[tube::check_params_before_publish] Checking parameters before publishing the data")

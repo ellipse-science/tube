@@ -48,6 +48,7 @@ list_datawarehouse_database <- function(credentials) {
 #'
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
+#' @param simplify Logical indicating whether to return simplified output (default TRUE)
 #' @returns If simplify = true it returns a tibble with columns:
 #'
 #'   * `table_name` : Name of the table in the data warehouse

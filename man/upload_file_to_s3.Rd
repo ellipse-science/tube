@@ -8,10 +8,11 @@ upload_file_to_s3(credentials, file, bucket, key)
 }
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant
-with the paws package
-#' @param bucket The bucket to upload the file to}
+with the paws package}
 
 \item{file}{The file to upload}
+
+\item{bucket}{The bucket to upload the file to}
 
 \item{key}{The key to use for the file}
 }

@@ -19,7 +19,15 @@ check_params_before_publish(
 
 \item{dataframe}{The dataframe to publish}
 
+\item{datamart}{The datamart to publish the data to}
+
 \item{table}{The table to publish the data to}
+
+\item{data_tag}{The data tag for the published data}
+
+\item{table_tags}{The table tags to associate with the published table}
+
+\item{table_description}{The description to associate with the published table}
 }
 \value{
 TRUE if the parameters are valid, FALSE otherwise

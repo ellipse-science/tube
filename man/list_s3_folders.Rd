@@ -8,8 +8,9 @@ list_s3_folders(credentials, bucket, prefix)
 }
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant
-with the paws package
-#' @param bucket The bucket to list folders from}
+with the paws package}
+
+\item{bucket}{The bucket to list folders from}
 
 \item{prefix}{The prefix (or partition) to list folders from}
 }

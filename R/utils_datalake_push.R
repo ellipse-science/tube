@@ -546,6 +546,7 @@ get_content_type <- function(file_path) {
 }
 
 #' Invoke AWS Lambda function to index public datalake content
+#' @param creds AWS credentials from get_aws_credentials()
 #' @keywords internal
 invoke_datalake_indexing_lambda <- function(creds) {
   logger::log_debug("[invoke_datalake_indexing_lambda] entering function")

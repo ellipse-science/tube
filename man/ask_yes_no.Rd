@@ -8,6 +8,8 @@ ask_yes_no(question, unattended_option = NULL)
 }
 \arguments{
 \item{question}{La question à poser}
+
+\item{unattended_option}{Option pour mode non-interactif ("oui"/"non")}
 }
 \value{
 La réponse de l'utilisateur

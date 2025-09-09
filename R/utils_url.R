@@ -1,6 +1,7 @@
 #' convert a url into a string
 #'
-#' @param url
+#' @param url The URL to convert to a key string
+#' @return A cleaned string suitable for use as a key
 #'
 #' @examples
 #' \dontrun{

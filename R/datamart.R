@@ -50,6 +50,8 @@ list_datamarts_database <- function(credentials) {
 #'
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
+#' @param datamart_name The name of the datamart to list tables from
+#' @param simplify Logical indicating whether to return simplified output (default TRUE)
 #' @returns If simplify = true it returns a tibble with columns:
 #'
 #'   * `table_name` : Name of the table in the data warehouse

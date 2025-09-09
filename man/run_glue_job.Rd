@@ -27,6 +27,10 @@ it must be either "datamart", "datamarts" or "datawarehouse"}
 level partition in the datawarehouse or datamart bucket
 in the datawarehouse, it represents the pipeline name
 in the datamart, it represents the datamart and table name separates with a /}
+
+\item{table_tags}{Optional tags to associate with the table}
+
+\item{table_description}{Optional description for the table}
 }
 \value{
 A boolean indicating wether or not the job was started

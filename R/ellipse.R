@@ -124,6 +124,7 @@ ellipse_connect <- function(
 }
 
 #' Se déconnecter de la plateforme de données ellipse
+#' @param con L'objet de connexion à fermer
 #' @returns TRUE if the connexion was closed or FALSE if no connexion existed
 #' @export
 ellipse_disconnect <- function(con = NULL) {

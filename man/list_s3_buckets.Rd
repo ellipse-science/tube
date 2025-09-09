@@ -8,8 +8,9 @@ list_s3_buckets(credentials, type)
 }
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant
-with the paws package
-#' @param type The type of bucket to list}
+with the paws package}
+
+\item{type}{The type of bucket to list}
 }
 \value{
 A list of S3 buckets
