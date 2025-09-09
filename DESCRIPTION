@@ -23,29 +23,25 @@ Remotes:
 RoxygenNote: 7.3.2
 Imports:
     cli,
-    data.table,
     DBI,
     dplyr,
+    glue,
     haven,
+    jsonlite,
     logger,
     magrittr,
-    memoise,
     noctua,
     paws.analytics,
+    paws.compute,
     paws.storage,
     purrr,
     readr,
     readxl,
     tibble,
     tools,
-    pbapply,
-    progress,
-    jsonlite,
     xml2
 Suggests:
-    knitr,
     rmarkdown
-VignetteBuilder: knitr
 URL: https://github.com/ellipse-science/tube/
 BugReports: https://github.com/ellipse-science/tube/issues
 Roxygen: list(markdown = TRUE)

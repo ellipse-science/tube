@@ -73,8 +73,7 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to list the properties from
 #' @returns A tibble with the properties of the table
-#' @examples
-#' list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
+#' @keywords internal
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
 
@@ -495,20 +494,14 @@ glue_table_list_to_tibble <- function(glue_response) {
 
 
 #' Update the custom tags (advanced properties) of a glue table
-#' @param credentials A list of AWS credentials in the format compliant
+#' @param creds A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to update the tags of
-#' @param table_tags A list of custom tags to update the table with
+#' @param new_table_tags A list of custom tags to update the table with
 #' @returns A boolean indicating wether or not the tags were updated
 #' successfully
-#' @examples
-#' update_glue_table_tags(
-#'   credentials,
-#'   DBI::dbGetInfo(con)$dbms.name,
-#'   "my_table",
-#'   list(tag1 = "value1", tag2 = "value2")
-#' )
+#' @keywords internal
 update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   logger::log_debug(paste(
     "[tube::update_glue_table_tags] entering function",
@@ -600,15 +593,14 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 
 
 #' Update the description of a glue table
-#' @param credentials A list of AWS credentials in the format compliant
+#' @param creds A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to change the description of
 #' @param desc A string contaning the new description of the table
 #' @returns A boolean indicating wether or not the description was updated
 #' successfully
-#' @examples
-#' update_glue_table_desc(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", "new description of my_table")
+#' @keywords internal
 update_glue_table_desc <- function(creds, schema, table, desc) {
   logger::log_debug(paste(
     "[tube::update_glue_table_desc] entering function",
