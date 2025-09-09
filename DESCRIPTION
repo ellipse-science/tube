@@ -14,10 +14,13 @@ Authors@R:
       role = c("aut"),
       email = "huguesmp@outlook.com")
   )
-Description: The goal of `{tube}` is to make it easier to access data
-    stored in the Ellipse Data Hub. Package dependency is logger, noctua, paws.analytics, paws.storage
+Description: The goal of tube is to make it easier to access data
+    stored in the Ellipse Data Hub. This package provides a French-language
+    interface for interacting with AWS services including S3, Glue, and Athena
+    to manage data workflows in the Ellipse ecosystem.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: fr
 Depends: R (>= 4.1.0)
 Remotes:
 RoxygenNote: 7.3.2

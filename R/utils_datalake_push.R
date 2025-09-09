@@ -546,15 +546,15 @@ get_content_type <- function(file_path) {
 }
 
 #' Invoke AWS Lambda function to index public datalake content
-#' @param creds AWS credentials from get_aws_credentials()
+#' @param credentials AWS credentials from get_aws_credentials()
 #' @keywords internal
-invoke_datalake_indexing_lambda <- function(creds) {
+invoke_datalake_indexing_lambda <- function(credentials) {
   logger::log_debug("[invoke_datalake_indexing_lambda] entering function")
 
   tryCatch(
     {
       # Find the correct lambda function using the generic finder
-      lambda_name <- find_datalake_indexing_lambda(creds)
+      lambda_name <- find_datalake_indexing_lambda(credentials)
 
       if (is.null(lambda_name)) {
         logger::log_warn("[invoke_datalake_indexing_lambda] no matching lambda function found")
@@ -565,7 +565,7 @@ invoke_datalake_indexing_lambda <- function(creds) {
       logger::log_debug(paste("[invoke_datalake_indexing_lambda] using lambda:", lambda_name))
 
       # Setup Lambda client
-      lambda_client <- paws.compute::lambda(config = creds)
+      lambda_client <- paws.compute::lambda(config = credentials)
 
       # Invoke the lambda function (no payload needed)
       result <- lambda_client$invoke(

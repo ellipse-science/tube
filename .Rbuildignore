@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^\.github$
+^\.devcontainer$
+^\.lintr$
+^CONCEPTS\.md$
+^sample_data$
+^tube\.png$

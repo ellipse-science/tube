@@ -4,13 +4,11 @@
 \alias{invoke_datalake_indexing_lambda}
 \title{Invoke AWS Lambda to index public datalake content}
 \usage{
-invoke_datalake_indexing_lambda(creds)
+invoke_datalake_indexing_lambda(credentials)
 
-invoke_datalake_indexing_lambda(creds)
+invoke_datalake_indexing_lambda(credentials)
 }
 \arguments{
-\item{creds}{AWS credentials from get_aws_credentials()}
-
 \item{credentials}{AWS credentials from get_aws_credentials()}
 }
 \value{
