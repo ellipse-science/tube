@@ -1,0 +1,51 @@
+# Add /home/vscode/.venv/bin to PATH
+if [ -d "/home/vscode/.venv/bin" ]; then
+  export PATH="/home/vscode/.venv/bin:$PATH"
+fi
+
+# --- Colors ---
+c_reset="\e[0m"; c_bold="\e[1m"; c_cyan="\e[36m"; c_yellow="\e[33m"; c_purple="\e[35m"; c_green="\e[32m"; c_red="\e[31m"; c_blue="\e[34m"
+PROMPT_DIRTRIM=3
+
+# --- Segments ---
+py_seg() {
+  [ -n "$VIRTUAL_ENV" ] && echo -e "🐍 ${c_yellow}$(basename "$VIRTUAL_ENV")${c_reset}" && return
+  [ -n "$CONDA_DEFAULT_ENV" ] && echo -e "🐍 ${c_yellow}$CONDA_DEFAULT_ENV${c_reset}"
+}
+
+docker_seg() {
+  ctx=$(docker context show 2>/dev/null)
+  if [ -n "$ctx" ]; then
+    running=$(docker ps -q 2>/dev/null | wc -l)
+    echo -e "🐳 ${c_blue}$ctx${c_reset}(${running})"
+  fi
+}
+
+aws_seg() {
+  prof="${AWS_VAULT:-$AWS_PROFILE}"
+  [ -n "$prof" ] && echo -e "☁️ ${c_cyan}$prof${c_reset}"
+}
+
+git_seg() {
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
+  if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+    echo -e "🌱 ${c_red}$branch*${c_reset}"
+  else
+    echo -e "🌱 ${c_green}$branch${c_reset}"
+  fi
+}
+
+mem_seg() {
+  free -h 2>/dev/null | awk '/^Mem:/ {print "🖥️ " $4 " free"}'
+}
+
+segments_line() {
+  local parts=() s
+  for s in "$(py_seg)" "$(docker_seg)" "$(aws_seg)" "$(git_seg)" "$(mem_seg)"; do
+    [ -n "$s" ] && parts+=("$s")
+  done
+  echo "${parts[*]}"
+}
+
+# --- Prompt ---
+PS1="\[${c_bold}${c_cyan}\]\u\[${c_reset}\]@\[$c_yellow\]\h\[${c_reset}\] \[${c_purple}\]\w\[${c_reset}\]\n\$(segments_line)\n\$ "

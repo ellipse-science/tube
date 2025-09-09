@@ -7,14 +7,14 @@
 update_glue_table_tags(creds, schema, table, new_table_tags)
 }
 \arguments{
+\item{creds}{A list of AWS credentials in the format compliant
+with the paws package}
+
 \item{schema}{The DBI schema to list the tables from}
 
 \item{table}{The name of the table to update the tags of}
 
-\item{credentials}{A list of AWS credentials in the format compliant
-with the paws package}
-
-\item{table_tags}{A list of custom tags to update the table with}
+\item{new_table_tags}{A list of custom tags to update the table with}
 }
 \value{
 A boolean indicating wether or not the tags were updated
@@ -23,9 +23,4 @@ successfully
 \description{
 Update the custom tags (advanced properties) of a glue table
 }
-\examples{
-update_glue_table_tags(credentials,
-                       DBI::dbGetInfo(con)$dbms.name,
-                       "my_table",
-                       list(tag1 = "value1", tag2 = "value2"))
-}
+\keyword{internal}

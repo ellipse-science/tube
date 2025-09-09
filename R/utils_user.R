@@ -2,10 +2,11 @@
 #' @description Fonctions pour poser des questions à l'utilisateur à laquelle
 #' il peut répondre par oui ou non
 #' @param question La question à poser
+#' @param unattended_option Option pour mode non-interactif ("oui"/"non")
 #' @return La réponse de l'utilisateur
 ask_yes_no <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
-    return(unattended_option %in% c("oui", "o"))
+    return(tolower(unattended_option) %in% c("oui", "o"))
   }
   answer <- readline(prompt = paste0(cli::symbol$fancy_question_mark, question, " (oui/non) "))
   return(invisible(tolower(answer) %in% c("oui", "o")))
@@ -15,6 +16,7 @@ ask_yes_no <- function(question, unattended_option = NULL) {
 #' @description Fonctions pour poser des questions à l'utilisateur à laquelle
 #' il peut répondre par 1 ou 2
 #' @param question La question à poser
+#' @param unattended_option Option pour mode non-interactif (doit être "1" ou "2")
 #' @return La réponse de l'utilisateur
 ask_1_2 <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
@@ -36,23 +38,29 @@ ask_1_2 <- function(question, unattended_option = NULL) {
 suppress_console_output <- function(expr) {
   temp_file <- tempfile()
   temp_conn <- file(temp_file, open = "wt")
-  
+
   sink(temp_conn, type = "output")
   sink(temp_conn, type = "message", append = TRUE)
-  
-  on.exit({
-    sink(type = "message")
-    sink(type = "output")
-    close(temp_conn)
-    file.remove(temp_file)
-  }, add = TRUE)
-  
-  result <- tryCatch({
-    force(expr)
-  }, error = function(e) {
-    stop(e) # Re-throw the caught error
-  })
-  
+
+  on.exit(
+    {
+      sink(type = "message")
+      sink(type = "output")
+      close(temp_conn)
+      file.remove(temp_file)
+    },
+    add = TRUE
+  )
+
+  result <- tryCatch(
+    {
+      force(expr)
+    },
+    error = function(e) {
+      stop(e) # Re-throw the caught error
+    }
+  )
+
   result
 }
 

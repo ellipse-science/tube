@@ -70,5 +70,5 @@
     "AWS_VAULT_FILE_DIR": "/home/vscode/.aws-vault"
   },
   "initializeCommand": "echo 'Checking Docker socket permissions...' && ls -la /var/run/docker.sock",
-  "postCreateCommand": "sudo chown root:$(stat -c '%g' /var/run/docker.sock) /var/run/docker.sock && sudo chmod 664 /var/run/docker.sock && echo 'Docker permissions fixed'"
+  "postCreateCommand": "/bin/bash -lc 'if [ -S /var/run/docker.sock ]; then sudo chown root:$(stat -c \"%g\" /var/run/docker.sock) /var/run/docker.sock && sudo chmod 664 /var/run/docker.sock && echo \"Docker permissions fixed\"; else echo \"Warning: Docker socket not found at /var/run/docker.sock\"; fi'",
 }

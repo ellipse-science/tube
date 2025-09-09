@@ -1,4 +1,3 @@
-
 #' List all the databases in the AWS Glue Data Catalog
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
@@ -6,8 +5,10 @@
 #' @returns A list of databases
 list_glue_databases <- function(credentials, type) {
   logger::log_debug(
-    paste("[tube::list_glue_databases] entering function",
-          "with type", type)
+    paste(
+      "[tube::list_glue_databases] entering function",
+      "with type", type
+    )
   )
 
   logger::log_debug("[tube::list_glue_databases] instanciating glue client")
@@ -29,7 +30,7 @@ list_glue_databases <- function(credentials, type) {
   database_list <- unlist(database_list)
 
   logger::log_debug("[tube::list_glue_databases] wrangling result")
-  return(database_list)
+  database_list
 }
 
 #' Lists all the tables in a GLUE database
@@ -41,7 +42,6 @@ list_glue_databases <- function(credentials, type) {
 #' @returns A list of tables
 list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simplify = TRUE) {
   logger::log_debug("[tube::list_glue_tables] entering function")
-  table_list <- list()
 
   logger::log_debug("[tube::list_glue_tables] instanciating glue client")
   glue_client <- paws.analytics::glue(
@@ -60,7 +60,9 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
     return(NULL)
   } else {
     logger::log_debug("[tube::list_glue_tables] returning results")
-    if (simplify) return(glue_table_list_to_tibble(tables))
+    if (simplify) {
+      return(glue_table_list_to_tibble(tables))
+    }
     return(tables)
   }
 }
@@ -71,8 +73,7 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to list the properties from
 #' @returns A tibble with the properties of the table
-#' @examples
-#' list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
+#' @keywords internal
 list_glue_table_properties <- function(credentials, schema, table) {
   logger::log_debug("[tube::list_glue_table_properties] entering function")
 
@@ -92,7 +93,7 @@ list_glue_table_properties <- function(credentials, schema, table) {
 
   if (length(props) == 0) {
     logger::log_error("[tube::list_glue_table_properties] no table found")
-    return(NULL)
+    NULL
   } else {
     logger::log_debug("[tube::list_glue_table_properties] returning results")
 
@@ -102,13 +103,17 @@ list_glue_table_properties <- function(credentials, schema, table) {
 
     properties_tibble <- tibble::tibble(
       table_name = props$Table$Name,
-      description = ifelse(is.null(props$Table$Description) || length(props$Table$Description) == 0, NA, props$Table$Description),
+      description = ifelse(
+        is.null(props$Table$Description) || length(props$Table$Description) == 0,
+        NA,
+        props$Table$Description
+      ),
       create_time = props$Table$CreateTime,
       update_time = props$Table$UpdateTime,
-      location =  props$Table$StorageDescriptor$Location,
+      location = props$Table$StorageDescriptor$Location,
       table_tags = if (length(custom_parameters) == 0) NULL else list(custom_parameters)
     )
-    return(properties_tibble)
+    properties_tibble
   }
 }
 
@@ -122,15 +127,18 @@ list_glue_table_properties <- function(credentials, schema, table) {
 #' successfully
 delete_glue_table <- function(credentials, database_name, table_name) {
   logger::log_debug(
-    paste("[tube::delete_glue_table] entering function with database_name", 
-    database_name, 
-    "and table_name", 
-    table_name))
+    paste(
+      "[tube::delete_glue_table] entering function with database_name",
+      database_name,
+      "and table_name",
+      table_name
+    )
+  )
 
   # ensure the database name is the datamart
   if (!grepl("datamart", database_name)) {
     logger::log_error("[tube::delete_glue_table] only datamarts tables can be deleted")
-    return(FALSE)
+    FALSE
   }
 
   logger::log_debug("[tube::delete_glue_table] instanciating glue client")
@@ -138,17 +146,22 @@ delete_glue_table <- function(credentials, database_name, table_name) {
     config = credentials
   )
 
-  result <- tryCatch({
-    logger::log_debug("[tube::delete_glue_table] deleting table")
-    suppress_console_output({glue_client$delete_table(
-      DatabaseName = database_name,
-      Name = table_name
-    )})
-    logger::log_debug("[tube::delete_glue_table] table deleted")
-    TRUE
-  }, error = function(e) {
-    FALSE
-  })
+  result <- tryCatch(
+    {
+      logger::log_debug("[tube::delete_glue_table] deleting table")
+      suppress_console_output({
+        glue_client$delete_table(
+          DatabaseName = database_name,
+          Name = table_name
+        )
+      })
+      logger::log_debug("[tube::delete_glue_table] table deleted")
+      TRUE
+    },
+    error = function(e) {
+      FALSE
+    }
+  )
 
   result
 }
@@ -159,7 +172,6 @@ delete_glue_table <- function(credentials, database_name, table_name) {
 #' @returns A list of jobs
 list_glue_jobs <- function(credentials) {
   logger::log_debug("[tube::list_glue_jobs] entering function")
-  job_list <- list()
 
   logger::log_debug("[tube::list_glue_jobs] instanciating glue client")
   glue_client <- paws.analytics::glue(
@@ -182,7 +194,7 @@ list_glue_jobs <- function(credentials) {
 
   logger::log_debug(paste("[tube::list_glue_jobs] returning results", paste(job_names, collapse = " | ")))
 
-  return(job_names)
+  job_names
 }
 
 #' Run a GLUE job manually specifically for ingesting CSV in to
@@ -190,24 +202,28 @@ list_glue_jobs <- function(credentials) {
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param job_name The name of the job to run
-#' @param database The name of the database to run the job for 
+#' @param database The name of the database to run the job for
 #' it must be either "datamart", "datamarts" or "datawarehouse"
 #' @param prefix The prefix to run the job for.  This is the first
 #' level partition in the datawarehouse or datamart bucket
 #' in the datawarehouse, it represents the pipeline name
 #' in the datamart, it represents the datamart and table name separates with a /
+#' @param table_tags Optional tags to associate with the table
+#' @param table_description Optional description for the table
 #' @returns A boolean indicating wether or not the job was started
 run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
-    paste("[tube::run_glue_job] entering function",
-    "with job_name", job_name,
-    "database", database,
-    "and prefix", prefix)
+    paste(
+      "[tube::run_glue_job] entering function",
+      "with job_name", job_name,
+      "database", database,
+      "and prefix", prefix
+    )
   )
 
   if (is.null(database) || !database %in% c("datamart", "datamarts", "datawarehouse")) {
     logger::log_error("[tube::run_glue_job] invalid database name.  must be datamart, datamarts or datawarehouse")
-    return(FALSE)
+    FALSE
   }
 
   logger::log_debug("[tube::run_glue_job] instanciating glue client")
@@ -215,7 +231,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     config = credentials
   )
 
- switch(database,
+  switch(database,
     "datamarts" = {
       bucket <- list_datamarts_bucket(credentials)
       glue_db <- list_glue_databases(credentials, "datamart")
@@ -242,17 +258,17 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
 
   if (length(job_names) == 0) {
     logger::log_error("[tube::run_glue_job] no job found")
-    return(FALSE)
+    FALSE
   }
 
   if (length(job_names) > 1) {
     logger::log_error("[tube::run_glue_job] more than one job found")
-    return(FALSE)
+    FALSE
   }
 
   if (!job_name %in% job_names) {
     logger::log_error("[tube::run_glue_job] job not found")
-    return(FALSE)
+    FALSE
   }
 
 
@@ -262,13 +278,14 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   # list all the unprocessed folders across the pipeline prefix in the bucket
   logger::log_debug("[tube::run_glue_job] listing unprocessed folders")
 
-  tmp_prefix <- gsub("^/", "", prefix)  
+  tmp_prefix <- gsub("^/", "", prefix)
   tmp_prefix <- gsub("/$", "", tmp_prefix)
   tmp_prefix_split <- strsplit(tmp_prefix, "/")
 
@@ -277,37 +294,34 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       Bucket = bucket,
       Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
       Delimiter = "/"
-      )
-    
-    index <- 1
+    )
   }
 
   if (length(tmp_prefix_split[[1]]) == 1) {
-   first_level <- s3_client$list_objects_v2(
-     Bucket = bucket,
-     Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
-     Delimiter = "/"
-     )
-   
-   # only get the commonprefixes$Prefix values
-   r <- lapply(first_level$CommonPrefixes, \(x) {
-     s3_client$list_objects_v2(
-       Bucket = bucket,
-       Prefix = x$Prefix,
-       Delimiter = "/"
-     )
-   })
+    first_level <- s3_client$list_objects_v2(
+      Bucket = bucket,
+      Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
+      Delimiter = "/"
+    )
 
-   r <- r[[1]]
-   index <- 2
+    # only get the commonprefixes$Prefix values
+    r <- lapply(first_level$CommonPrefixes, \(x) {
+      s3_client$list_objects_v2(
+        Bucket = bucket,
+        Prefix = x$Prefix,
+        Delimiter = "/"
+      )
+    })
+
+    r <- r[[1]]
   }
- 
+
   logger::log_debug("[tube::run_glue_job] wrangling partitions")
   partitions <- sapply(r$CommonPrefixes, function(x) {
     ret <- gsub(prefix, "", x$Prefix)
     ret <- gsub("^/", "", ret)
     ret <- gsub("/$", "", ret)
-    return(ret)
+    ret
   })
 
   has_unprocessed <- function(prefix_list) {
@@ -329,7 +343,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
 
     r <- s3_client$list_objects_v2(
       Bucket = bucket,
-      Prefix = paste0(prefix,"/",partition),
+      Prefix = paste0(prefix, "/", partition),
       Delimiter = "/"
     )
 
@@ -369,16 +383,22 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
         # to x-amz-meta-<name> for every item in the list
         # that is not null and not already prefixed with x-amz-meta-
         table_tags <-
-          setNames(table_tags,
-                   ifelse(!sapply(table_tags, is.null) &
-                            !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
-                          paste0("x-amz-meta-", names(table_tags)),
-                          names(table_tags)))
+          setNames(
+            table_tags,
+            ifelse(!sapply(table_tags, is.null) &
+                !sapply(grepl("x-amz-meta-", names(table_tags)), \(x) x),
+              paste0("x-amz-meta-", names(table_tags)),
+              names(table_tags)
+            )
+          )
 
-        arguments_list <- c(arguments_list, list("--custom_table_properties" =
-                                                   jsonlite::toJSON(table_tags,
-                                                                    auto_unbox = TRUE,
-                                                                    null = "null")))
+        arguments_list <- c(arguments_list, list(
+          "--custom_table_properties" =
+            jsonlite::toJSON(table_tags,
+              auto_unbox = TRUE,
+              null = "null"
+            )
+        ))
       }
 
       if (!is.null(table_description)) {
@@ -408,7 +428,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
   }
 
   logger::log_debug("[tube::run_glue_job] job started successfully")
-  return(TRUE)
+  TRUE
 }
 
 
@@ -435,59 +455,62 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
 #'   * `is_partition` : Logical indicating wether or not the column is
 #'      partitionned
 glue_table_list_to_tibble <- function(glue_response) {
-  df <- tibble::tibble(table_name = character(),
-                       col_name = character(),
-                       col_type = character(),
-                       is_partition = logical())
+  df <- tibble::tibble(
+    table_name = character(),
+    col_name = character(),
+    col_type = character(),
+    is_partition = logical()
+  )
 
   table_names <- purrr::map(glue_response[[1]], \(x) x$Name) |> unlist()
 
   for (i in seq_along(table_names)) {
     # Partitions and regulars columns are not together in the response
     partitions <- glue_response[[1]][[i]]$PartitionKeys
-    col_names  <- purrr::map(partitions, \(x) x$Name) |> unlist()
-    col_types  <- purrr::map(partitions, \(x) x$Type) |> unlist()
+    col_names <- purrr::map(partitions, \(x) x$Name) |> unlist()
+    col_types <- purrr::map(partitions, \(x) x$Type) |> unlist()
 
-    parts <- tibble::tibble(table_name = table_names[i],
-                            col_name = col_names,
-                            col_type = col_types,
-                            is_partition = TRUE)
+    parts <- tibble::tibble(
+      table_name = table_names[i],
+      col_name = col_names,
+      col_type = col_types,
+      is_partition = TRUE
+    )
 
-    columns   <- glue_response[[1]][[i]]$StorageDescriptor$Columns
+    columns <- glue_response[[1]][[i]]$StorageDescriptor$Columns
     col_names <- purrr::map(columns, \(x) x$Name) |> unlist()
     col_types <- purrr::map(columns, \(x) x$Type) |> unlist()
 
-    cols <- tibble::tibble(table_name = table_names[i],
-                           col_name = col_names,
-                           col_type = col_types,
-                           is_partition = FALSE)
+    cols <- tibble::tibble(
+      table_name = table_names[i],
+      col_name = col_names,
+      col_type = col_types,
+      is_partition = FALSE
+    )
 
     df <- dplyr::bind_rows(df, parts, cols)
   }
 
-  return(df)
+  df
 }
 
 
 #' Update the custom tags (advanced properties) of a glue table
-#' @param credentials A list of AWS credentials in the format compliant
+#' @param creds A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to update the tags of
-#' @param table_tags A list of custom tags to update the table with
+#' @param new_table_tags A list of custom tags to update the table with
 #' @returns A boolean indicating wether or not the tags were updated
 #' successfully
-#' @examples
-#' update_glue_table_tags(credentials,
-#'                        DBI::dbGetInfo(con)$dbms.name,
-#'                        "my_table",
-#'                        list(tag1 = "value1", tag2 = "value2"))
-
+#' @keywords internal
 update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
-  logger::log_debug(paste("[tube::update_glue_table_tags] entering function",
-                          "with schema", schema,
-                          "table", table,
-                          "and new_table_tags", paste(new_table_tags, collapse = ", ")))
+  logger::log_debug(paste(
+    "[tube::update_glue_table_tags] entering function",
+    "with schema", schema,
+    "table", table,
+    "and new_table_tags", paste(new_table_tags, collapse = ", ")
+  ))
 
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_tags] instanciating glue client")
@@ -504,10 +527,13 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 
   # add x-amz-meta- prefix to the tags if not already present
   new_table_tags <-
-    setNames(new_table_tags,
-             ifelse(!sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
-                    paste0("x-amz-meta-", names(new_table_tags)),
-                    names(new_table_tags)))
+    setNames(
+      new_table_tags,
+      ifelse(!sapply(grepl("x-amz-meta-", names(new_table_tags)), \(x) x),
+        paste0("x-amz-meta-", names(new_table_tags)),
+        names(new_table_tags)
+      )
+    )
 
   properties_to_remove <- list()
   custom_table_properties <- new_table_tags
@@ -520,11 +546,14 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   }
 
   custom_table_properties <-
-    setNames(custom_table_properties,
-             ifelse(!sapply(custom_table_properties, is.null) &
-                      !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
-                    paste0("x-amz-meta-", names(custom_table_properties)),
-                    names(custom_table_properties)))
+    setNames(
+      custom_table_properties,
+      ifelse(!sapply(custom_table_properties, is.null) &
+          !sapply(grepl("x-amz-meta-", names(custom_table_properties)), \(x) x),
+        paste0("x-amz-meta-", names(custom_table_properties)),
+        names(custom_table_properties)
+      )
+    )
 
   existing_parameters <- table_details$Table$Parameters
 
@@ -566,20 +595,21 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 
 
 #' Update the description of a glue table
-#' @param credentials A list of AWS credentials in the format compliant
+#' @param creds A list of AWS credentials in the format compliant
 #' with the paws package
 #' @param schema The DBI schema to list the tables from
 #' @param table The name of the table to change the description of
 #' @param desc A string contaning the new description of the table
 #' @returns A boolean indicating wether or not the description was updated
 #' successfully
-#' @examples
-#' update_glue_table_desc(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table", "new description of my_table")
+#' @keywords internal
 update_glue_table_desc <- function(creds, schema, table, desc) {
-  logger::log_debug(paste("[tube::update_glue_table_desc] entering function",
-                          "with schema", schema,
-                          "table", table,
-                          "and desc", desc))
+  logger::log_debug(paste(
+    "[tube::update_glue_table_desc] entering function",
+    "with schema", schema,
+    "table", table,
+    "and desc", desc
+  ))
 
   # instanciate clue client
   logger::log_debug("[tube::update_glue_table_desc] instanciating glue client")
@@ -613,7 +643,7 @@ update_glue_table_desc <- function(creds, schema, table, desc) {
   # Return TRUE indicating successful update
   if (length(r) != 0) {
     logger::log_error("[tube::update_glue_table_desc] Description not updated")
-    return(FALSE)
+    FALSE
   }
 
   logger::log_debug("[tube::update_glue_table_desc] Description updated successfully")

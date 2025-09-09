@@ -9,6 +9,8 @@ list_datawarehouse_tables(credentials, simplify = TRUE)
 \arguments{
 \item{credentials}{A list of AWS credentials in the format compliant
 with the paws package}
+
+\item{simplify}{Logical indicating whether to return simplified output (default TRUE)}
 }
 \value{
 If simplify = true it returns a tibble with columns:

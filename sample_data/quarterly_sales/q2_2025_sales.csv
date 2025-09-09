@@ -1,0 +1,11 @@
+product_id,product_name,category,price_cad,units_sold,revenue_cad,sale_date,region
+P011,Gaming Mouse,Electronics,79.99,89,7119.11,2025-04-02,Quebec
+P012,Espresso Machine,Appliances,299.99,12,3599.88,2025-04-03,Ontario
+P013,Tennis Racket,Sports,189.99,27,5129.73,2025-04-04,BC
+P014,Phone Charger,Electronics,19.99,156,3118.44,2025-04-05,Alberta
+P015,Resistance Bands,Sports,34.99,73,2554.27,2025-04-06,Quebec
+P016,Bookshelf,Furniture,149.99,15,2249.85,2025-04-07,Ontario
+P017,Wireless Earbuds,Electronics,159.99,64,10239.36,2025-04-08,BC
+P018,Protein Shaker,Sports,19.99,91,1819.09,2025-04-09,Alberta
+P019,Standing Desk,Furniture,499.99,6,2999.94,2025-04-10,Quebec
+P020,Screen Protector,Electronics,14.99,127,1904.73,2025-04-11,Ontario

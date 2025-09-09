@@ -1,0 +1,11 @@
+employee_id,first_name,last_name,department,position,salary_cad,hire_date,location,performance_rating
+E001,Marie,Tremblay,Engineering,Senior Developer,95000,2022-03-15,Montreal,4.2
+E002,John,Smith,Marketing,Marketing Manager,78000,2021-07-22,Toronto,4.0
+E003,Sophie,Dubois,Engineering,Junior Developer,65000,2023-09-10,Montreal,3.8
+E004,Michael,Johnson,Sales,Sales Representative,55000,2023-01-05,Vancouver,4.1
+E005,Amélie,Gagnon,HR,HR Specialist,62000,2022-11-30,Quebec City,4.3
+E006,David,Wilson,Engineering,Tech Lead,110000,2020-05-18,Toronto,4.5
+E007,Catherine,Roy,Finance,Financial Analyst,68000,2023-04-12,Montreal,3.9
+E008,Robert,Brown,Operations,Operations Manager,85000,2021-12-08,Calgary,4.2
+E009,Julie,Côté,Marketing,Content Specialist,58000,2023-06-20,Montreal,4.0
+E010,Thomas,Davis,Engineering,DevOps Engineer,88000,2022-08-03,Vancouver,4.4

@@ -7,15 +7,18 @@
 convert_url_to_key(url)
 }
 \arguments{
-\item{url}{}
+\item{url}{The URL to convert to a key string}
+}
+\value{
+A cleaned string suitable for use as a key
 }
 \description{
 convert a url into a string
 }
 \examples{
 \dontrun{
-  r <- convert_url_to_key(url)
-  print(r)
+r <- convert_url_to_key(url)
+print(r)
 }
 
 }

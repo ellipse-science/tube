@@ -2,7 +2,7 @@
 #' @description List all the S3 buckets that match the type
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param type The type of bucket to list
+#' @param type The type of bucket to list
 #' @return A list of S3 buckets
 list_s3_buckets <- function(credentials, type) {
   logger::log_debug("[tube::list_s3_buckets] entering function")
@@ -11,93 +11,159 @@ list_s3_buckets <- function(credentials, type) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_buckets] listing buckets")
   r <- s3_client$list_buckets()
 
-  #TODO: error management if no bucket is returned
+  # TODO: error management if no bucket is returned
 
   logger::log_debug("[tube::list_s3_buckets] wrangling result")
   list <- unlist(r$Buckets)
   bucket_list <- list[grep(type, list)]
   bucket_list <- as.list(bucket_list)
-  names(bucket_list) <- ""
+
+  # Only assign names if bucket_list is not empty
+  if (length(bucket_list) > 0) {
+    names(bucket_list) <- ""
+  }
+
   bucket_list <- unlist(bucket_list)
 
   logger::log_debug("[tube::list_s3_buckets] returning results")
-  return(bucket_list)
+  bucket_list
 }
 
 #' @title List S3 partitions
 #' @description List all the S3 partitions in a bucket even the empty ones (containing no object)
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to list partitions from
-#' @return A list of S3 partitions
+#' @param bucket The bucket to list partitions from
+#' @return A character vector of S3 partitions
 list_s3_partitions <- function(credentials, bucket) {
   logger::log_debug("[tube::list_s3_partitions] entering function")
+
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
 
   logger::log_debug("[tube::list_s3_partitions] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_partitions] listing partitions")
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Delimiter = "/"
+  r <- tryCatch(
+    {
+      s3_client$list_objects_v2(
+        Bucket = bucket,
+        Delimiter = "/"
+      )
+    },
+    error = function(e) {
+      if (grepl("NoSuchBucket", e$message)) {
+        logger::log_debug("[tube::list_s3_partitions] bucket does not exist")
+        NULL
+      } else {
+        logger::log_error("[tube::list_s3_partitions] AWS API error")
+        NULL
+      }
+    }
   )
+
+  if (is.null(r)) {
+    return(NULL)
+  }
 
   # Make a unnamed list of it
   logger::log_debug("[tube::list_s3_partitions] wrangling result")
   partition_list <- r$CommonPrefixes
   partition_list <- lapply(partition_list, function(x) x$Prefix)
+  partition_list <- unlist(partition_list)
   logger::log_debug("[tube::list_s3_partitions] returning results")
-  return(partition_list)
+  partition_list
 }
 
 #' @title List S3 folders
 #' @description List all the S3 folders within a particular prefix (or partition) in a bucket
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to list folders from
+#' @param bucket The bucket to list folders from
 #' @param prefix The prefix (or partition) to list folders from
-#' @return A list of S3 folders
+#' @return A character vector of S3 folders
 list_s3_folders <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::list_s3_folders] entering function")
+
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
 
   logger::log_debug("[tube::list_s3_folders] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug("[tube::list_s3_folders] listing folders")
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Prefix = prefix,
-    Delimiter = "/"
+  r <- tryCatch(
+    {
+      s3_client$list_objects_v2(
+        Bucket = bucket,
+        Prefix = prefix,
+        Delimiter = "/"
+      )
+    },
+    error = function(e) {
+      if (grepl("NoSuchBucket", e$message)) {
+        logger::log_debug("[tube::list_s3_folders] bucket does not exist")
+        NULL
+      } else {
+        logger::log_error("[tube::list_s3_folders] AWS API error")
+        NULL
+      }
+    }
   )
+
+  if (is.null(r)) {
+    return(NULL)
+  }
 
   # Make a unnamed list of it
   logger::log_debug("[tube::list_s3_folders] wrangling result")
   folder_list <- r$CommonPrefixes
   folder_list <- lapply(folder_list, function(x) x$Prefix)
-  folder_list <- lapply(folder_list, function(x) regmatches(x, regexec(".*/(.*)/$", x))[[1]][2])
+  # Fix regex to handle both root-level and nested folders
+  folder_list <- lapply(folder_list, function(x) {
+    # Remove trailing slash first
+    cleaned <- gsub("/$", "", x)
+    # Extract the last part after the last slash (or the whole string if no slash)
+    if (grepl("/", cleaned)) {
+      # Has slashes - extract last part
+      regmatches(cleaned, regexec(".*/(.*)$", cleaned))[[1]][2]
+    } else {
+      # No slashes - return as is
+      cleaned
+    }
+  })
+  folder_list <- unlist(folder_list)
   logger::log_debug("[tube::list_s3_folders] returning results")
-  return(folder_list)
+  folder_list
 }
 
 #' Upload a file to an S3 bucket
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
-#' #' @param bucket The bucket to upload the file to
 #' @param file The file to upload
+#' @param bucket The bucket to upload the file to
 #' @param key The key to use for the file
 #' @return TRUE if the file was uploaded successfully
 upload_file_to_s3 <- function(credentials, file, bucket, key) {
@@ -106,14 +172,15 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
   # Check that the file exists
   if (!file.exists(file)) {
     logger::log_error("[tube::upload_file_to_s3] file does not exist")
-    return(FALSE)
+    stop("File does not exist: ", file, call. = FALSE)
   }
 
   logger::log_debug("[tube::upload_file_to_s3] instanciating s3 client")
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   tryCatch(
@@ -128,12 +195,12 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
     error = function(e) {
       logger::log_error("[tube::upload_file_to_s3] error uploading file")
       logger::log_error(e$message)
-      return(FALSE)
+      FALSE
     }
   )
 
   logger::log_debug("[tube::upload_file_to_s3] returning results")
-  return(TRUE)
+  TRUE
 }
 
 #' Delete s3 folder
@@ -145,6 +212,11 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
 delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] entering function")
 
+  # Input validation
+  if (is.null(bucket) || nchar(bucket) == 0) {
+    stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
+
   # if prefix does not end with / add it
   if (!endsWith(prefix, "/")) {
     prefix <- paste0(prefix, "/")
@@ -154,7 +226,8 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   s3_client <- paws.storage::s3(
     config = c(
       credentials,
-      close_connection = TRUE)
+      close_connection = TRUE
+    )
   )
 
   logger::log_debug(paste("[tube::delete_s3_folder] listing objects in bucket", bucket, "prefix", prefix))
@@ -164,9 +237,9 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
     Prefix = prefix,
     MaxKeys = 1000
   )
-  
+
   object_list <- r$Contents
-  
+
   while (!is.null(r$NextContinuationToken) && length(r$NextContinuationToken) > 0) {
     pass <- pass + 1
     logger::log_debug(paste("[tube::delete_s3_folder] more objects to list in pass", pass))
@@ -182,7 +255,7 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   # Check if the folder is empty
   if (length(object_list) > 0) {
     logger::log_debug(paste("[tube::delete_s3_folder] folder contains", length(object_list), "objects"))
-    
+
     # Loop through each object and delete it
     for (object in object_list) {
       if (startsWith(object$Key, prefix)) {
@@ -190,19 +263,19 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
           {
             logger::log_debug("[tube::delete_s3_folder] deleting object")
             s3_client$delete_object(
-             Bucket = bucket,
-             Key = object$Key
+              Bucket = bucket,
+              Key = object$Key
             )
           },
           error = function(e) {
             logger::log_error("[tube::delete_s3_folder] error deleting object")
             logger::log_error(e$message)
-            return(FALSE)
+            FALSE
           }
         )
       }
     }
-  } else  {
+  } else {
     logger::log_debug("[tube::delete_s3_folder] folder is empty : deleting folder only")
     # Delete the folder
     tryCatch(
@@ -216,11 +289,41 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
       error = function(e) {
         logger::log_error("[tube::delete_s3_folder] error deleting folder")
         logger::log_error(e$message)
-        return(FALSE)
+        FALSE
       }
     )
   }
 
   logger::log_debug("[tube::delete_s3_folder] returning results")
-  return(TRUE)
+  TRUE
+}
+
+#' Download S3 file to temporary location
+#' @param s3_path S3 path (s3://bucket/key format)
+#' @param credentials AWS credentials from get_aws_credentials()
+#' @keywords internal
+download_s3_file_to_temp <- function(s3_path, credentials) {
+  # Parse S3 path
+  s3_parts <- gsub("^s3://", "", s3_path)
+  bucket_and_key <- strsplit(s3_parts, "/", fixed = TRUE)[[1]]
+  bucket <- bucket_and_key[1]
+  key <- paste(bucket_and_key[-1], collapse = "/")
+
+  # Create temp file with appropriate extension
+  temp_file <- tempfile(fileext = paste0(".", tools::file_ext(key)))
+
+  # Download using paws.storage with credentials
+  s3 <- paws.storage::s3(
+    config = c(
+      credentials,
+      close_connection = TRUE
+    )
+  )
+  s3$download_file(
+    Bucket = bucket,
+    Key = key,
+    Filename = temp_file
+  )
+
+  temp_file
 }

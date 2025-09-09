@@ -1,0 +1,11 @@
+product_id,product_name,category,price_cad,units_sold,revenue_cad,sale_date,region
+P021,Smart Watch,Electronics,249.99,57,14249.43,2025-07-05,Quebec
+P022,Air Fryer,Appliances,159.99,38,6079.62,2025-07-06,Ontario
+P023,Basketball,Sports,39.99,84,3359.16,2025-07-07,BC
+P024,USB Cable,Electronics,12.99,203,2638.97,2025-07-08,Alberta
+P025,Foam Roller,Sports,59.99,41,2459.59,2025-07-09,Quebec
+P026,Ergonomic Chair,Furniture,399.99,11,4399.89,2025-07-10,Ontario
+P027,Tablet,Electronics,329.99,29,9569.71,2025-07-11,BC
+P028,Gym Bag,Sports,49.99,58,2899.42,2025-07-12,Alberta
+P029,Coffee Table,Furniture,199.99,17,3399.83,2025-07-13,Quebec
+P030,Power Bank,Electronics,59.99,95,5699.05,2025-07-14,Ontario

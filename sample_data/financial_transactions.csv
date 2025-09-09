@@ -1,0 +1,11 @@
+transaction_id,user_id,transaction_type,amount_cad,currency,timestamp,merchant,category,status
+TXN001,U12345,Purchase,45.67,CAD,2025-08-14 09:15:32,Tim Hortons,Food & Beverage,Completed
+TXN002,U67890,Purchase,129.99,CAD,2025-08-14 09:22:18,Best Buy,Electronics,Completed
+TXN003,U54321,Transfer,200.00,CAD,2025-08-14 09:35:45,Interac e-Transfer,Transfer,Completed
+TXN004,U98765,Purchase,89.50,CAD,2025-08-14 09:41:12,Loblaws,Groceries,Completed
+TXN005,U11111,Purchase,15.75,CAD,2025-08-14 10:03:28,Starbucks,Food & Beverage,Completed
+TXN006,U22222,Purchase,299.99,CAD,2025-08-14 10:15:55,Amazon,Online Shopping,Pending
+TXN007,U33333,Withdrawal,100.00,CAD,2025-08-14 10:28:17,ATM - TD Bank,Cash Withdrawal,Completed
+TXN008,U44444,Purchase,67.43,CAD,2025-08-14 10:45:33,Shell,Gas Station,Completed
+TXN009,U55555,Purchase,156.78,CAD,2025-08-14 11:02:19,Canadian Tire,Retail,Completed
+TXN010,U66666,Transfer,50.00,CAD,2025-08-14 11:18:44,PayPal,Transfer,Failed

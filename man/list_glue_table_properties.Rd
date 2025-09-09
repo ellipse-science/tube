@@ -20,6 +20,4 @@ A tibble with the properties of the table
 \description{
 List the properties of a GLUE table
 }
-\examples{
-list_glue_table_properties(credentials, DBI::dbGetInfo(con)$dbms.name, "my_table")
-}
+\keyword{internal}

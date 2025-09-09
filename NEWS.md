@@ -1,3 +1,79 @@
+# tube 0.6.1 (BETA)
+
+## 🆕 New Features
+
+### Enhanced Data Deletion Control
+* **NEW**: `ellipse_unpush()` now supports granular file deletion with `filename` parameter
+* **NEW**: Three deletion modes available:
+  - Full dataset deletion: `ellipse_unpush(con, "dataset")`
+  - Tag-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1")`
+  - File-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1", filename = "file.csv")`
+* **NEW**: Parameter validation ensures `filename` requires `tag` to be specified
+* **NEW**: File existence validation before deletion attempts
+* **ENHANCED**: Improved user confirmation dialogs with specific deletion details
+
+### XML File Support
+* **NEW**: XML file format support for public datalake uploads
+* **NEW**: Intelligent XML-to-tabular conversion with multiple parsing strategies
+* **NEW**: Support for both simple repeating elements and complex nested XML structures
+* **NEW**: Graceful error handling for malformed XML files
+* **NEW**: Added `xml2` package dependency for robust XML processing
+
+### File Format Support
+* **ENHANCED**: File format detection now includes XML files
+* **ENHANCED**: Updated all user-facing prompts to mention XML support
+* **ENHANCED**: Content type mapping for XML files (`text/xml`)
+
+## 🔧 Technical Improvements
+* **IMPROVED**: Extended `read_file_by_extension()` function with XML parsing capability
+* **IMPROVED**: Updated supported file extensions across all public datalake functions
+* **IMPROVED**: Enhanced `ellipse_unpush()` with improved error handling and validation
+* **IMPROVED**: Added comprehensive parameter validation for file deletion operations
+* **IMPROVED**: Backward compatibility maintained for all existing `ellipse_unpush()` usage patterns
+
+---
+
+# tube 0.6.0 (BETA)
+
+## 🚀 Major New Features
+
+### Public Datalake Integration
+* **NEW**: `ellipse_push()` - Upload data files to the public datalake with full metadata support
+* **NEW**: `ellipse_query()` - Query and download data from the public datalake
+* **NEW**: `ellipse_discover()` enhanced with public datalake dataset discovery
+* **NEW**: Interactive file browser for `ellipse_push()` with intuitive navigation
+* **NEW**: Comprehensive metadata collection including ethics, consent, and data governance
+
+### Enhanced User Experience
+* **NEW**: CLI-based progress bars for all file operations
+* **NEW**: Smart file format detection (CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML)
+* **NEW**: Automatic AWS Lambda indexing trigger for uploaded data
+* **NEW**: Rich metadata formatting and display
+
+### Data Governance & Compliance
+* **NEW**: Built-in data sensitivity levels (1-5 scale)
+* **NEW**: Consent expiry date tracking
+* **NEW**: Data destruction date management
+* **NEW**: Ethical approval stamp system
+* **NEW**: Custom metadata fields support
+
+## 🐛 Bug Fixes
+* Fixed progress bar display issues across different terminal environments
+* Improved error handling for AWS credential validation
+* Enhanced file validation with better user feedback
+
+## 📚 Documentation
+* Added comprehensive [CONCEPTS.md](CONCEPTS.md) explaining platform architecture
+* Updated README with public datalake usage examples
+* Enhanced function documentation with real-world examples
+
+## 🔧 Technical Improvements
+* Unified error handling patterns across all functions
+* Improved logging for debugging and monitoring
+* Better AWS service integration and reliability
+
+---
+
 # tube 0.5.6
 
 * Support for double data type in datamarts tables
