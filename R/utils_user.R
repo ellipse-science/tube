@@ -1,9 +1,9 @@
 #' Fonction pour interagir avec l'utilisateur
-#' @description Fonctions pour poser des questions \\u00e0 l'utilisateur \\u00e0 laquelle
-#' il peut r\\u00e9pondre par oui ou non
-#' @param question La question \\u00e0 poser
+#' @description Fonctions pour poser des questions à l'utilisateur à laquelle
+#' il peut répondre par oui ou non
+#' @param question La question à poser
 #' @param unattended_option Option pour mode non-interactif ("oui"/"non")
-#' @return La r\\u00e9ponse de l'utilisateur
+#' @return La réponse de l'utilisateur
 ask_yes_no <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
     return(tolower(unattended_option) %in% c("oui", "o"))
