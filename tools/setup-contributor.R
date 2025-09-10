@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 #' Detailed contributor setup script for tools directory
-#' 
+#'
 #' This script provides advanced setup options and validation
 #' for contributors working on the QA pipeline and tools.
 
@@ -11,13 +11,13 @@ cat("=============================================\n\n")
 # Function to check if command is available
 command_exists <- function(cmd) {
   result <- suppressWarnings(system2("which", cmd, stdout = FALSE, stderr = FALSE))
-  return(result == 0)
+  result == 0
 }
 
 # Advanced package recommendations
 advanced_packages <- c(
   "remotes",       # Install from GitHub
-  "pkgdown",       # Documentation websites  
+  "pkgdown",       # Documentation websites
   "goodpractice",  # Package quality checks
   "spelling",      # Spell checking
   "urlchecker"     # Check URLs in documentation
@@ -93,8 +93,8 @@ if (dir.exists(".vscode") || Sys.getenv("TERM_PROGRAM") == "vscode") {
   )
   
   tryCatch({
-    jsonlite::write_json(vscode_settings, ".vscode/settings.json", 
-                        pretty = TRUE, auto_unbox = TRUE)
+    jsonlite::write_json(vscode_settings, ".vscode/settings.json",
+      pretty = TRUE, auto_unbox = TRUE)
     cat("  ✅ VS Code settings created\n")
   }, error = function(e) {
     cat("  ⚠️ Could not create VS Code settings\n")
@@ -110,8 +110,8 @@ for (tool in tools_to_test) {
   if (file.exists(tool_path)) {
     cat("  Testing", tool, "...\n")
     tryCatch({
-      result <- system2("Rscript", args = tool_path, 
-                       stdout = TRUE, stderr = TRUE, timeout = 30)
+      result <- system2("Rscript", args = tool_path,
+        stdout = TRUE, stderr = TRUE, timeout = 30)
       
       status <- attr(result, "status")
       if (is.null(status) || status == 0) {

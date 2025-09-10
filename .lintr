@@ -15,6 +15,3 @@ linters: linters_with_defaults(
     trailing_whitespace_linter(allow_empty_lines = TRUE),
     indentation_linter(indent = 2, hanging_indent_style = "never")
     )
-exclude: "# Exclude Shiny files"
-exclude_start: "# Begin Exclude"
-exclude_end: "# End Exclude"

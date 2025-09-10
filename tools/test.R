@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 
+#!/usr/bin/env Rscript
+
 #' Run package tests
-#' 
-#' Executes all unit tests for the package using devtools::test().
-#' This script mirrors the testing checks performed in GitHub Actions.
+#'
+#' Runs the test suite using devtools::test().
+#' This script mirrors the testing performed in GitHub Actions.
 
 cat("=== Package Testing ===\n")
 

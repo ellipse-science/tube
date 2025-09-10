@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 #' Test coverage analysis
-#' 
+#'
 #' Generates test coverage report for the package using covr.
 #' This script helps ensure comprehensive test coverage.
 

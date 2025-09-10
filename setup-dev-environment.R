@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 
 #' Development Environment Setup for tube Package Contributors
-#' 
+#'
 #' This script sets up the complete development environment for contributing
 #' to the tube package, including linting rules, QA tools, and dependencies.
-#' 
+#'
 #' Usage: Rscript setup-dev-environment.R
 
 cat("🚀 Setting up tube package development environment\n")
@@ -85,9 +85,9 @@ if (dir.exists("tools")) {
   tryCatch({
     if (file.exists("tools/qa-pipeline.R")) {
       # Run lint-only test
-      result <- system2("Rscript", 
-                       args = c("tools/qa-pipeline.R", "--lint-only"), 
-                       stdout = TRUE, stderr = TRUE)
+      result <- system2("Rscript",
+        args = c("tools/qa-pipeline.R", "--lint-only"),
+        stdout = TRUE, stderr = TRUE)
       
       if (attr(result, "status") == 0 || is.null(attr(result, "status"))) {
         cat("  ✅ QA pipeline test passed\n")
@@ -106,7 +106,7 @@ if (dir.exists("tools")) {
 cat("\n📝 Environment setup recommendations:\n")
 cat("  • Use .Renviron file for environment variables\n")
 cat("  • Install IDE extensions for R development:\n")
-cat("    - VS Code: R Extension\n") 
+cat("    - VS Code: R Extension\n")
 cat("    - RStudio: Built-in R support\n")
 cat("  • Consider setting up git hooks for pre-commit linting\n")
 
@@ -127,7 +127,7 @@ cat("=" %R% 45, "\n")
 
 # Create a simple test to verify everything works
 cat("\n✅ Running verification test...\n")
-if (requireNamespace("lintr", quietly = TRUE) && 
+if (requireNamespace("lintr", quietly = TRUE) &&
     requireNamespace("devtools", quietly = TRUE) &&
     file.exists(".lintr") &&
     dir.exists("tools")) {

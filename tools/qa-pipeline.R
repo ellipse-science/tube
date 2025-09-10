@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 
 #' Main orchestration script for package quality assurance
-#' 
+#'
 #' This script runs the complete QA pipeline that mirrors GitHub Actions:
 #' 1. Linting checks
 #' 2. Package tests
 #' 3. Test coverage analysis
 #' 4. R CMD check
-#' 
+#'
 #' Usage: Rscript tools/qa-pipeline.R [--lint-only] [--no-coverage] [--help]
 
 # Parse command line arguments
@@ -54,10 +54,10 @@ run_script <- function(script_name, description) {
   
   if (exit_code == 0) {
     cat("✅", description, "passed\n\n")
-    return(TRUE)
+    TRUE
   } else {
     cat("❌", description, "failed\n\n")
-    return(FALSE)
+    FALSE
   }
 }
 

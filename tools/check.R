@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 #' Run R CMD check on the package
-#' 
+#'
 #' Performs comprehensive package checking using devtools::check().
 #' This script mirrors the package checking performed in GitHub Actions.
 
