@@ -7,3 +7,8 @@
 ^CONCEPTS\.md$
 ^sample_data$
 ^tube\.png$
+^setup-dev-environment\.R$
+^CONTRIBUTING\.md$
+^DEVELOPMENT-CHECKLIST\.md$
+^\.Renviron\.template$
+^tools$
