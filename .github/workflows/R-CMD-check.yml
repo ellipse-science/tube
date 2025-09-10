@@ -26,6 +26,8 @@ jobs:
     
     - name: Query dependencies
       run: |
+        # Set CRAN mirror to avoid contrib.url error
+        options(repos = c(CRAN = "https://cloud.r-project.org/"))
         install.packages('remotes')
         saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
         writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
@@ -45,6 +47,8 @@ jobs:
     
     - name: Install dependencies
       run: |
+        # Set CRAN mirror to avoid contrib.url error
+        options(repos = c(CRAN = "https://cloud.r-project.org/"))
         remotes::install_deps(dependencies = TRUE)
         remotes::install_cran("rcmdcheck")
         remotes::install_cran("lintr")
@@ -52,6 +56,8 @@ jobs:
     
     - name: Lint package (MUST PASS)
       run: |
+        # Set CRAN mirror to avoid contrib.url error
+        options(repos = c(CRAN = "https://cloud.r-project.org/"))
         cat("🔍 Running package linting checks...\n")
         lints <- lintr::lint_package()
         if (length(lints) > 0) {
