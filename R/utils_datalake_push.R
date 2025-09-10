@@ -467,15 +467,15 @@ prepare_s3_metadata <- function(custom_metadata) {
     }
     
     # Handle consent expiry date (support both field names)
-    consent_expiry_value <- custom_metadata$consent_expiry_date %||% 
-                           custom_metadata$consent_expiration_date
+    consent_expiry_value <- custom_metadata$consent_expiry_date %||%
+      custom_metadata$consent_expiration_date
     if (!is.null(consent_expiry_value)) {
       s3_metadata[["consent_expiry_date"]] <- consent_expiry_value
     }
     
     # Handle data destruction date (support both field names)
-    destruction_date_value <- custom_metadata$data_destruction_date %||% 
-                             custom_metadata$data_expiration_date
+    destruction_date_value <- custom_metadata$data_destruction_date %||%
+      custom_metadata$data_expiration_date
     if (!is.null(destruction_date_value)) {
       s3_metadata[["data_destruction_date"]] <- destruction_date_value
     }
@@ -1065,5 +1065,5 @@ handle_simple_choice <- function(choice, choice_map, current_dir) {
   }
 
   cli::cli_alert_warning("⚠️ Choix invalide (utilisez un numéro affiché)")
-  return(list(action = "continue"))
+  list(action = "continue")
 }

@@ -404,7 +404,8 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'     \item \code{sensitivity_level} - Niveau de sensibilité (numérique 1-5)
 #'     \item \code{ethical_stamp} - Tampon éthique (chaîne "true" ou "false")
 #'   }
-#'   Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1, ethical_stamp = "false", custom_field = "valeur personnalisée")}
+#'   Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
+#'     ethical_stamp = "false", custom_field = "valeur personnalisée")}
 #' @param interactive Pour connexions datalake: mode interactif (défaut: TRUE)
 #' @param pipeline Pour connexions datawarehouse: nom du pipeline (obligatoire)
 #' @param file_batch Pour connexions datawarehouse: nom du batch (optionnel, NULL sinon)
@@ -1259,7 +1260,7 @@ ellipse_unpush <- function(con, dataset_name, tag = NULL, filename = NULL) {
     
     deletion_target <- paste0(dataset_name, "/", tag, "/", filename)
     confirmation_msg <- paste0(
-      "Êtes-vous certain.e de vouloir supprimer le fichier '", filename, 
+      "Êtes-vous certain.e de vouloir supprimer le fichier '", filename,
       "' du tag '", tag, "' dans le dataset '", dataset_name, "'?"
     )
   }
