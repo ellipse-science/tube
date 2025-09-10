@@ -201,8 +201,8 @@ read_csv_with_overflow_handling <- function(filepath) {
 #' @param filepath Path to DAT file
 #' @keywords internal
 read_dat_with_overflow_handling <- function(filepath) {
-  # Try to detect delimiter
-  sample_lines <- readLines(filepath, n = 5)
+  # Try to detect delimiter by reading sample lines
+  readLines(filepath, n = 5)
 
   # Common delimiters to try
   delims <- c(",", "\t", ";", "|", " ")
@@ -357,7 +357,7 @@ extract_xml_tabular_data <- function(xml_doc) {
     }
   }
   
-  return(NULL)
+  NULL
 }
 
 #' Extract rows from XML elements
@@ -398,7 +398,7 @@ extract_rows_from_elements <- function(elements) {
         row_data[[child_name]] <- child_value
       }
       
-      return(row_data)
+      row_data
     })
     
     # Filter out NULL rows
@@ -417,7 +417,7 @@ extract_rows_from_elements <- function(elements) {
       if (length(missing_cols) > 0) {
         row[missing_cols] <- NA
       }
-      return(row[all_columns])  # Reorder columns consistently
+      row[all_columns]  # Reorder columns consistently
     })
     
     # Convert to data frame
@@ -426,10 +426,10 @@ extract_rows_from_elements <- function(elements) {
       stringsAsFactors = FALSE
     )
     
-    return(tibble::as_tibble(df))
+    tibble::as_tibble(df)
     
   }, error = function(e) {
-    return(NULL)
+    NULL
   })
 }
 

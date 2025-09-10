@@ -35,7 +35,8 @@ Pour métadonnées système, utilisez les noms de champs suivants:
 \item \code{sensitivity_level} - Niveau de sensibilité (numérique 1-5)
 \item \code{ethical_stamp} - Tampon éthique (chaîne "true" ou "false")
 }
-Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1, ethical_stamp = "false", custom_field = "valeur personnalisée")}}
+Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
+    ethical_stamp = "false", custom_field = "valeur personnalisée")}}
 
 \item{interactive}{Pour connexions datalake: mode interactif (défaut: TRUE)}
 

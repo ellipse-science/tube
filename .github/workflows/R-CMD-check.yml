@@ -1,9 +1,9 @@
 name: R-CMD-check
 on: 
   push:
-    branches: [main, master, develop, release/*]
+    branches: [main, master, develop, release/*, feature/*, bugfix/*, fix/*]
   pull_request:
-    branches: [main, master, develop, release/*]
+    branches: [main, master, develop, release/*, feature/*, bugfix/*, fix/*]
 
 jobs:
   R-CMD-check:
@@ -47,7 +47,61 @@ jobs:
       run: |
         remotes::install_deps(dependencies = TRUE)
         remotes::install_cran("rcmdcheck")
+        remotes::install_cran("lintr")
       shell: Rscript {0}
+    
+    - name: Lint package (MUST PASS)
+      run: |
+        cat("🔍 Running package linting checks...\n")
+        lints <- lintr::lint_package()
+        if (length(lints) > 0) {
+          cat("❌ Linting failed! Issues found:\n")
+          print(lints)
+          stop("Linting failed. Fix all linting issues before merging.", call. = FALSE)
+        } else {
+          cat("✅ Linting passed!\n")
+        }
+      shell: Rscript {0}
+    
+    # NOTE: Tests and coverage analysis are currently disabled
+    # Uncomment the sections below when ready to enable testing
+    
+    # - name: Run package tests
+    #   run: |
+    #     cat("🧪 Running package tests...\n")
+    #     if (!requireNamespace("testthat", quietly = TRUE)) {
+    #       cat("⚠️ testthat not available - skipping tests\n")
+    #     } else {
+    #       test_results <- devtools::test()
+    #       if (any(test_results$failed > 0)) {
+    #         cat("❌ Tests failed!\n")
+    #         stop("Tests failed. All tests must pass before merging.", call. = FALSE)
+    #       } else {
+    #         cat("✅ All tests passed!\n")
+    #       }
+    #     }
+    #   shell: Rscript {0}
+    
+    # - name: Check test coverage
+    #   run: |
+    #     cat("📊 Checking test coverage...\n")
+    #     if (!requireNamespace("covr", quietly = TRUE)) {
+    #       remotes::install_cran("covr")
+    #     }
+    #     coverage <- covr::package_coverage()
+    #     coverage_percent <- covr::percent_coverage(coverage)
+    #     cat("📈 Test coverage:", coverage_percent, "%\n")
+    #     if (coverage_percent < 80) {
+    #       cat("⚠️ Test coverage below 80%\n")
+    #       # Uncomment line below to make coverage a blocking requirement
+    #       # stop("Test coverage must be at least 80%. Current coverage: ", coverage_percent, "%")
+    #     } else {
+    #       cat("✅ Test coverage meets requirements\n")
+    #     }
+    #   shell: Rscript {0}
+    
+    # Tests are skipped via --no-tests flag in check-r-package step below
+    # Coverage analysis is not included in this workflow
     
     - name: Check package
       uses: r-lib/actions/check-r-package@v2

@@ -499,11 +499,44 @@ GitHub Actions automatically runs:
 
 #### Contributing
 
-1. Create feature branch from `main`
-2. Implement changes with full test coverage
-3. Run `qa_pipeline()` locally
-4. Submit pull request
-5. All CI/CD checks must pass
+🚀 **Quick Start for Contributors:**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/ellipse-science/tube.git
+cd tube
+
+# 2. Set up development environment (one-click setup)
+Rscript setup-dev-environment.R
+
+# 3. Test your setup
+Rscript tools/qa-pipeline.R --lint-only
+```
+
+**Development Workflow:**
+
+1. **Environment Setup**: Run `setup-dev-environment.R` for one-click configuration
+2. **Create feature branch** from current branch: `git checkout -b feature/your-feature`
+3. **Make changes** following our code standards
+4. **Run QA checks**: `Rscript tools/qa-pipeline.R --lint-only`
+5. **Fix any linting issues** reported
+6. **Run full validation**: `Rscript tools/qa-pipeline.R`
+7. **Commit and push** your changes
+8. **Submit pull request** with clear description
+
+**Development Tools:**
+- **`setup-dev-environment.R`** - One-click environment setup
+- **`tools/qa-pipeline.R`** - Main QA orchestration script
+- **`tools/lint.R`** - Code linting checks
+- **`tools/check.R`** - Package validation
+- **`CONTRIBUTING.md`** - Detailed contributor guidelines
+
+**Required Checks:**
+- ✅ All linting must pass (`lintr::lint_package()`)
+- ✅ Package validation must succeed (`devtools::check()`)
+- ✅ All CI/CD checks must pass
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for detailed development guidelines.
 
 For conceptual documentation, see [tube-doc](https://github.com/ellipse-science/tube-doc/tree/main)
 

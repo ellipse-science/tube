@@ -80,7 +80,7 @@ merge_dataframes_with_schema_union <- function(df_list) {
 }
 
 # Null coalescing operator - internal utility
-# nolint start
+# nolint start: object_name_linter
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

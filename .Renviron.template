@@ -1,0 +1,18 @@
+# Environment Variables Template for tube Package
+# Copy this to .Renviron and fill in your actual values
+# Use usethis::edit_r_environ() to edit your .Renviron file
+
+# AWS Credentials for DEV environment
+AWS_ACCESS_KEY_ID_DEV=your_dev_access_key_here
+AWS_SECRET_ACCESS_KEY_DEV=your_dev_secret_key_here
+
+# AWS Credentials for PROD environment  
+AWS_ACCESS_KEY_ID_PROD=your_prod_access_key_here
+AWS_SECRET_ACCESS_KEY_PROD=your_prod_secret_key_here
+
+# Optional: Development settings
+# DEBUG_MODE=TRUE
+# LOG_LEVEL=INFO
+
+# Note: Never commit the actual .Renviron file with real credentials!
+# This template shows the structure only.

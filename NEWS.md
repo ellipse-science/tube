@@ -1,3 +1,36 @@
+# tube 0.7.0
+
+## 🔧 Code Quality & Development Infrastructure
+
+### Enhanced Development Workflow
+* **NEW**: Comprehensive linting integration with GitHub Actions
+* **NEW**: Modular QA pipeline in `/tools/` directory with orchestration script
+* **NEW**: Automated code style enforcement and quality checks
+* **IMPROVED**: Package structure and documentation consistency
+
+## 📋 Consolidated Changes from 0.6.2 and 0.6.3
+
+### Enhanced Data Management (0.6.3)
+* **FIXED**: Resolved all R CMD check issues for stable GitHub releases
+* **FIXED**: Corrected accent encoding issues in French interface
+* **DOCS**: Fixed all undocumented function parameters
+* **DOCS**: Cleaned up development references from user documentation  
+* **INFRASTRUCTURE**: Restored and improved GitHub Actions workflow
+* **INFRASTRUCTURE**: Completed testing infrastructure cleanup
+
+### Advanced File Deletion Control (0.6.2)
+* **NEW**: `ellipse_unpush()` enhanced with granular `filename` parameter support
+* **NEW**: Three-tier deletion system:
+  - Full dataset deletion: `ellipse_unpush(con, "dataset")`
+  - Tag-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1")`
+  - File-specific deletion: `ellipse_unpush(con, "dataset", tag = "v1", filename = "file.csv")`
+* **FIXED**: S3 folder listing regex issue for root-level folders
+* **FIXED**: User metadata JSON double-wrapping and field name compatibility
+* **IMPROVED**: Enhanced `ellipse_push()` validation and error handling
+* **IMPROVED**: Reordered metadata collection flow for better user experience
+
+---
+
 # tube 0.6.1 (BETA)
 
 ## 🆕 New Features
