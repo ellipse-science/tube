@@ -58,3 +58,4 @@ inst/doc
 docs
 test/*
 sample_data/*
+*.csv
