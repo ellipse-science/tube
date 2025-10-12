@@ -485,3 +485,63 @@ flatten_xml_to_tabular <- function(xml_doc) {
     )
   })
 }
+
+#' Display an image file using R's built-in viewer capabilities
+#' @param filepath Path to image file
+#' @keywords internal
+display_image_file <- function(filepath) {
+  if (!file.exists(filepath)) {
+    stop("Image file not found: ", filepath, call. = FALSE)
+  }
+  
+  # Get file extension
+  ext <- tolower(tools::file_ext(filepath))
+  
+  # Validate it's an image
+  if (!ext %in% c("png", "jpg", "jpeg")) {
+    stop("Unsupported image format: ", ext, call. = FALSE)
+  }
+  
+  tryCatch({
+    # Try to use magick package if available (best option)
+    if (requireNamespace("magick", quietly = TRUE)) {
+      img <- magick::image_read(filepath)
+      print(img)  # This should auto-display in RStudio/VSCode
+      return(invisible(img))
+    }
+    
+    # Fallback: try png package for PNG files
+    if (ext == "png" && requireNamespace("png", quietly = TRUE)) {
+      img <- png::readPNG(filepath)
+      # Create a simple plot to display the image
+      old_par <- par(mar = c(0, 0, 0, 0))
+      on.exit(par(old_par))
+      plot(1:2, type = 'n', axes = FALSE, xlab = "", ylab = "")
+      rasterImage(img, 1, 1, 2, 2)
+      return(invisible(img))
+    }
+    
+    # Fallback: try jpeg package for JPEG files
+    if (ext %in% c("jpg", "jpeg") && requireNamespace("jpeg", quietly = TRUE)) {
+      img <- jpeg::readJPEG(filepath)
+      # Create a simple plot to display the image
+      old_par <- par(mar = c(0, 0, 0, 0))
+      on.exit(par(old_par))
+      plot(1:2, type = 'n', axes = FALSE, xlab = "", ylab = "")
+      rasterImage(img, 1, 1, 2, 2)
+      return(invisible(img))
+    }
+    
+    # Ultimate fallback: system viewer
+    cli::cli_alert_warning("Aucun package d'image R disponible. Tentative d'ouverture avec le viewer système...")
+    if (.Platform$OS.type == "windows") {
+      system(paste("start", shQuote(filepath)))
+    } else {
+      system(paste("xdg-open", shQuote(filepath)))
+    }
+    
+  }, error = function(e) {
+    cli::cli_alert_danger("Impossible d'afficher l'image: {e$message}")
+    cli::cli_alert_info("Fichier image disponible à: {filepath}")
+  })
+}

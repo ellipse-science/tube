@@ -1,3 +1,34 @@
+# tube 0.8.0
+
+## 🖼️ New Feature: Image File Support
+
+### Image Upload and Download
+* **NEW**: Support for PNG and JPEG image files in public datalake
+* **NEW**: Seamless integration with existing `ellipse_push()` and `ellipse_query()` functions
+* **NEW**: Automatic image file detection and specialized handling
+* **NEW**: Interactive image viewer integration for R IDEs (RStudio/VSCode)
+* **NEW**: Simplified metadata collection for images (no ethics/consent required)
+
+### Enhanced File Format Support
+* **EXTENDED**: File format validation now includes PNG, JPG, JPEG extensions
+* **EXTENDED**: Content type mapping with proper MIME types for images
+* **EXTENDED**: User interface messages updated to mention image support
+* **NEW**: `display_image_file()` function with multiple fallback display methods
+
+### Image-Specific Features
+* **NEW**: `is_image_dataset()` helper function for automatic image detection  
+* **NEW**: `handle_image_dataset()` for interactive image selection and display
+* **NEW**: Streamlined metadata workflow - images skip ethical approval questions
+* **NEW**: Support for magick, png, and jpeg packages for optimal image display
+
+### Technical Improvements
+* **DEPENDENCIES**: Added magick, png, jpeg as suggested packages
+* **TESTING**: Comprehensive test suite for image functionality
+* **DOCUMENTATION**: Updated function documentation with image examples
+* **LINTING**: All code follows project linting standards
+
+---
+
 # tube 0.7.0
 
 ## 🔧 Code Quality & Development Infrastructure

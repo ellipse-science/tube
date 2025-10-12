@@ -27,7 +27,16 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
         return(tibble::tibble())
       }
 
-      # Step 2: Download and read files
+      # Check if dataset contains images
+      image_extensions <- c("png", "jpg", "jpeg")
+      has_images <- any(files_metadata$file_extension %in% image_extensions)
+      
+      if (has_images) {
+        # Handle image files differently
+        return(handle_image_dataset(files_metadata, creds, dataset, tag))
+      }
+
+      # Step 2: Download and read files (for non-image datasets)
       if (!is.null(tag)) {
         cli::cli_alert_info(
           "Agrégation de {nrow(files_metadata)} fichier(s) du dataset '{dataset}' avec le tag '{tag}'..."
@@ -233,4 +242,84 @@ ellipse_query_table_mode <- function(con, table) {
   )
 
   r
+}
+
+#' Handle image dataset queries with interactive selection
+#' @param files_metadata Dataframe with file metadata
+#' @param credentials AWS credentials
+#' @param dataset Dataset name
+#' @param tag Tag name (optional)
+#' @return NULL (images are displayed directly)
+#' @keywords internal
+handle_image_dataset <- function(files_metadata, credentials, dataset, tag = NULL) {
+  # Display available images
+  if (!is.null(tag)) {
+    cli::cli_h2("🖼️ Images dans le dataset '{dataset}' (tag: '{tag}')")
+  } else {
+    cli::cli_h2("🖼️ Images dans le dataset '{dataset}' (tous les tags)")
+  }
+  
+  # Create a display table
+  display_data <- data.frame(
+    `#` = seq_len(nrow(files_metadata)),
+    `Nom` = files_metadata$file_name,
+    `Tag` = files_metadata$tag,
+    `Taille` = sapply(files_metadata$file_size_bytes, function(x) {
+      if (is.na(x) || x == 0) return("N/A")
+      if (x < 1024) return(paste(x, "B"))
+      if (x < 1024^2) return(paste(round(x / 1024, 1), "KB"))
+      if (x < 1024^3) return(paste(round(x / 1024^2, 1), "MB"))
+      paste(round(x / 1024^3, 1), "GB")
+    }),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Display the table
+  print(display_data, row.names = FALSE)
+  cli::cli_text("")
+  
+  # Interactive selection
+  repeat {
+    choice <- readline(prompt = "🖼️ Sélectionnez une image à afficher (numéro) ou 'q' pour quitter: ")
+    
+    if (tolower(choice) == "q" || tolower(choice) == "quit") {
+      cli::cli_alert_info("Terminé.")
+      return(invisible(NULL))
+    }
+    
+    # Validate numeric choice
+    choice_num <- suppressWarnings(as.numeric(choice))
+    if (is.na(choice_num) || choice_num < 1 || choice_num > nrow(files_metadata)) {
+      cli::cli_alert_warning("Choix invalide. Veuillez entrer un numéro entre 1 et {nrow(files_metadata)} ou 'q'.")
+      next
+    }
+    
+    # Display selected image
+    selected_file <- files_metadata[choice_num, ]
+    display_image_from_s3(selected_file, credentials)
+  }
+}
+
+#' Display an image from S3 using R's built-in viewer
+#' @param file_info Single row from files_metadata
+#' @param credentials AWS credentials
+#' @keywords internal
+display_image_from_s3 <- function(file_info, credentials) {
+  cli::cli_alert_info("Téléchargement et affichage de: {file_info$file_name}")
+  
+  tryCatch({
+    # Download to temporary file
+    temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+    
+    # Load and display image using appropriate method
+    display_image_file(temp_file)
+    
+    # Clean up
+    unlink(temp_file)
+    
+    cli::cli_alert_success("✅ Image affichée: {file_info$file_name}")
+  }, error = function(e) {
+    cli::cli_alert_danger("Erreur lors de l'affichage de l'image: {e$message}")
+  })
 }
