@@ -233,29 +233,51 @@ repeat {
     if (opt$dry_run) {
       cat(sprintf("[DRY RUN] Would copy: %s\n", key))
     } else {
-      tryCatch({
-        # Get current object metadata first
-        head_result <- s3$head_object(Bucket = bucket, Key = key)
-        
-        # Prepare metadata with reprocessing timestamp
-        current_metadata <- head_result$Metadata
-        if (is.null(current_metadata)) current_metadata <- list()
-        current_metadata$reprocessed_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S")
-        
-        s3$copy_object(
-          Bucket = bucket,
-          CopySource = paste0(bucket, "/", key),
-          Key = key,
-          MetadataDirective = "REPLACE",
-          Metadata = current_metadata,
-          ContentType = head_result$ContentType %||% "text/html"
-        )
-        Sys.sleep(opt$object_sleep)
-      }, error = function(e) {
-        status <<- "error"
-        error <<- e$message
-        cat(sprintf("Error copying %s: %s\n", key, error))
-      })
+      # Retry logic with exponential backoff
+      max_retries <- 10
+      retry_count <- 0
+      success <- FALSE
+      
+      while (retry_count < max_retries && !success) {
+        tryCatch({
+          # Get current object metadata first
+          head_result <- s3$head_object(Bucket = bucket, Key = key)
+          
+          # Prepare metadata with reprocessing timestamp
+          current_metadata <- head_result$Metadata
+          if (is.null(current_metadata)) current_metadata <- list()
+          current_metadata$reprocessed_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S")
+          
+          s3$copy_object(
+            Bucket = bucket,
+            CopySource = paste0(bucket, "/", key),
+            Key = key,
+            MetadataDirective = "REPLACE",
+            Metadata = current_metadata,
+            ContentType = head_result$ContentType %||% "text/html"
+          )
+          success <- TRUE
+          Sys.sleep(opt$object_sleep)
+        }, error = function(e) {
+          retry_count <<- retry_count + 1
+          error <<- e$message
+          
+          if (retry_count < max_retries) {
+            # Exponential backoff: 2^retry_count seconds + jitter
+            wait_time <- (2^retry_count) + runif(1, 0, 1)
+            cat(sprintf("Error copying %s (attempt %d/%d): %s. Retrying in %.1f seconds...\n", 
+                       key, retry_count, max_retries, error, wait_time))
+            Sys.sleep(wait_time)
+          } else {
+            status <<- "error"
+            cat(sprintf("FINAL ERROR copying %s after %d attempts: %s\n", key, max_retries, error))
+          }
+        })
+      }
+      
+      if (!success) {
+        status <- "error"
+      }
     }
     # Create new row avoiding data.table key interpretation issues
     new_row <- list(key = key, timestamp = as.character(ts), status = status, error = error)
