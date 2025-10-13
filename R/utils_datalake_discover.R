@@ -1,10 +1,7 @@
 #' Format public datalake discovery results for all datasets
 #'
 #' @param con Database connection object
-#' @retur    cli::cli_h3("🖼️ Graphics & Media Products")
-    
-    media_summary <- data.frame(
-      Dataset = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),matted tibble with all public datalake datasets
+#' @return Formatted tibble with all public datalake datasets
 #' @keywords internal
 format_public_datalake_all_datasets <- function(con) {
   # Query the public datalake table for all datasets including file extensions
@@ -99,6 +96,7 @@ display_categorized_datasets <- function(categorized_datasets) {
   # Display tabular/data datasets
   if (length(categorized_datasets$data_datasets) > 0) {
     cli::cli_h3("📊 Data Analysis Datasets")
+    cli::cli_text("")
     
     data_summary <- data.frame(
       Dataset = paste("📁", sapply(categorized_datasets$data_datasets, function(x) x$name)),
@@ -119,7 +117,7 @@ display_categorized_datasets <- function(categorized_datasets) {
     cli::cli_text("")
     
     media_summary <- data.frame(
-      Dataset = paste("�️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
+      Dataset = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
       Tags = sapply(categorized_datasets$media_datasets, function(x) x$tags_count),
       Files = sapply(categorized_datasets$media_datasets, function(x) x$total_files),
       `First Created` = sapply(categorized_datasets$media_datasets, function(x) x$first_created),
