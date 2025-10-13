@@ -23,7 +23,7 @@ Encoding: UTF-8
 Language: fr
 Depends: R (>= 4.1.0)
 Remotes:
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
     cli,
     DBI,

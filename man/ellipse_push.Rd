@@ -27,16 +27,19 @@ Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.}
 \item{tag}{Pour connexions datalake: tag de version (obligatoire)}
 
 \item{metadata}{Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel).
-Pour métadonnées système, utilisez les noms de champs suivants:
+Pour datasets: métadonnées système requises (éthique, consentement, etc.)
+Pour images: métadonnées simplifiées (seulement date de création et champs personnalisés)
 \itemize{
 \item \code{creation_date} - Date de création des données (YYYY-MM-DD)
-\item \code{consent_expiry_date} - Date d'expiration du consentement (YYYY-MM-DD)
-\item \code{data_destruction_date} - Date de destruction des données (YYYY-MM-DD)
-\item \code{sensitivity_level} - Niveau de sensibilité (numérique 1-5)
-\item \code{ethical_stamp} - Tampon éthique (chaîne "true" ou "false")
+\item \code{consent_expiry_date} - Date d'expiration du consentement (datasets seulement)
+\item \code{data_destruction_date} - Date de destruction des données (datasets seulement)
+\item \code{sensitivity_level} - Niveau de sensibilité (datasets seulement)
+\item \code{ethical_stamp} - Tampon éthique (datasets seulement)
 }
-Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
-    ethical_stamp = "false", custom_field = "valeur personnalisée")}}
+Exemple dataset: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
+    ethical_stamp = "false", custom_field = "valeur personnalisée")}
+  Exemple image: \code{list(creation_date = "2025-01-01", photographer = "Jean Doe",
+    title = "Photo de démonstration")}}
 
 \item{interactive}{Pour connexions datalake: mode interactif (défaut: TRUE)}
 
@@ -53,6 +56,7 @@ La liste des fichiers qui ont été injectés dans tube
 Cette fonction unifie l'injection de données vers différentes destinations:
 \itemize{
 \item Datalake public (pour connexions "datalake"): Upload direct avec métadonnées
+Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG
 \item Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 }
 }

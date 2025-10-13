@@ -4,7 +4,12 @@
 \alias{collect_required_system_metadata}
 \title{Collect required system metadata fields}
 \usage{
-collect_required_system_metadata(metadata)
+collect_required_system_metadata(metadata, is_images = FALSE)
+}
+\arguments{
+\item{metadata}{Existing metadata list}
+
+\item{is_images}{Whether the files being processed are images (if TRUE, only creation_date is collected)}
 }
 \description{
 Collect required system metadata fields

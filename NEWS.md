@@ -7,7 +7,8 @@
 * **NEW**: Seamless integration with existing `ellipse_push()` and `ellipse_query()` functions
 * **NEW**: Automatic image file detection and specialized handling
 * **NEW**: Interactive image viewer integration for R IDEs (RStudio/VSCode)
-* **NEW**: Simplified metadata collection for images (no ethics/consent required)
+* **NEW**: Streamlined metadata collection for images (only creation_date required)
+* **IMPROVED**: Images skip governance metadata (ethics, consent, destruction dates) as they are not relevant for image files
 
 ### Enhanced File Format Support
 * **EXTENDED**: File format validation now includes PNG, JPG, JPEG extensions
