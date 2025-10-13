@@ -206,6 +206,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
       sensitivity_level,
       ethical_stamp,
       user_metadata_json,
+      file_extensions,
       regexp_replace(file_paths, \'s3://[^/]+/\', \'\') as file_paths,
       COUNT(*) OVER () as total_rows,
       SUM(CAST(file_count AS INTEGER)) OVER () as total_files
@@ -221,8 +222,30 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     return(invisible(NULL))
   }
 
-  # Create nice output with icons
-  cli::cli_h2(glue::glue("📊 Dataset Details: {dataset_name}"))
+  # Detect content type based on file extensions
+  tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+  image_extensions <- c("png", "jpg", "jpeg")
+  
+  all_extensions <- c()
+  for (i in seq_len(nrow(result))) {
+    if (!is.null(result$file_extensions[i]) && nzchar(result$file_extensions[i])) {
+      extensions <- jsonlite::fromJSON(result$file_extensions[i])
+      # Remove leading dots and convert to lowercase
+      extensions <- tolower(gsub("^\\.", "", extensions))
+      all_extensions <- c(all_extensions, extensions)
+    }
+  }
+  
+  # Determine content type (images take precedence)
+  has_images <- any(all_extensions %in% image_extensions)
+  has_tabular <- any(all_extensions %in% tabular_extensions)
+  
+  # Use appropriate header and icon based on content type
+  if (has_images) {
+    cli::cli_h2(glue::glue("🖼️ Graphics Details: {dataset_name}"))
+  } else {
+    cli::cli_h2(glue::glue("📊 Dataset Details: {dataset_name}"))
+  }
   # Basic information
   cli::cli_h3("📋 Overview")
   cli::cli_text("")
@@ -233,9 +256,19 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   tags_list <- paste(unique_tags, collapse = ", ")
   total_files <- as.integer(result[1, "total_files"])
 
-  # Create overview data frame with proper formatting
+  # Create overview data frame with content-aware icons
+  if (has_images) {
+    dataset_icon <- "🖼️"
+    content_label <- "Graphics"
+    files_icon <- "🖼️"
+  } else {
+    dataset_icon <- "📊"
+    content_label <- "Dataset" 
+    files_icon <- "📄"
+  }
+  
   overview_data <- data.frame(
-    Property = c("📋Dataset", "🏷️ Tags", "📄Total files"),
+    Property = c(paste(dataset_icon, content_label), "🏷️ Tags", paste(files_icon, "Total files")),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE
