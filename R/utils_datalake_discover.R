@@ -4,10 +4,10 @@
 #' @return Formatted tibble with all public datalake datasets
 #' @keywords internal
 format_public_datalake_all_datasets <- function(con) {
-  # Query the public datalake table for all datasets
+  # Query the public datalake table for all datasets including file extensions
   query <- 'SELECT name as table_name, tag, file_count, creation_date, consent_expiry_date,
             data_destruction_date, sensitivity_level, ethical_stamp,
-            user_metadata_json
+            user_metadata_json, file_extensions
             FROM "public-data-lake-content" ORDER BY name, tag'
 
   result <- DBI::dbGetQuery(con, query)
@@ -17,72 +17,121 @@ format_public_datalake_all_datasets <- function(con) {
     return(invisible(NULL))
   }
 
+  # Categorize datasets by content type
+  categorized_datasets <- categorize_datasets_by_content(result)
+
   # Create tabular output with proper formatting
   cli::cli_h2("🗂️  Public Datalake - All Datasets")
   cli::cli_text("")
 
-  # Create a summary table first
-  dataset_names <- unique(result$table_name)
-  dataset_summary <- data.frame(
-    table_name = character(0),
-    tags_count = integer(0),
-    total_files = numeric(0),
-    first_created = character(0),
-    stringsAsFactors = FALSE
-  )
+  # Display categories separately
+  display_categorized_datasets(categorized_datasets)
 
+  return(invisible(NULL))
+}
+
+#' Categorize datasets by content type based on file extensions
+#' @param result Query result from public-data-lake-content table
+#' @return List with data_datasets and media_datasets
+#' @keywords internal
+categorize_datasets_by_content <- function(result) {
+  # Define file type categories
+  tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+  image_extensions <- c("png", "jpg", "jpeg")
+  
+  data_datasets <- list()
+  media_datasets <- list()
+  
+  # Group by dataset name
+  dataset_names <- unique(result$table_name)
+  
   for (dataset in dataset_names) {
     dataset_rows <- result[result$table_name == dataset, ]
-    dataset_summary <- rbind(dataset_summary, data.frame(
-      table_name = dataset,
+    
+    # Get all file extensions for this dataset
+    all_extensions <- c()
+    for (i in seq_len(nrow(dataset_rows))) {
+      if (!is.null(dataset_rows$file_extensions[i]) && nzchar(dataset_rows$file_extensions[i])) {
+        extensions <- jsonlite::fromJSON(dataset_rows$file_extensions[i])
+        # Remove leading dots and convert to lowercase
+        extensions <- tolower(gsub("^\\.", "", extensions))
+        all_extensions <- c(all_extensions, extensions)
+      }
+    }
+    
+    # Categorize based on predominant file types
+    has_tabular <- any(all_extensions %in% tabular_extensions)
+    has_images <- any(all_extensions %in% image_extensions)
+    
+    # Create dataset summary
+    dataset_info <- list(
+      name = dataset,
       tags_count = nrow(dataset_rows),
       total_files = sum(as.numeric(dataset_rows$file_count), na.rm = TRUE),
       first_created = min(dataset_rows$creation_date, na.rm = TRUE),
-      stringsAsFactors = FALSE
-    ))
+      extensions = unique(all_extensions)
+    )
+    
+    # Categorize (images take precedence for mixed datasets)
+    if (has_images) {
+      media_datasets[[length(media_datasets) + 1]] <- dataset_info
+    } else if (has_tabular) {
+      data_datasets[[length(data_datasets) + 1]] <- dataset_info
+    } else {
+      # Default to data if unknown
+      data_datasets[[length(data_datasets) + 1]] <- dataset_info
+    }
   }
-
-  cli::cli_h3("📋 Dataset Summary")
-  cli::cli_text("")
-
-  # Create a clean data frame with icons integrated into values
-  display_summary <- data.frame(
-    Dataset = paste("📁", dataset_summary$table_name),
-    Tags = dataset_summary$tags_count,
-    Files = dataset_summary$total_files,
-    `First Created` = dataset_summary$first_created,
-    stringsAsFactors = FALSE,
-    check.names = FALSE
+  
+  list(
+    data_datasets = data_datasets,
+    media_datasets = media_datasets
   )
+}
 
-  # Print the data frame as a simple table
-  print(display_summary, row.names = FALSE, col.names = FALSE, right = FALSE)
-
-  cli::cli_text("")
-  cli::cli_rule()
-
-  # Detailed table with all tags
-  cli::cli_h3("🏷️  Detailed Tag Information")
-  cli::cli_text("")
-
-  # Create a clean data frame with icons integrated into values
-  display_details <- data.frame(
-    Dataset = paste("📁", result$table_name),
-    Tag = paste("🏷️", result$tag),
-    Files = result$file_count,
-    Created = result$creation_date,
-    Sensitivity = result$sensitivity_level,
-    stringsAsFactors = FALSE,
-    check.names = FALSE
-  )
-
-  # Print the data frame as a simple table
-  print(display_details, row.names = FALSE, col.names = FALSE, right = FALSE)
-
-  cli::cli_text("")
+#' Display categorized datasets in separate sections
+#' @param categorized_datasets List from categorize_datasets_by_content
+#' @keywords internal
+display_categorized_datasets <- function(categorized_datasets) {
+  
+  # Display tabular/data datasets
+  if (length(categorized_datasets$data_datasets) > 0) {
+    cli::cli_h3("📊 Data Analysis Datasets")
+    cli::cli_text("")
+    
+    data_summary <- data.frame(
+      Dataset = paste("📁", sapply(categorized_datasets$data_datasets, function(x) x$name)),
+      Tags = sapply(categorized_datasets$data_datasets, function(x) x$tags_count),
+      Files = sapply(categorized_datasets$data_datasets, function(x) x$total_files),
+      `First Created` = sapply(categorized_datasets$data_datasets, function(x) x$first_created),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    print(data_summary, row.names = FALSE, col.names = FALSE, right = FALSE)
+    cli::cli_text("")
+  }
+  
+  # Display media/graphics datasets
+  if (length(categorized_datasets$media_datasets) > 0) {
+    cli::cli_h3("🖼️ Graphics & Media Products")
+    cli::cli_text("")
+    
+    media_summary <- data.frame(
+      Dataset = paste("�️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
+      Tags = sapply(categorized_datasets$media_datasets, function(x) x$tags_count),
+      Files = sapply(categorized_datasets$media_datasets, function(x) x$total_files),
+      `First Created` = sapply(categorized_datasets$media_datasets, function(x) x$first_created),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    print(media_summary, row.names = FALSE, col.names = FALSE, right = FALSE)
+    cli::cli_text("")
+  }
+  
   cli::cli_rule()
   cli::cli_alert_info("💡 Use ellipse_discover(con, 'dataset_name') for detailed information")
-  invisible(result)
 }
 
 #' Format public datalake discovery results for pattern search
