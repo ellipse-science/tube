@@ -1,7 +1,10 @@
 #' Format public datalake discovery results for all datasets
 #'
 #' @param con Database connection object
-#' @return Formatted tibble with all public datalake datasets
+#' @retur    cli::cli_h3("🖼️ Graphics & Media Products")
+    
+    media_summary <- data.frame(
+      Dataset = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),matted tibble with all public datalake datasets
 #' @keywords internal
 format_public_datalake_all_datasets <- function(con) {
   # Query the public datalake table for all datasets including file extensions
@@ -22,7 +25,6 @@ format_public_datalake_all_datasets <- function(con) {
 
   # Create tabular output with proper formatting
   cli::cli_h2("🗂️  Public Datalake - All Datasets")
-  cli::cli_text("")
 
   # Display categories separately
   display_categorized_datasets(categorized_datasets)
@@ -97,7 +99,6 @@ display_categorized_datasets <- function(categorized_datasets) {
   # Display tabular/data datasets
   if (length(categorized_datasets$data_datasets) > 0) {
     cli::cli_h3("📊 Data Analysis Datasets")
-    cli::cli_text("")
     
     data_summary <- data.frame(
       Dataset = paste("📁", sapply(categorized_datasets$data_datasets, function(x) x$name)),
