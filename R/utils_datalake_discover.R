@@ -117,7 +117,7 @@ display_categorized_datasets <- function(categorized_datasets) {
     cli::cli_text("")
     
     media_summary <- data.frame(
-      `Informational_Object` = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
+      `Informational Object` = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
       Tags = sapply(categorized_datasets$media_datasets, function(x) x$tags_count),
       Files = sapply(categorized_datasets$media_datasets, function(x) x$total_files),
       `First Created` = sapply(categorized_datasets$media_datasets, function(x) x$first_created),
