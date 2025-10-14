@@ -117,7 +117,7 @@ display_categorized_datasets <- function(categorized_datasets) {
     cli::cli_text("")
     
     media_summary <- data.frame(
-      `Informational Object` = paste("🖼️  ", sapply(categorized_datasets$media_datasets, function(x) x$name)),
+      `Object` = paste("🖼️ ", sapply(categorized_datasets$media_datasets, function(x) x$name)),
       Tags = sapply(categorized_datasets$media_datasets, function(x) x$tags_count),
       Files = sapply(categorized_datasets$media_datasets, function(x) x$total_files),
       `First Created` = sapply(categorized_datasets$media_datasets, function(x) x$first_created),
@@ -258,9 +258,9 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame with content-aware icons
   if (has_images) {
-    dataset_icon <- "🖼️  "
+    dataset_icon <- "🖼️ "
     content_label <- "Graphics"
-    files_icon <- "🖼️  "
+    files_icon <- "🖼️ "
   } else {
     dataset_icon <- "📊"
     content_label <- "Dataset"
