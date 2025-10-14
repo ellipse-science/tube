@@ -113,7 +113,7 @@ display_categorized_datasets <- function(categorized_datasets) {
   
   # Display media/graphics datasets
   if (length(categorized_datasets$media_datasets) > 0) {
-    cli::cli_h3("🖼️ Graphics & Media Products")
+    cli::cli_h3("🖼️  Graphics & Other informational products")
     cli::cli_text("")
     
     media_summary <- data.frame(
@@ -242,9 +242,9 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   
   # Use appropriate header and icon based on content type
   if (has_images) {
-    cli::cli_h2(glue::glue("🖼️ Graphics Details: {dataset_name}"))
+    cli::cli_h2(glue::glue("🖼️  Graphics Details: {dataset_name}"))
   } else {
-    cli::cli_h2(glue::glue("📊 Dataset Details: {dataset_name}"))
+    cli::cli_h2(glue::glue("📊  Dataset Details: {dataset_name}"))
   }
   # Basic information
   cli::cli_h3("📋 Overview")
