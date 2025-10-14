@@ -305,8 +305,8 @@ display_image_from_s3 <- function(file_info, credentials) {
     # Load and display image using appropriate method
     display_image_file(temp_file)
     
-    # Clean up
-    unlink(temp_file)
+    # Note: Don't delete temp file immediately as xdg-open runs asynchronously
+    # Temp files will be cleaned up when R session ends
     
     cli::cli_alert_success("✅ Image affichée: {file_info$file_name}")
   }, error = function(e) {
