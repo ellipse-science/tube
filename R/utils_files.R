@@ -503,45 +503,32 @@ display_image_file <- function(filepath) {
   }
   
   tryCatch({
-    # Try to use magick package if available (best option)
+    # Method 1: Try to use magick package (best for RStudio viewer)
     if (requireNamespace("magick", quietly = TRUE)) {
       img <- magick::image_read(filepath)
-      print(img)  # This should auto-display in RStudio/VSCode
-      return(invisible(img))
+      
+      # In RStudio, magick images display in viewer pane automatically
+      if (exists(".rs.invokeShinyPaneViewer") || Sys.getenv("RSTUDIO") == "1") {
+        print(img)  # Auto-displays in RStudio viewer
+        return(invisible(img))
+      }
     }
     
-    # Fallback: try png package for PNG files
-    if (ext == "png" && requireNamespace("png", quietly = TRUE)) {
-      img <- png::readPNG(filepath)
-      # Create a simple plot to display the image
-      old_par <- par(mar = c(0, 0, 0, 0))
-      on.exit(par(old_par))
-      plot(1:2, type = 'n', axes = FALSE, xlab = "", ylab = "")
-      rasterImage(img, 1, 1, 2, 2)
-      return(invisible(img))
-    }
-    
-    # Fallback: try jpeg package for JPEG files
-    if (ext %in% c("jpg", "jpeg") && requireNamespace("jpeg", quietly = TRUE)) {
-      img <- jpeg::readJPEG(filepath)
-      # Create a simple plot to display the image
-      old_par <- par(mar = c(0, 0, 0, 0))
-      on.exit(par(old_par))
-      plot(1:2, type = 'n', axes = FALSE, xlab = "", ylab = "")
-      rasterImage(img, 1, 1, 2, 2)
-      return(invisible(img))
-    }
-    
-    # Ultimate fallback: system viewer
-    cli::cli_alert_warning("Aucun package d'image R disponible. Tentative d'ouverture avec le viewer système...")
+    # Method 2: VS Code or other IDEs - use system viewer (clean, no plots)
+    cli::cli_alert_info("Ouverture de l'image avec le viewer système...")
     if (.Platform$OS.type == "windows") {
-      system(paste("start", shQuote(filepath)))
+      system(paste("start", shQuote(filepath)), wait = FALSE)
     } else {
-      system(paste("xdg-open", shQuote(filepath)))
+      # Use xdg-open for Linux (works with VS Code and most desktop environments)
+      system(paste("xdg-open", shQuote(filepath)), wait = FALSE)
     }
+    
+    # Return file path for reference
+    return(invisible(filepath))
     
   }, error = function(e) {
     cli::cli_alert_danger("Impossible d'afficher l'image: {e$message}")
     cli::cli_alert_info("Fichier image disponible à: {filepath}")
+    return(invisible(filepath))
   })
 }

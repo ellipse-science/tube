@@ -279,26 +279,16 @@ handle_image_dataset <- function(files_metadata, credentials, dataset, tag = NUL
   print(display_data, row.names = FALSE)
   cli::cli_text("")
   
-  # Interactive selection
-  repeat {
-    choice <- readline(prompt = "🖼️ Sélectionnez une image à afficher (numéro) ou 'q' pour quitter: ")
-    
-    if (tolower(choice) == "q" || tolower(choice) == "quit") {
-      cli::cli_alert_info("Terminé.")
-      return(invisible(NULL))
-    }
-    
-    # Validate numeric choice
-    choice_num <- suppressWarnings(as.numeric(choice))
-    if (is.na(choice_num) || choice_num < 1 || choice_num > nrow(files_metadata)) {
-      cli::cli_alert_warning("Choix invalide. Veuillez entrer un numéro entre 1 et {nrow(files_metadata)} ou 'q'.")
-      next
-    }
-    
-    # Display selected image
-    selected_file <- files_metadata[choice_num, ]
+  # Auto-display all images (no interactive selection needed)
+  cli::cli_alert_info("Téléchargement et affichage de {nrow(files_metadata)} image(s)...")
+  
+  for (i in seq_len(nrow(files_metadata))) {
+    selected_file <- files_metadata[i, ]
     display_image_from_s3(selected_file, credentials)
   }
+  
+  cli::cli_alert_success("✅ Toutes les images ont été affichées.")
+  return(invisible(files_metadata))
 }
 
 #' Display an image from S3 using R's built-in viewer
