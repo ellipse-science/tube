@@ -21,12 +21,12 @@ format_public_datalake_all_datasets <- function(con) {
   categorized_datasets <- categorize_datasets_by_content(result)
 
   # Create tabular output with proper formatting
-  cli::cli_h2("🗂️  Public Datalake - All Datasets")
+  cli::cli_h2("🗂️  Public Datalake")
 
   # Display categories separately
   display_categorized_datasets(categorized_datasets)
 
-  return(invisible(NULL))
+  invisible(NULL)
 }
 
 #' Categorize datasets by content type based on file extensions
@@ -95,7 +95,7 @@ display_categorized_datasets <- function(categorized_datasets) {
   
   # Display tabular/data datasets
   if (length(categorized_datasets$data_datasets) > 0) {
-    cli::cli_h3("📊 Data Analysis Datasets")
+    cli::cli_h3("📊 Datasets")
     cli::cli_text("")
     
     data_summary <- data.frame(
@@ -117,7 +117,7 @@ display_categorized_datasets <- function(categorized_datasets) {
     cli::cli_text("")
     
     media_summary <- data.frame(
-      Dataset = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
+      `Informational_Object` = paste("🖼️", sapply(categorized_datasets$media_datasets, function(x) x$name)),
       Tags = sapply(categorized_datasets$media_datasets, function(x) x$tags_count),
       Files = sapply(categorized_datasets$media_datasets, function(x) x$total_files),
       `First Created` = sapply(categorized_datasets$media_datasets, function(x) x$first_created),
@@ -263,7 +263,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     files_icon <- "🖼️"
   } else {
     dataset_icon <- "📊"
-    content_label <- "Dataset" 
+    content_label <- "Dataset"
     files_icon <- "📄"
   }
   
