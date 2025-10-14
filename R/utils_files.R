@@ -503,28 +503,86 @@ display_image_file <- function(filepath) {
   }
   
   tryCatch({
-    # Method 1: Try to use magick package (best for RStudio viewer)
-    if (requireNamespace("magick", quietly = TRUE)) {
+    # Check if we're in RStudio first
+    is_rstudio <- exists(".rs.invokeShinyPaneViewer") || Sys.getenv("RSTUDIO") == "1"
+    
+    if (is_rstudio && requireNamespace("magick", quietly = TRUE)) {
+      # Method 1: RStudio with magick - use viewer pane
       img <- magick::image_read(filepath)
-      
-      # In RStudio, magick images display in viewer pane automatically
-      if (exists(".rs.invokeShinyPaneViewer") || Sys.getenv("RSTUDIO") == "1") {
-        print(img)  # Auto-displays in RStudio viewer
-        return(invisible(img))
-      }
-    }
-    
-    # Method 2: VS Code or other IDEs - use system viewer (clean, no plots)
-    cli::cli_alert_info("Ouverture de l'image avec le viewer système...")
-    if (.Platform$OS.type == "windows") {
-      system(paste("start", shQuote(filepath)), wait = FALSE)
+      print(img)  # Auto-displays in RStudio viewer
+      return(invisible(img))
     } else {
-      # Use xdg-open for Linux (works with VS Code and most desktop environments)
-      system(paste("xdg-open", shQuote(filepath)), wait = FALSE)
+      # Method 2: VS Code or other IDEs - try multiple approaches
+      cli::cli_alert_info("Ouverture de l'image avec le viewer système...")
+      cli::cli_alert_info("Fichier: {filepath}")
+      
+      success <- FALSE
+      
+      if (.Platform$OS.type == "windows") {
+        system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
+        success <- (system_result == 0)
+      } else {
+        # Try multiple Linux approaches in order of preference
+        
+        # 1. Try VS Code directly
+        if (Sys.which("code") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec VS Code...")
+          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE, ignore.stdout = TRUE, ignore.stderr = TRUE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte dans VS Code")
+          }
+        }
+        
+        # 2. Try eog (Eyes of GNOME)
+        if (Sys.which("eog") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec eog...")
+          system_result <- system(paste("eog", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec eog")
+          }
+        }
+        
+        # 3. Try feh
+        if (Sys.which("feh") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec feh...")
+          system_result <- system(paste("feh", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec feh")
+          }
+        }
+        
+        # 4. Try ImageMagick display
+        if (Sys.which("display") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec ImageMagick display...")
+          system_result <- system(paste("display", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec ImageMagick display")
+          }
+        }
+        
+        # 5. Fallback to xdg-open
+        if (!success) {
+          cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
+          system_result <- system(paste("xdg-open", shQuote(filepath)), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec xdg-open")
+          }
+        }
+      }
+      
+      if (!success) {
+        cli::cli_alert_warning("Impossible d'ouvrir l'image automatiquement.")
+        cli::cli_alert_info("📁 Fichier disponible à: {filepath}")
+        cli::cli_alert_info("💡 Vous pouvez l'ouvrir manuellement avec VS Code ou votre viewer d'images préféré")
+      }
+      
+      return(invisible(filepath))
     }
-    
-    # Return file path for reference
-    return(invisible(filepath))
     
   }, error = function(e) {
     cli::cli_alert_danger("Impossible d'afficher l'image: {e$message}")
