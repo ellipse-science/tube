@@ -130,7 +130,7 @@ upload_dataframe_to_datamart <- function(credentials, dataframe, bucket, prefix,
     )
 
     if (glue_col_type == FALSE) {
-      return("Unsupported column type")
+      return(paste("Unsupported column type:", dataframe_col_type, "for column:", col_names[i]))
     }
 
     col_names[i] <- paste(col_names[i], ":", glue_col_type, sep = "")
