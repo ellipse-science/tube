@@ -675,8 +675,8 @@ ellipse_publish <- function(
       # append the dataframe to the table by uploading
       # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {
@@ -714,8 +714,8 @@ ellipse_publish <- function(
 
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {
@@ -733,8 +733,8 @@ ellipse_publish <- function(
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {
