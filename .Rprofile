@@ -1,6 +1,9 @@
 # tube package development .Rprofile
 # This file is loaded when R starts in the tube project directory
 
+# Helper function for repeated characters
+`%R%` <- function(x, n) paste(rep(x, n), collapse = "")
+
 # Display startup message
 if (interactive()) {
   cat("\n🚰 tube Package Development Environment\n")
@@ -13,9 +16,6 @@ if (interactive()) {
   cat("\nFor full setup: Rscript setup-dev-environment.R\n")
   cat("=" %R% 40, "\n\n")
 }
-
-# Helper function for repeated characters
-`%R%` <- function(x, n) paste(rep(x, n), collapse = "")
 
 # Development helper functions
 setup_env <- function() {

@@ -363,8 +363,9 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #'   à filtrer. Si NULL, agrège tous les tags du dataset.
 #'
 #' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
-#'   dans un pipeline `dplyr`. Pour datalake: Un dataframe agrégé de tous les
-#'   fichiers du dataset.
+#'   dans un pipeline `dplyr`. Pour datalake datasets: Un dataframe agrégé de tous les
+#'   fichiers du dataset. Pour datalake images: Interface interactive pour visualiser
+#'   les images une par une.
 #' @export
 ellipse_query <- function(con, dataset, tag = NULL) {
   logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag))
@@ -388,6 +389,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'
 #' Cette fonction unifie l'injection de données vers différentes destinations:
 #' - Datalake public (pour connexions "datalake"): Upload direct avec métadonnées
+#'   Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG
 #' - Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
@@ -396,16 +398,19 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #' @param dataset_name Pour connexions datalake: nom du dataset (obligatoire)
 #' @param tag Pour connexions datalake: tag de version (obligatoire)
 #' @param metadata Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel).
-#'   Pour métadonnées système, utilisez les noms de champs suivants:
+#'   Pour datasets: métadonnées système requises (éthique, consentement, etc.)
+#'   Pour images: métadonnées simplifiées (seulement date de création et champs personnalisés)
 #'   \itemize{
 #'     \item \code{creation_date} - Date de création des données (YYYY-MM-DD)
-#'     \item \code{consent_expiry_date} - Date d'expiration du consentement (YYYY-MM-DD)
-#'     \item \code{data_destruction_date} - Date de destruction des données (YYYY-MM-DD)
-#'     \item \code{sensitivity_level} - Niveau de sensibilité (numérique 1-5)
-#'     \item \code{ethical_stamp} - Tampon éthique (chaîne "true" ou "false")
+#'     \item \code{consent_expiry_date} - Date d'expiration du consentement (datasets seulement)
+#'     \item \code{data_destruction_date} - Date de destruction des données (datasets seulement)
+#'     \item \code{sensitivity_level} - Niveau de sensibilité (datasets seulement)
+#'     \item \code{ethical_stamp} - Tampon éthique (datasets seulement)
 #'   }
-#'   Exemple: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
+#'   Exemple dataset: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
 #'     ethical_stamp = "false", custom_field = "valeur personnalisée")}
+#'   Exemple image: \code{list(creation_date = "2025-01-01", photographer = "Jean Doe",
+#'     title = "Photo de démonstration")}
 #' @param interactive Pour connexions datalake: mode interactif (défaut: TRUE)
 #' @param pipeline Pour connexions datawarehouse: nom du pipeline (obligatoire)
 #' @param file_batch Pour connexions datawarehouse: nom du batch (optionnel, NULL sinon)
@@ -670,8 +675,8 @@ ellipse_publish <- function(
       # append the dataframe to the table by uploading
       # upload the csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {
@@ -709,8 +714,8 @@ ellipse_publish <- function(
 
       # upload new csv in s3://datamarts-bucket/datamart/table/unprocessed
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {
@@ -728,8 +733,8 @@ ellipse_publish <- function(
       # create the glue table by uploading the csv in s3://datamarts-bucket/datamart/table/unprocessed
       info("Création de la table en cours...")
       r <- upload_dataframe_to_datamart(creds, dataframe, dm_bucket, datamart, table)
-      if (is.character(r) && r == "Unsupported column type") {
-        danger("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅")
+      if (is.character(r) && grepl("Unsupported column type", r)) {
+        danger(paste("Il y a une colonne dont le type n'est pas pris en charge dans votre dataframe! 😅", r))
         invisible(FALSE)
       } else {
         if (r == FALSE) {

@@ -1,7 +1,7 @@
 Package: tube
 Type: Package
 Title: Access Ellipse Data Hub on AWS
-Version: 0.7.0
+Version: 0.8.0
 Authors@R:
   c(person(
       given = "Patrick",
@@ -23,7 +23,7 @@ Encoding: UTF-8
 Language: fr
 Depends: R (>= 4.1.0)
 Remotes:
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
     cli,
     DBI,
@@ -44,7 +44,10 @@ Imports:
     tools,
     xml2
 Suggests:
-    rmarkdown
+    rmarkdown,
+    magick,
+    png,
+    jpeg
 URL: https://github.com/ellipse-science/tube/
 BugReports: https://github.com/ellipse-science/tube/issues
 Roxygen: list(markdown = TRUE)

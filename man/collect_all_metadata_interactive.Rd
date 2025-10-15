@@ -4,7 +4,10 @@
 \alias{collect_all_metadata_interactive}
 \title{Collect ALL metadata including required system fields}
 \usage{
-collect_all_metadata_interactive()
+collect_all_metadata_interactive(files = NULL)
+}
+\arguments{
+\item{files}{Vector of file paths being uploaded (optional)}
 }
 \description{
 Collect ALL metadata including required system fields

@@ -117,7 +117,9 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
 
   # ENHANCED METADATA COLLECTION - now includes required system fields
   if (is.null(metadata)) {
-    metadata <- collect_all_metadata_interactive()
+    # Get files list to check if they are images
+    files <- prepare_files_for_upload(file_or_folder)
+    metadata <- collect_all_metadata_interactive(files)
   }
 
   # Confirmation
@@ -138,16 +140,40 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
   )
 }
 
-#' Collect ALL metadata including required system fields
+#' Check if files are image files
+#' @param files Vector of file paths
+#' @return TRUE if all files are images, FALSE otherwise
 #' @keywords internal
-collect_all_metadata_interactive <- function() {
+is_image_dataset <- function(files) {
+  if (length(files) == 0) return(FALSE)
+  
+  # Get file extensions
+  extensions <- tools::file_ext(tolower(files))
+  image_extensions <- c("png", "jpg", "jpeg")
+  
+  # Check if all files are images
+  all(extensions %in% image_extensions)
+}
+
+#' Collect ALL metadata including required system fields
+#' @param files Vector of file paths being uploaded (optional)
+#' @keywords internal
+collect_all_metadata_interactive <- function(files = NULL) {
   cli::cli_h2("📊 Métadonnées du dataset")
-  cli::cli_text("Ces informations sont importantes pour la gouvernance des données")
+  
+  # Check if dealing with images
+  is_images <- !is.null(files) && is_image_dataset(files)
+  
+  if (is_images) {
+    cli::cli_text("🖼️ Images détectées - métadonnées simplifiées")
+  } else {
+    cli::cli_text("Ces informations sont importantes pour la gouvernance des données")
+  }
 
   metadata <- list()
 
   # REQUIRED SYSTEM FIELDS
-  metadata <- collect_required_system_metadata(metadata)
+  metadata <- collect_required_system_metadata(metadata, is_images)
 
   # OPTIONAL CUSTOM FIELDS
   metadata <- collect_optional_custom_metadata(metadata)
@@ -156,9 +182,26 @@ collect_all_metadata_interactive <- function() {
 }
 
 #' Collect required system metadata fields
+#' @param metadata Existing metadata list
+#' @param is_images Whether the files being processed are images (if TRUE, only creation_date is collected)
 #' @keywords internal
-collect_required_system_metadata <- function(metadata) {
-  cli::cli_h3("📝 Métadonnées système requises")
+collect_required_system_metadata <- function(metadata, is_images = FALSE) {
+  if (is_images) {
+    # For images, only collect creation date - other governance metadata not relevant
+    cli::cli_h3("📝 Métadonnées système pour images")
+    
+    # Creation date (default to today)
+    default_date <- format(Sys.Date(), "%Y-%m-%d")
+    creation_date <- readline(prompt = paste0("📅 Date de création de l'image [", default_date, "]: "))
+    if (nchar(creation_date) == 0) creation_date <- default_date
+    metadata$creation_date <- creation_date
+    
+    cli::cli_alert_info("🖼️ Images - autres métadonnées de gouvernance ignorées")
+    return(metadata)
+  }
+  
+  # For tabular datasets, collect full system metadata
+  cli::cli_h3("� Métadonnées système requises")
 
   # Creation date (default to today)
   default_date <- format(Sys.Date(), "%Y-%m-%d")
@@ -166,7 +209,7 @@ collect_required_system_metadata <- function(metadata) {
   if (nchar(creation_date) == 0) creation_date <- default_date
   metadata$creation_date <- creation_date
 
-  # Ethical approval - MOVED UP
+  # Ethical approval - for tabular datasets only
   ethical_response <- readline(prompt = "✅ Approbation éthique requise [o/n]: ")
   if (nchar(ethical_response) == 0) ethical_response <- "n"
   if (tolower(ethical_response) %in% c("y", "yes", "oui", "o")) {
@@ -351,7 +394,7 @@ prepare_files_for_upload <- function(file_or_folder) {
     all_files <- list.files(file_or_folder, recursive = TRUE, full.names = TRUE)
 
     # Filter for supported formats
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg")
     files <- all_files[tools::file_ext(tolower(all_files)) %in% supported_extensions]
 
     if (length(files) == 0) {
@@ -364,7 +407,7 @@ prepare_files_for_upload <- function(file_or_folder) {
   } else {
     # Single file
     extension <- tools::file_ext(tolower(file_or_folder))
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg")
 
     if (!extension %in% supported_extensions) {
       cli::cli_alert_danger("Format de fichier non supporté: {extension}")
@@ -539,7 +582,10 @@ get_content_type <- function(file_path) {
     "xlsx" = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "xls" = "application/vnd.ms-excel",
     "dat" = "application/octet-stream",
-    "xml" = "text/xml"
+    "xml" = "text/xml",
+    "png" = "image/png",
+    "jpg" = "image/jpeg",
+    "jpeg" = "image/jpeg"
   )
 
   content_types[[extension]] %||% "application/octet-stream"
@@ -625,7 +671,7 @@ find_datalake_indexing_lambda <- function(credentials) {
 #' @keywords internal
 simple_file_folder_selector <- function() {
   cli::cli_h2("📁 Sélectionnez un fichier ou dossier")
-  cli::cli_text("📄 Formats: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML")
+  cli::cli_text("📄 Formats: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG")
   cli::cli_text("")
 
   current_dir <- getwd()
@@ -707,7 +753,7 @@ categorize_directory_items <- function(current_dir, items) {
   files <- items[!is_dir]
 
   # Identify supported files
-  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg")
   supported_files <- character(0)
   other_files <- character(0)
 
@@ -883,7 +929,7 @@ handle_navigation_choice <- function(choice, current_dir) {
 #' @keywords internal
 confirm_simple_directory_selection <- function(dir_path) {
   files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
-  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
+  supported_exts <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg")
 
   supported_count <- 0
   for (file in files) {
@@ -927,7 +973,7 @@ handle_numeric_selection <- function(choice_num, current_dir) {
   # Get supported files
   supported_exts <- c(
     "\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$",
-    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$"
+    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$", "\\.png$", "\\.jpg$", "\\.jpeg$"
   )
   supported_pattern <- paste(supported_exts, collapse = "|")
   supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
@@ -973,7 +1019,7 @@ confirm_directory_selection <- function(dir_path) {
   files <- list.files(dir_path, recursive = TRUE, full.names = TRUE)
   supported_exts <- c(
     "\\.csv$", "\\.dta$", "\\.sav$", "\\.rds$", "\\.rda$",
-    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$"
+    "\\.xlsx$", "\\.xls$", "\\.dat$", "\\.xml$", "\\.png$", "\\.jpg$", "\\.jpeg$"
   )
   supported_pattern <- paste(supported_exts, collapse = "|")
   supported_files <- files[grepl(supported_pattern, files, ignore.case = TRUE)]
