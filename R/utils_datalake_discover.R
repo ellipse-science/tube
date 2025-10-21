@@ -905,114 +905,57 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
   cli::cli_alert_info(paste("📊", length(all_files_data), "files, Total size:", total_size_display))
   cli::cli_text("")
 
-  # Display compact file information as a table with more details
-  files_table_data <- data.frame(
-    `📄File` = paste("📄", seq_along(all_files_data)),
-    `📝Name` = sapply(all_files_data, function(f) {
-      name <- ifelse(nzchar(f$name), f$name, basename(f$path))
-      if (nchar(name) > 20) {
-        paste0(substr(name, 1, 17), "...")
-      } else {
-        name
-      }
-    }),
-    `📂Path` = sapply(all_files_data, function(f) {
-      path <- ifelse(nzchar(f$path), f$path, "N/A")
-      if (nchar(path) > 30) {
-        paste0(substr(path, 1, 27), "...")
-      } else {
-        path
-      }
-    }),
-    `📏Size` = sapply(all_files_data, function(f) {
-      size_bytes <- as.numeric(f$size_bytes)
-      if (size_bytes >= 1024^2) {
-        paste(round(size_bytes / 1024^2, 1), "MB")
-      } else if (size_bytes >= 1024) {
-        paste(round(size_bytes / 1024, 1), "KB")
-      } else {
-        paste(size_bytes, "B")
-      }
-    }),
-    `📅Creation Date` = sapply(all_files_data, function(f) {
-      if (!is.na(f$creation_date) && nzchar(f$creation_date)) {
-        substr(f$creation_date, 1, 10) # Just date, no time
-      } else {
-        "N/A"
-      }
-    }),
-    `🔒Sensitivity Level` = sapply(all_files_data, function(f) {
-      if (!is.na(f$sensitivity_level)) {
-        f$sensitivity_level
-      } else {
-        "N/A"
-      }
-    }),
-    `✅Ethical Stamp` = sapply(all_files_data, function(f) {
-      if (!is.na(f$ethical_stamp)) {
-        ifelse(as.logical(f$ethical_stamp), "✅ Yes", "❌ No")
-      } else {
-        "N/A"
-      }
-    }),
-    `⏰Consent Expiry` = sapply(all_files_data, function(f) {
-      if (!is.na(f$consent_expiry_date) && nzchar(f$consent_expiry_date)) {
-        substr(f$consent_expiry_date, 1, 10)
-      } else {
-        "N/A"
-      }
-    }),
-    `🗑️ Data Destruction` = sapply(all_files_data, function(f) {
-      if (!is.na(f$data_destruction_date) && nzchar(f$data_destruction_date)) {
-        substr(f$data_destruction_date, 1, 10)
-      } else {
-        "N/A"
-      }
-    }),
-    `🏷️ Custom Metadata` = sapply(all_files_data, function(f) {
-      if (!is.null(f$user_metadata) && length(f$user_metadata) > 0) {
-        metadata_summary <- paste(names(f$user_metadata)[seq_len(min(2, length(f$user_metadata)))], collapse = ",")
-        if (length(f$user_metadata) > 2) {
-          paste0(metadata_summary, "...")
-        } else {
-          metadata_summary
-        }
-      } else {
-        "None"
-      }
-    }),
-    stringsAsFactors = FALSE,
-    check.names = FALSE
-  )
-
-  # Print compact table with all details
-  print(files_table_data, row.names = FALSE, right = FALSE)
-  cli::cli_text("")
-
-  # Show files with custom metadata and their details
-  files_with_metadata <- which(sapply(
-    all_files_data, function(f) !is.null(f$user_metadata) && length(f$user_metadata) > 0
-  ))
-
-  if (length(files_with_metadata) > 0) {
-    cli::cli_text("🏷️  Custom Metadata Details:")
-    for (file_idx in files_with_metadata) {
-      file_data <- all_files_data[[file_idx]]
-      metadata_items <- sapply(names(file_data$user_metadata), function(key) {
+  # Display files with full details using vertical layout for readability
+  for (file_idx in seq_along(all_files_data)) {
+    file_data <- all_files_data[[file_idx]]
+    
+    # Full filename (no truncation)
+    name <- ifelse(nzchar(file_data$name), file_data$name, basename(file_data$path))
+    
+    # File size
+    size_bytes <- as.numeric(file_data$size_bytes)
+    if (size_bytes >= 1024^2) {
+      size_display <- paste(round(size_bytes / 1024^2, 1), "MB")
+    } else if (size_bytes >= 1024) {
+      size_display <- paste(round(size_bytes / 1024, 1), "KB")
+    } else {
+      size_display <- paste(size_bytes, "B")
+    }
+    
+    # Creation date (short format)
+    creation_date <- if (!is.na(file_data$creation_date) && nzchar(file_data$creation_date)) {
+      substr(file_data$creation_date, 1, 10)
+    } else {
+      "N/A"
+    }
+    
+    # Ethics indicator
+    ethical_icon <- if (!is.na(file_data$ethical_stamp)) {
+      ifelse(as.logical(file_data$ethical_stamp), "✅", "❌")
+    } else {
+      "?"
+    }
+    
+    # Print file info header
+    cli::cli_text(glue::glue("📄 File {file_idx}: {name}"))
+    cli::cli_text(glue::glue("   � Size: {size_display} | 📅 Created: {creation_date} | ⚠️  Sensitivity: {file_data$sensitivity_level} | {ethical_icon} Ethical"))
+    
+    # Print custom metadata if present
+    if (!is.null(file_data$user_metadata) && length(file_data$user_metadata) > 0) {
+      metadata_lines <- sapply(names(file_data$user_metadata), function(key) {
         value <- file_data$user_metadata[[key]]
         if (is.list(value) || length(value) > 1) {
           value <- paste(as.character(value), collapse = ", ")
         }
-        # Truncate long values
-        if (nchar(value) > 30) value <- paste0(substr(value, 1, 27), "...")
-        paste(key, "=", value)
+        paste0("   • ", key, ": ", value)
       })
-      cli::cli_text(paste("   File", file_idx, ":", paste(metadata_items, collapse = " | ")))
+      cli::cli_text(metadata_lines)
     }
+    
     cli::cli_text("")
   }
 
-  cli::cli_text("💡 Use format_public_datalake_tag_details_detailed() for full individual file cards")
+
 
   # Create file summary for programmatic use
   files_summary <- data.frame(
