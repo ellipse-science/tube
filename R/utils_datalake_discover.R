@@ -30,9 +30,26 @@ format_public_datalake_all_datasets <- function(con) {
 }
 
 #' Categorize datasets by content type based on file extensions
-#' @param result Query result from public-data-lake-content table
-#' @return List with data_datasets and media_datasets
+#'
+#' Analyzes file extensions in query results to categorize datasets as either data (tabular)
+#' or media (images/HTML). Images and HTML take precedence for mixed datasets as they are
+#' considered informational products.
+#'
+#' Categories:
+#' - **Tabular data**: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML
+#' - **Images**: PNG, JPG, JPEG
+#' - **HTML**: HTML, HTM
+#'
+#' @param result Query result dataframe from public-data-lake-content table with columns:
+#'   table_name, file_extensions (JSON array), file_count, creation_date
+#' @return List with two elements:
+#'   \describe{
+#'     \item{data_datasets}{List of dataset info for tabular data}
+#'     \item{media_datasets}{List of dataset info for images/HTML}
+#'   }
+#'   Each dataset info contains: name, tags_count, total_files, first_created, extensions
 #' @keywords internal
+#' @seealso [format_public_datalake_all_datasets()], [ellipse_discover()]
 categorize_datasets_by_content <- function(result) {
   # Define file type categories
   tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
@@ -266,7 +283,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   if (has_images) {
     dataset_icon <- "🖼️"
     content_label <- "Graphics"
-    files_icon <- "🖼️"
+    files_icon <- "🖼️ "
   } else if (has_html) {
     dataset_icon <- "📄"
     content_label <- "HTML"
@@ -278,7 +295,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   }
   
   overview_data <- data.frame(
-    Property = c(paste(dataset_icon, content_label), "🏷️ Tags", paste(files_icon, "Total files")),
+    Property = c(paste(dataset_icon, content_label), "🏷️  Tags", paste(files_icon, "Total files")),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE

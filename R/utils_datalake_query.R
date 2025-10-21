@@ -322,12 +322,18 @@ display_image_from_s3 <- function(file_info, credentials) {
 }
 
 #' Handle HTML dataset queries with automatic display
-#' @param files_metadata Dataframe with file metadata
-#' @param credentials AWS credentials
+#'
+#' Processes HTML datasets by automatically downloading and displaying all HTML files
+#' in a web browser. Similar to image handling, this provides a streamlined workflow
+#' for informational products that don't require data aggregation.
+#'
+#' @param files_metadata Dataframe with file metadata (from get_datalake_files_metadata)
+#' @param credentials AWS credentials (from get_aws_credentials)
 #' @param dataset Dataset name
-#' @param tag Tag name (optional)
-#' @return NULL (HTML files are displayed directly)
+#' @param tag Tag name (optional). If NULL, processes all tags
+#' @return Invisibly returns files_metadata tibble
 #' @keywords internal
+#' @seealso \code{\link{handle_image_dataset}} for similar image handling
 handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL) {
   # Display available HTML files
   if (!is.null(tag)) {
@@ -369,8 +375,17 @@ handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL
 }
 
 #' Display an HTML file from S3 using browser
-#' @param file_info Single row from files_metadata
-#' @param credentials AWS credentials
+#'
+#' Downloads an HTML file from S3 to a temporary location and opens it in the default
+#' browser. Automatically cleans up temporary file after display. Similar to
+#' display_image_from_s3() but uses browser instead of image viewer.
+#'
+#' @param file_info Single-row dataframe containing S3 file metadata with columns:
+#'   s3_key, filename, and other metadata from Glue catalog
+#' @param credentials List containing AWS credentials (access_key_id, secret_access_key,
+#'   session_token, region)
+#' @return NULL (invisibly). Function called for side effect of displaying HTML in browser
+#' @seealso [display_image_from_s3()], [display_html_file()], [handle_html_dataset()]
 #' @keywords internal
 display_html_from_s3 <- function(file_info, credentials) {
   cli::cli_alert_info("Téléchargement et affichage de: {file_info$file_name}")

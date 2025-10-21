@@ -18,8 +18,9 @@ Pour les connexions datalake: nom d'un dataset à agréger.}
 \value{
 Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 dans un pipeline \code{dplyr}. Pour datalake datasets: Un dataframe agrégé de tous les
-fichiers du dataset. Pour datalake images: Interface interactive pour visualiser
-les images une par une.
+fichiers du dataset. Pour datalake images (PNG/JPEG): Télécharge et affiche
+automatiquement toutes les images. Pour datalake HTML: Télécharge et affiche
+automatiquement tous les fichiers HTML dans le navigateur.
 }
 \description{
 Lire et exploiter une table contenue dans l'entrepôt de données ellipse

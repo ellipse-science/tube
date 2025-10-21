@@ -523,11 +523,12 @@ display_image_file <- function(filepath) {
         success <- (system_result == 0)
       } else {
         # Try multiple Linux approaches in order of preference
-        
+
         # 1. Try VS Code directly
         if (Sys.which("code") != "" && !success) {
           cli::cli_alert_info("Tentative d'ouverture avec VS Code...")
-          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE, ignore.stdout = TRUE, ignore.stderr = TRUE)
+          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE,
+            ignore.stdout = TRUE, ignore.stderr = TRUE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ Image ouverte dans VS Code")
@@ -587,13 +588,24 @@ display_image_file <- function(filepath) {
   }, error = function(e) {
     cli::cli_alert_danger("Impossible d'afficher l'image: {e$message}")
     cli::cli_alert_info("Fichier image disponible à: {filepath}")
-    return(invisible(filepath))
+    invisible(filepath)
   })
 }
 
 #' Display an HTML file by opening it in a web browser
+#'
+#' Opens an HTML file in the default web browser with multiple fallback options for
+#' Linux/Mac/Windows. Tries multiple browser opening methods in order of preference:
+#' - Linux: xdg-open, firefox, chrome/chromium
+#' - Mac: open command
+#' - Windows: start command
+#'
+#' Temp files should persist as browser needs time to load them.
+#'
 #' @param filepath Path to HTML file to display
+#' @return Invisibly returns the filepath
 #' @keywords internal
+#' @seealso \code{\link{display_image_file}} for image display
 display_html_file <- function(filepath) {
   if (!file.exists(filepath)) {
     stop("HTML file not found: ", filepath, call. = FALSE)
@@ -672,12 +684,12 @@ display_html_file <- function(filepath) {
       cli::cli_alert_info("📁 Fichier disponible à: {filepath}")
       cli::cli_alert_info("💡 Vous pouvez l'ouvrir manuellement dans votre navigateur")
     }
-    
-    return(invisible(filepath))
-    
+
+    invisible(filepath)
+
   }, error = function(e) {
     cli::cli_alert_danger("Impossible d'afficher le fichier HTML: {e$message}")
     cli::cli_alert_info("Fichier HTML disponible à: {filepath}")
-    return(invisible(filepath))
+    invisible(filepath)
   })
 }

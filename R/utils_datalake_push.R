@@ -158,9 +158,18 @@ is_image_dataset <- function(files) {
 }
 
 #' Check if all files are HTML
+#'
+#' Determines if all files in the provided vector are HTML files (html or htm extensions).
+#' Used to apply streamlined metadata collection for HTML informational products.
+#'
 #' @param files Vector of file paths
 #' @return TRUE if all files are HTML, FALSE otherwise
 #' @keywords internal
+#' @examples
+#' \dontrun{
+#' is_html_dataset(c("report.html", "index.htm"))  # TRUE
+#' is_html_dataset(c("report.html", "data.csv"))   # FALSE
+#' }
 is_html_dataset <- function(files) {
   if (length(files) == 0) return(FALSE)
   
@@ -173,9 +182,21 @@ is_html_dataset <- function(files) {
 }
 
 #' Check if dataset uses streamlined metadata (images or HTML)
+#'
+#' Determines if the dataset should use streamlined metadata collection, which applies
+#' to informational products (images, HTML) that only require creation_date rather than
+#' full governance metadata.
+#'
 #' @param files Vector of file paths
-#' @return TRUE if streamlined metadata applies, FALSE otherwise
+#' @return TRUE if streamlined metadata applies (images or HTML), FALSE otherwise
 #' @keywords internal
+#' @seealso \code{\link{is_image_dataset}}, \code{\link{is_html_dataset}}
+#' @examples
+#' \dontrun{
+#' is_streamlined_metadata_dataset(c("report.html"))     # TRUE
+#' is_streamlined_metadata_dataset(c("photo.png"))       # TRUE
+#' is_streamlined_metadata_dataset(c("data.csv"))        # FALSE
+#' }
 is_streamlined_metadata_dataset <- function(files) {
   is_image_dataset(files) || is_html_dataset(files)
 }
@@ -211,11 +232,16 @@ collect_all_metadata_interactive <- function(files = NULL) {
 }
 
 #' Collect required system metadata fields
-#' @param metadata Existing metadata list
-#' Collect required system metadata fields
-#' @param metadata Existing metadata list
-#' @param use_streamlined Whether to use streamlined metadata (for images, HTML, etc - only creation_date)
+#'
+#' Collects system metadata with different requirements based on content type:
+#' - For informational products (images, HTML): Only creation_date
+#' - For tabular datasets: Full governance metadata (ethics, consent, sensitivity, etc.)
+#'
+#' @param metadata Existing metadata list to append to
+#' @param use_streamlined Whether to use streamlined metadata (for images, HTML - only creation_date)
+#' @return Updated metadata list with system fields
 #' @keywords internal
+#' @seealso \code{\link{is_streamlined_metadata_dataset}}
 collect_required_system_metadata <- function(metadata, use_streamlined = FALSE) {
   if (use_streamlined) {
     # For images/HTML, only collect creation date - other governance metadata not relevant
@@ -227,7 +253,7 @@ collect_required_system_metadata <- function(metadata, use_streamlined = FALSE) 
     if (nchar(creation_date) == 0) creation_date <- default_date
     metadata$creation_date <- creation_date
     
-    cli::cli_alert_info("� Contenu informationnel - autres métadonnées de gouvernance ignorées")
+    cli::cli_alert_info("🖼️ Images - autres métadonnées de gouvernance ignorées")
     return(metadata)
   }
   
