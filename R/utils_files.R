@@ -512,50 +512,66 @@ display_image_file <- function(filepath) {
       print(img)  # Auto-displays in RStudio viewer
       return(invisible(img))
     } else {
-      # Method 2: System default application (preferred for local users)
-      cli::cli_alert_info("Ouverture de l'image avec l'application par défaut...")
+      # Method 2: VS Code or other IDEs - try multiple approaches
+      cli::cli_alert_info("Ouverture de l'image avec le viewer système...")
       cli::cli_alert_info("Fichier: {filepath}")
       
       success <- FALSE
       
       if (.Platform$OS.type == "windows") {
-        # Windows: 'start' opens with default application
         system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
         success <- (system_result == 0)
-        if (success) {
-          cli::cli_alert_success("✅ Image ouverte avec l'application par défaut")
-        }
-      } else if (Sys.info()["sysname"] == "Darwin") {
-        # Mac: 'open' opens with default application
-        system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
-        success <- (system_result == 0)
-        if (success) {
-          cli::cli_alert_success("✅ Image ouverte avec l'application par défaut")
-        }
       } else {
-        # Linux: Try xdg-open first (opens with default application)
-        if (Sys.which("xdg-open") != "" && !success) {
-          system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null"), wait = FALSE)
+        # Try multiple Linux approaches in order of preference
+
+        # 1. Try VS Code directly
+        if (Sys.which("code") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec VS Code...")
+          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE,
+            ignore.stdout = TRUE, ignore.stderr = TRUE)
           if (system_result == 0) {
             success <- TRUE
-            cli::cli_alert_success("✅ Image ouverte avec l'application par défaut")
+            cli::cli_alert_success("✅ Image ouverte dans VS Code")
           }
         }
         
-        # Fallback: Try specific viewers only if xdg-open failed
-        if (!success && Sys.which("eog") != "") {
-          system_result <- system(paste("eog", shQuote(filepath), "2>/dev/null"), wait = FALSE)
+        # 2. Try eog (Eyes of GNOME)
+        if (Sys.which("eog") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec eog...")
+          system_result <- system(paste("eog", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ Image ouverte avec eog")
           }
         }
         
-        if (!success && Sys.which("feh") != "") {
-          system_result <- system(paste("feh", shQuote(filepath), "2>/dev/null"), wait = FALSE)
+        # 3. Try feh
+        if (Sys.which("feh") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec feh...")
+          system_result <- system(paste("feh", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ Image ouverte avec feh")
+          }
+        }
+        
+        # 4. Try ImageMagick display
+        if (Sys.which("display") != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec ImageMagick display...")
+          system_result <- system(paste("display", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec ImageMagick display")
+          }
+        }
+        
+        # 5. Fallback to xdg-open
+        if (!success) {
+          cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
+          system_result <- system(paste("xdg-open", shQuote(filepath)), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ Image ouverte avec xdg-open")
           }
         }
       }
@@ -563,7 +579,7 @@ display_image_file <- function(filepath) {
       if (!success) {
         cli::cli_alert_warning("Impossible d'ouvrir l'image automatiquement.")
         cli::cli_alert_info("📁 Fichier disponible à: {filepath}")
-        cli::cli_alert_info("💡 Vous pouvez l'ouvrir manuellement avec votre viewer d'images préféré")
+        cli::cli_alert_info("💡 Vous pouvez l'ouvrir manuellement avec VS Code ou votre viewer d'images préféré")
       }
       
       return(invisible(filepath))
@@ -604,44 +620,21 @@ display_html_file <- function(filepath) {
   }
   
   tryCatch({
-    cli::cli_alert_info("Ouverture du fichier HTML dans le navigateur par défaut...")
+    cli::cli_alert_info("Ouverture du fichier HTML dans le navigateur...")
     cli::cli_alert_info("Fichier: {filepath}")
     
     success <- FALSE
     
-    # Detect if running in VS Code Remote (not local VS Code)
-    in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
-                        grepl("vscode-server", Sys.getenv("PATH"))
-    
-    if (in_vscode_remote) {
-      # VS Code Remote: use browseURL to open in client browser
-      tryCatch({
-        utils::browseURL(paste0("file://", filepath))
-        success <- TRUE
-        cli::cli_alert_success("✅ HTML ouvert dans le navigateur du client")
-      }, error = function(e) {
-        cli::cli_alert_warning("Échec de browseURL: {e$message}")
-      })
-    }
-    
-    # For local users: use system default application (preferred method)
-    if (!success && .Platform$OS.type == "windows") {
-      # Windows: 'start' opens with default browser
+    if (.Platform$OS.type == "windows") {
+      # Windows: use start command
       system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
       success <- (system_result == 0)
-      if (success) {
-        cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
-      }
-    } else if (!success && Sys.info()["sysname"] == "Darwin") {
-      # Mac: 'open' opens with default browser
-      system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
-      success <- (system_result == 0)
-      if (success) {
-        cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
-      }
-    } else if (!success) {
-      # Linux: xdg-open opens with default browser (preferred for local users)
-      if (Sys.which("xdg-open") != "") {
+    } else {
+      # Linux/Mac: try multiple browser opening approaches
+      
+      # 1. Try xdg-open (standard Linux)
+      if (Sys.which("xdg-open") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
         system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
@@ -649,8 +642,9 @@ display_html_file <- function(filepath) {
         }
       }
       
-      # Fallback: Try specific browsers only if xdg-open failed
-      if (!success && Sys.which("firefox") != "") {
+      # 2. Try firefox
+      if (Sys.which("firefox") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec Firefox...")
         system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
@@ -658,16 +652,28 @@ display_html_file <- function(filepath) {
         }
       }
       
-      if (!success) {
-        chrome_browsers <- c("chromium-browser", "chromium", "google-chrome", "chrome")
-        for (browser in chrome_browsers) {
-          if (Sys.which(browser) != "") {
-            system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null"), wait = FALSE)
-            if (system_result == 0) {
-              success <- TRUE
-              cli::cli_alert_success("✅ HTML ouvert dans {browser}")
-              break
-            }
+      # 3. Try chromium/chrome
+      chrome_browsers <- c("chromium-browser", "chromium", "google-chrome", "chrome")
+      for (browser in chrome_browsers) {
+        if (Sys.which(browser) != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec {browser}...")
+          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ HTML ouvert dans {browser}")
+            break
+          }
+        }
+      }
+      
+      # 4. Mac fallback
+      if (.Platform$OS.type == "unix" && !success) {
+        if (Sys.which("open") != "") {
+          cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
+          system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ HTML ouvert avec open")
           }
         }
       }
