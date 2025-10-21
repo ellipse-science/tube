@@ -626,20 +626,24 @@ display_html_file <- function(filepath) {
     success <- FALSE
     
     # Detect VS Code Remote environment
+    vscode_browser <- Sys.getenv("BROWSER")
     in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
-                        grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
+                        grepl("browser.sh", vscode_browser, fixed = TRUE)
     
-    # For VS Code Remote: use browseURL() which opens in client browser
-    if (in_vscode_remote) {
+    # For VS Code Remote: use VS Code's browser helper script
+    if (in_vscode_remote && nzchar(vscode_browser)) {
       cli::cli_alert_info("Détection de VS Code Remote - ouverture dans le navigateur du client...")
       tryCatch({
-        # Use file:// URL for browseURL
+        # Use VS Code's browser helper which properly forwards to client
         file_url <- paste0("file://", normalizePath(filepath, winslash = "/"))
-        utils::browseURL(file_url)
-        success <- TRUE
-        cli::cli_alert_success("✅ HTML ouvert dans le navigateur du client")
+        system_result <- system2(vscode_browser, args = c(file_url), wait = FALSE, 
+                                 stdout = FALSE, stderr = FALSE)
+        if (system_result == 0 || is.null(system_result)) {
+          success <- TRUE
+          cli::cli_alert_success("✅ HTML ouvert dans le navigateur du client")
+        }
       }, error = function(e) {
-        cli::cli_alert_warning("Échec de browseURL: {e$message}")
+        cli::cli_alert_warning("Échec du helper VS Code: {e$message}")
       })
     }
     
