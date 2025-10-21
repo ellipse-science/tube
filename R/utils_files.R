@@ -620,60 +620,128 @@ display_html_file <- function(filepath) {
   }
   
   tryCatch({
-    cli::cli_alert_info("Ouverture du fichier HTML dans le navigateur...")
+    cli::cli_alert_info("Ouverture du fichier HTML...")
     cli::cli_alert_info("Fichier: {filepath}")
     
     success <- FALSE
     
-    if (.Platform$OS.type == "windows") {
+    # Check if we're in RStudio first - it has the best HTML viewing support
+    is_rstudio <- exists(".rs.invokeShinyPaneViewer") || Sys.getenv("RSTUDIO") == "1"
+    
+    if (is_rstudio && requireNamespace("rstudioapi", quietly = TRUE)) {
+      # RStudio: use viewer pane - works for both local and RStudio Server
+      tryCatch({
+        rstudioapi::viewer(filepath)
+        success <- TRUE
+        cli::cli_alert_success("✅ HTML ouvert dans le Viewer RStudio")
+        return(invisible(filepath))
+      }, error = function(e) {
+        cli::cli_alert_warning("Échec du viewer RStudio: {e$message}")
+      })
+    }
+    
+    # Detect VS Code Remote environment
+    in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
+                        grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
+    
+    # For VS Code Remote: serve via HTTP and use browseURL
+    if (!success && in_vscode_remote) {
+      cli::cli_alert_info("Détection de VS Code Remote - configuration du serveur HTTP...")
+      
+      # Check if httpuv is available for serving
+      if (requireNamespace("httpuv", quietly = TRUE)) {
+        tryCatch({
+          # Read HTML content
+          html_content <- readLines(filepath, warn = FALSE)
+          html_content <- paste(html_content, collapse = "\n")
+          
+          # Start a simple HTTP server on random port
+          port <- httpuv::randomPort()
+          
+          server <- httpuv::startServer("127.0.0.1", port,
+            list(
+              call = function(req) {
+                list(
+                  status = 200L,
+                  headers = list('Content-Type' = 'text/html; charset=UTF-8'),
+                  body = html_content
+                )
+              }
+            )
+          )
+          
+          # Open in browser via HTTP URL (VS Code will forward this)
+          http_url <- paste0("http://127.0.0.1:", port)
+          utils::browseURL(http_url)
+          
+          cli::cli_alert_success("✅ HTML servi sur {http_url}")
+          cli::cli_alert_info("💡 Le serveur restera actif pendant cette session R")
+          
+          success <- TRUE
+          
+          # Store server reference so it stays alive
+          assign(".tube_html_server", server, envir = .GlobalEnv)
+          
+        }, error = function(e) {
+          cli::cli_alert_warning("Échec du serveur HTTP: {e$message}")
+        })
+      } else {
+        cli::cli_alert_info("💡 Installez 'httpuv' pour l'affichage HTML dans VS Code Remote")
+        cli::cli_alert_info("   install.packages('httpuv')")
+      }
+    }
+    
+    # For local environments: use system commands
+    if (!success && .Platform$OS.type == "windows") {
       # Windows: use start command
       system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
       success <- (system_result == 0)
-    } else {
+      if (success) {
+        cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
+      }
+    } else if (!success) {
       # Linux/Mac: try multiple browser opening approaches
       
       # 1. Try xdg-open (standard Linux)
       if (Sys.which("xdg-open") != "" && !success) {
         cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
-        system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
           cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
         }
       }
       
-      # 2. Try firefox
+      # 2. Try Mac open
+      if (Sys.which("open") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
+        system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
+        if (system_result == 0) {
+          success <- TRUE
+          cli::cli_alert_success("✅ HTML ouvert avec open")
+        }
+      }
+      
+      # 3. Try firefox
       if (Sys.which("firefox") != "" && !success) {
         cli::cli_alert_info("Tentative d'ouverture avec Firefox...")
-        system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
           cli::cli_alert_success("✅ HTML ouvert dans Firefox")
         }
       }
       
-      # 3. Try chromium/chrome
+      # 4. Try chromium/chrome
       chrome_browsers <- c("chromium-browser", "chromium", "google-chrome", "chrome")
       for (browser in chrome_browsers) {
         if (Sys.which(browser) != "" && !success) {
           cli::cli_alert_info("Tentative d'ouverture avec {browser}...")
-          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null"), wait = FALSE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ HTML ouvert dans {browser}")
             break
-          }
-        }
-      }
-      
-      # 4. Mac fallback
-      if (.Platform$OS.type == "unix" && !success) {
-        if (Sys.which("open") != "") {
-          cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
-          system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
-          if (system_result == 0) {
-            success <- TRUE
-            cli::cli_alert_success("✅ HTML ouvert avec open")
           }
         }
       }
