@@ -620,10 +620,25 @@ display_html_file <- function(filepath) {
   }
   
   tryCatch({
-    cli::cli_alert_info("Ouverture du fichier HTML dans le navigateur...")
+    cli::cli_alert_info("Ouverture du fichier HTML...")
     cli::cli_alert_info("Fichier: {filepath}")
     
     success <- FALSE
+    
+    # Check if we're in RStudio first - it has the best HTML viewing support
+    is_rstudio <- exists(".rs.invokeShinyPaneViewer") || Sys.getenv("RSTUDIO") == "1"
+    
+    if (is_rstudio && requireNamespace("rstudioapi", quietly = TRUE)) {
+      # RStudio: use viewer pane - works for both local and RStudio Server
+      tryCatch({
+        rstudioapi::viewer(filepath)
+        success <- TRUE
+        cli::cli_alert_success("✅ HTML ouvert dans le Viewer RStudio")
+        return(invisible(filepath))
+      }, error = function(e) {
+        cli::cli_alert_warning("Échec du viewer RStudio: {e$message}")
+      })
+    }
     
     # Detect VS Code Remote environment
     vscode_browser <- Sys.getenv("BROWSER")
@@ -631,8 +646,8 @@ display_html_file <- function(filepath) {
                         grepl("browser.sh", vscode_browser, fixed = TRUE)
     
     # For VS Code Remote: use VS Code's browser helper script
-    if (in_vscode_remote && nzchar(vscode_browser)) {
-      cli::cli_alert_info("Détection de VS Code Remote - ouverture dans le navigateur du client...")
+    if (!success && in_vscode_remote && nzchar(vscode_browser)) {
+      cli::cli_alert_info("Détection de VS Code Remote - tentative d'ouverture...")
       tryCatch({
         # Use VS Code's browser helper which properly forwards to client
         file_url <- paste0("file://", normalizePath(filepath, winslash = "/"))
@@ -640,7 +655,7 @@ display_html_file <- function(filepath) {
                                  stdout = FALSE, stderr = FALSE)
         if (system_result == 0 || is.null(system_result)) {
           success <- TRUE
-          cli::cli_alert_success("✅ HTML ouvert dans le navigateur du client")
+          cli::cli_alert_success("✅ HTML envoyé au client")
         }
       }, error = function(e) {
         cli::cli_alert_warning("Échec du helper VS Code: {e$message}")
