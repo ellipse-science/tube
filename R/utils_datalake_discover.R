@@ -261,6 +261,35 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   has_html <- any(all_extensions %in% html_extensions)
   has_tabular <- any(all_extensions %in% tabular_extensions)
   
+  # For media datasets (images/HTML), show simplified tags-only view
+  if ((has_images || has_html) && !has_tabular) {
+    # Use appropriate header and icon based on content type
+    if (has_images) {
+      cli::cli_h2(glue::glue("🖼️  Graphics: {dataset_name}"))
+    } else {
+      cli::cli_h2(glue::glue("📄 HTML Documents: {dataset_name}"))
+    }
+    
+    unique_tags <- unique(result$tag)
+    tags_count <- length(unique_tags)
+    
+    cli::cli_text("")
+    cli::cli_text(glue::glue("🏷️  Tags ({tags_count}):"))
+    cli::cli_text("")
+    
+    # Display tags in a numbered list format
+    for (i in seq_along(unique_tags)) {
+      tag <- unique_tags[i]
+      file_count <- sum(as.numeric(result[result$tag == tag, "file_count"]), na.rm = TRUE)
+      cli::cli_text(glue::glue("  {i}. {tag} ({file_count} file{if(file_count != 1) 's' else ''})"))
+    }
+    
+    cli::cli_text("")
+    cli::cli_alert_info(glue::glue("💡 Use ellipse_discover(con, '{dataset_name}', 'tag_name') for tag details"))
+    
+    return(invisible(result))
+  }
+  
   # Use appropriate header and icon based on content type
   if (has_images) {
     cli::cli_h2(glue::glue("🖼️  Graphics Details: {dataset_name}"))
