@@ -635,7 +635,7 @@ display_html_file <- function(filepath) {
       # 1. Try xdg-open (standard Linux)
       if (Sys.which("xdg-open") != "" && !success) {
         cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
-        system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
           cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
@@ -645,7 +645,7 @@ display_html_file <- function(filepath) {
       # 2. Try firefox
       if (Sys.which("firefox") != "" && !success) {
         cli::cli_alert_info("Tentative d'ouverture avec Firefox...")
-        system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null"), wait = FALSE)
         if (system_result == 0) {
           success <- TRUE
           cli::cli_alert_success("✅ HTML ouvert dans Firefox")
@@ -657,7 +657,7 @@ display_html_file <- function(filepath) {
       for (browser in chrome_browsers) {
         if (Sys.which(browser) != "" && !success) {
           cli::cli_alert_info("Tentative d'ouverture avec {browser}...")
-          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null"), wait = FALSE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ HTML ouvert dans {browser}")
