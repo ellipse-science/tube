@@ -33,13 +33,21 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
       has_images <- any(files_metadata$file_extension %in% image_extensions)
       has_html <- any(files_metadata$file_extension %in% html_extensions)
       
+      # Handle mixed media datasets (images + HTML)
+      if (has_images && has_html) {
+        # Handle both image and HTML files
+        handle_image_dataset(files_metadata, creds, dataset, tag)
+        handle_html_dataset(files_metadata, creds, dataset, tag)
+        return(invisible(files_metadata))
+      }
+      
       if (has_images) {
-        # Handle image files differently
+        # Handle image files only
         return(handle_image_dataset(files_metadata, creds, dataset, tag))
       }
       
       if (has_html) {
-        # Handle HTML files differently
+        # Handle HTML files only
         return(handle_html_dataset(files_metadata, creds, dataset, tag))
       }
 
@@ -259,6 +267,15 @@ ellipse_query_table_mode <- function(con, table) {
 #' @return NULL (images are displayed directly)
 #' @keywords internal
 handle_image_dataset <- function(files_metadata, credentials, dataset, tag = NULL) {
+  # Filter to only image files
+  image_extensions <- c("png", "jpg", "jpeg")
+  image_files <- files_metadata[files_metadata$file_extension %in% image_extensions, ]
+  
+  if (nrow(image_files) == 0) {
+    cli::cli_alert_warning("Aucun fichier image trouvé.")
+    return(invisible(files_metadata))
+  }
+  
   # Display available images
   if (!is.null(tag)) {
     cli::cli_h2("🖼️ Images dans le dataset '{dataset}' (tag: '{tag}')")
@@ -268,10 +285,10 @@ handle_image_dataset <- function(files_metadata, credentials, dataset, tag = NUL
   
   # Create a display table
   display_data <- data.frame(
-    `#` = seq_len(nrow(files_metadata)),
-    `Nom` = files_metadata$file_name,
-    `Tag` = files_metadata$tag,
-    `Taille` = sapply(files_metadata$file_size_bytes, function(x) {
+    `#` = seq_len(nrow(image_files)),
+    `Nom` = image_files$file_name,
+    `Tag` = image_files$tag,
+    `Taille` = sapply(image_files$file_size_bytes, function(x) {
       if (is.na(x) || x == 0) return("N/A")
       if (x < 1024) return(paste(x, "B"))
       if (x < 1024^2) return(paste(round(x / 1024, 1), "KB"))
@@ -287,10 +304,10 @@ handle_image_dataset <- function(files_metadata, credentials, dataset, tag = NUL
   cli::cli_text("")
   
   # Auto-display all images (no interactive selection needed)
-  cli::cli_alert_info("Téléchargement et affichage de {nrow(files_metadata)} image(s)...")
+  cli::cli_alert_info("Téléchargement et affichage de {nrow(image_files)} image(s)...")
   
-  for (i in seq_len(nrow(files_metadata))) {
-    selected_file <- files_metadata[i, ]
+  for (i in seq_len(nrow(image_files))) {
+    selected_file <- image_files[i, ]
     display_image_from_s3(selected_file, credentials)
   }
   
@@ -335,6 +352,15 @@ display_image_from_s3 <- function(file_info, credentials) {
 #' @keywords internal
 #' @seealso \code{\link{handle_image_dataset}} for similar image handling
 handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL) {
+  # Filter to only HTML files
+  html_extensions <- c("html", "htm")
+  html_files <- files_metadata[files_metadata$file_extension %in% html_extensions, ]
+  
+  if (nrow(html_files) == 0) {
+    cli::cli_alert_warning("Aucun fichier HTML trouvé.")
+    return(invisible(files_metadata))
+  }
+  
   # Display available HTML files
   if (!is.null(tag)) {
     cli::cli_h2("📄 Fichiers HTML dans le dataset '{dataset}' (tag: '{tag}')")
@@ -344,10 +370,10 @@ handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL
   
   # Create a display table
   display_data <- data.frame(
-    `#` = seq_len(nrow(files_metadata)),
-    `Nom` = files_metadata$file_name,
-    `Tag` = files_metadata$tag,
-    `Taille` = sapply(files_metadata$file_size_bytes, function(x) {
+    `#` = seq_len(nrow(html_files)),
+    `Nom` = html_files$file_name,
+    `Tag` = html_files$tag,
+    `Taille` = sapply(html_files$file_size_bytes, function(x) {
       if (is.na(x) || x == 0) return("N/A")
       if (x < 1024) return(paste(x, "B"))
       if (x < 1024^2) return(paste(round(x / 1024, 1), "KB"))
@@ -363,10 +389,10 @@ handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL
   cli::cli_text("")
   
   # Auto-display all HTML files (no interactive selection needed)
-  cli::cli_alert_info("Téléchargement et affichage de {nrow(files_metadata)} fichier(s) HTML...")
+  cli::cli_alert_info("Téléchargement et affichage de {nrow(html_files)} fichier(s) HTML...")
   
-  for (i in seq_len(nrow(files_metadata))) {
-    selected_file <- files_metadata[i, ]
+  for (i in seq_len(nrow(html_files))) {
+    selected_file <- html_files[i, ]
     display_html_from_s3(selected_file, credentials)
   }
   
