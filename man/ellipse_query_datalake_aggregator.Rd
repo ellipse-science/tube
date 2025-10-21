@@ -4,7 +4,7 @@
 \alias{ellipse_query_datalake_aggregator}
 \title{File aggregator mode for public datalake connections}
 \usage{
-ellipse_query_datalake_aggregator(con, dataset, tag = NULL)
+ellipse_query_datalake_aggregator(con, dataset, tag = NULL, file = NULL)
 }
 \arguments{
 \item{con}{Database connection to public datalake}
@@ -12,6 +12,8 @@ ellipse_query_datalake_aggregator(con, dataset, tag = NULL)
 \item{dataset}{Dataset name to aggregate}
 
 \item{tag}{Optional tag to filter files}
+
+\item{file}{Optional specific filename to download/display}
 }
 \description{
 File aggregator mode for public datalake connections

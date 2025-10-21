@@ -363,12 +363,34 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #'   à filtrer. Si NULL, agrège tous les tags du dataset.
 #' @param file Optionnel. Pour les connexions datalake seulement: nom de fichier spécifique
 #'   à télécharger/afficher. Si NULL, traite tous les fichiers du dataset/tag.
+#'   Utile pour afficher un seul fichier parmi plusieurs dans un dataset.
 #'
 #' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 #'   dans un pipeline `dplyr`. Pour datalake datasets: Un dataframe agrégé de tous les
 #'   fichiers du dataset. Pour datalake images (PNG/JPEG): Télécharge et affiche
-#'   automatiquement toutes les images. Pour datalake HTML: Télécharge et affiche
-#'   automatiquement tous les fichiers HTML dans le navigateur.
+#'   automatiquement les images (toutes ou celle spécifiée par 'file'). Pour datalake 
+#'   HTML: Télécharge et affiche automatiquement les fichiers HTML dans le navigateur
+#'   (tous ou celui spécifié par 'file').
+#'
+#' @examples
+#' \dontrun{
+#' # Connexion au datalake
+#' con <- ellipse_connect(mode = "datalake", env = "dev")
+#'
+#' # Query tous les fichiers d'un dataset
+#' ellipse_query(con, "mon-dataset")
+#'
+#' # Query tous les fichiers d'un tag spécifique
+#' ellipse_query(con, "mon-dataset", tag = "v1.0")
+#'
+#' # Query un fichier spécifique (image, HTML, ou données)
+#' ellipse_query(con, "mon-dataset", tag = "v1.0", file = "rapport.html")
+#' ellipse_query(con, "mon-dataset", file = "image.png")
+#'
+#' # Connexion datawarehouse - query une table
+#' con_dw <- ellipse_connect(mode = "datawarehouse", env = "dev")
+#' ellipse_query(con_dw, "ma_table")
+#' }
 #' @export
 ellipse_query <- function(con, dataset, tag = NULL, file = NULL) {
   logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag, ", file = ", file))

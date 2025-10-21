@@ -4,7 +4,7 @@
 \alias{ellipse_query}
 \title{Lire et exploiter une table contenue dans l'entrepôt de données ellipse}
 \usage{
-ellipse_query(con, dataset, tag = NULL)
+ellipse_query(con, dataset, tag = NULL, file = NULL)
 }
 \arguments{
 \item{con}{Un objet de connexion tel qu'obtenu via \code{tube::ellipse_connect()}.}
@@ -14,14 +14,39 @@ Pour les connexions datalake: nom d'un dataset à agréger.}
 
 \item{tag}{Optionnel. Pour les connexions datalake seulement: tag spécifique
 à filtrer. Si NULL, agrège tous les tags du dataset.}
+
+\item{file}{Optionnel. Pour les connexions datalake seulement: nom de fichier spécifique
+à télécharger/afficher. Si NULL, traite tous les fichiers du dataset/tag.
+Utile pour afficher un seul fichier parmi plusieurs dans un dataset.}
 }
 \value{
 Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 dans un pipeline \code{dplyr}. Pour datalake datasets: Un dataframe agrégé de tous les
 fichiers du dataset. Pour datalake images (PNG/JPEG): Télécharge et affiche
-automatiquement toutes les images. Pour datalake HTML: Télécharge et affiche
-automatiquement tous les fichiers HTML dans le navigateur.
+automatiquement les images (toutes ou celle spécifiée par 'file'). Pour datalake
+HTML: Télécharge et affiche automatiquement les fichiers HTML dans le navigateur
+(tous ou celui spécifié par 'file').
 }
 \description{
 Lire et exploiter une table contenue dans l'entrepôt de données ellipse
+}
+\examples{
+\dontrun{
+# Connexion au datalake
+con <- ellipse_connect(mode = "datalake", env = "dev")
+
+# Query tous les fichiers d'un dataset
+ellipse_query(con, "mon-dataset")
+
+# Query tous les fichiers d'un tag spécifique
+ellipse_query(con, "mon-dataset", tag = "v1.0")
+
+# Query un fichier spécifique (image, HTML, ou données)
+ellipse_query(con, "mon-dataset", tag = "v1.0", file = "rapport.html")
+ellipse_query(con, "mon-dataset", file = "image.png")
+
+# Connexion datawarehouse - query une table
+con_dw <- ellipse_connect(mode = "datawarehouse", env = "dev")
+ellipse_query(con_dw, "ma_table")
+}
 }
