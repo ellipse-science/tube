@@ -5,9 +5,10 @@
 #' @param con Database connection to public datalake
 #' @param dataset Dataset name to aggregate
 #' @param tag Optional tag to filter files
+#' @param file Optional specific filename to download/display
 #' @keywords internal
-ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
-  logger::log_debug(paste("[ellipse_query_datalake_aggregator] entering with dataset =", dataset, ", tag =", tag))
+ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL, file = NULL) {
+  logger::log_debug(paste("[ellipse_query_datalake_aggregator] entering with dataset =", dataset, ", tag =", tag, ", file =", file))
 
   tryCatch(
     {
@@ -25,6 +26,16 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
           cli::cli_alert_warning("Aucun fichier trouvé pour le dataset '{dataset}'.")
         }
         return(tibble::tibble())
+      }
+      
+      # Filter to specific file if requested
+      if (!is.null(file)) {
+        files_metadata <- files_metadata[files_metadata$file_name == file, ]
+        if (nrow(files_metadata) == 0) {
+          cli::cli_alert_warning("Fichier '{file}' non trouvé dans le dataset '{dataset}'.")
+          return(tibble::tibble())
+        }
+        cli::cli_alert_info("Fichier spécifique sélectionné: {file}")
       }
 
       # Check if dataset contains images or HTML files

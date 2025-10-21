@@ -1,3 +1,49 @@
+# tube 0.9.0
+
+## 🌐 New Feature: HTML File Support
+
+### HTML Upload and Download
+* **NEW**: Support for HTML files (.html, .htm) in public datalake
+* **NEW**: Seamless integration with existing `ellipse_push()` and `ellipse_query()` functions
+* **NEW**: Automatic HTML file detection and specialized handling
+* **NEW**: Multi-environment HTML display support (RStudio, VS Code Remote, local browsers)
+* **NEW**: Streamlined metadata collection for HTML (only creation_date required)
+* **IMPROVED**: HTML files skip governance metadata (ethics, consent, destruction dates) as they are informational products
+
+### Enhanced File Display Support
+* **NEW**: `display_html_file()` function with intelligent display method selection
+* **NEW**: RStudio Viewer pane support for optimal HTML viewing in RStudio
+* **NEW**: VS Code Remote support via HTTP server for client-side browser display
+* **NEW**: Local browser support (xdg-open, open, start commands)
+* **NEW**: `is_html_dataset()` helper function for automatic HTML detection
+* **NEW**: `handle_html_dataset()` for automatic HTML download and display
+
+### Mixed Media Dataset Support
+* **NEW**: Support for datasets containing both images and HTML files
+* **NEW**: Automatic filtering and routing to appropriate display handlers
+* **NEW**: Sequential display of images and HTML in mixed datasets
+* **IMPROVED**: `handle_image_dataset()` and `handle_html_dataset()` now filter by file type
+
+### Enhanced Query Capabilities
+* **NEW**: `file` parameter in `ellipse_query()` for querying specific files
+* **NEW**: Query single file from multi-file datasets: `ellipse_query(con, "dataset", file = "specific-file.html")`
+* **IMPROVED**: More precise file selection in datasets with multiple files
+* **IMPROVED**: Works with dataset, tag, and file parameters together
+
+### Technical Improvements
+* **DEPENDENCIES**: Added httpuv as suggested package for VS Code Remote HTML serving
+* **TESTING**: End-to-end tested in RStudio, VS Code Remote, and local environments
+* **DOCUMENTATION**: Comprehensive roxygen documentation for all HTML functions
+* **DOCUMENTATION**: Enhanced `ellipse_query()` documentation with file parameter examples
+* **LINTING**: All code follows project linting standards
+
+### Content Type Support
+* **EXTENDED**: File format validation now includes HTML, HTM extensions
+* **EXTENDED**: Content type mapping with proper MIME types for HTML (text/html)
+* **EXTENDED**: User interface messages updated to mention HTML support
+
+---
+
 # tube 0.8.0
 
 ## 🖼️ New Feature: Image File Support
