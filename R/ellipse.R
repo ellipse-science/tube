@@ -361,6 +361,8 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #'   Pour les connexions datalake: nom d'un dataset à agréger.
 #' @param tag Optionnel. Pour les connexions datalake seulement: tag spécifique
 #'   à filtrer. Si NULL, agrège tous les tags du dataset.
+#' @param file Optionnel. Pour les connexions datalake seulement: nom de fichier spécifique
+#'   à télécharger/afficher. Si NULL, traite tous les fichiers du dataset/tag.
 #'
 #' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 #'   dans un pipeline `dplyr`. Pour datalake datasets: Un dataframe agrégé de tous les
@@ -368,8 +370,8 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #'   automatiquement toutes les images. Pour datalake HTML: Télécharge et affiche
 #'   automatiquement tous les fichiers HTML dans le navigateur.
 #' @export
-ellipse_query <- function(con, dataset, tag = NULL) {
-  logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag))
+ellipse_query <- function(con, dataset, tag = NULL, file = NULL) {
+  logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag, ", file = ", file))
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
   # Detect if this is a datalake connection (same logic as ellipse_discover)
@@ -378,7 +380,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
   if (is_datalake) {
     # File aggregator mode for public datalake
     logger::log_debug("[ellipse_query] datalake mode - file aggregator")
-    return(ellipse_query_datalake_aggregator(con, dataset, tag))
+    return(ellipse_query_datalake_aggregator(con, dataset, tag, file))
   } else {
     # Traditional table query mode for datawarehouse/datamarts
     logger::log_debug("[ellipse_query] traditional table mode")
