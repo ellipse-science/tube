@@ -625,11 +625,33 @@ display_html_file <- function(filepath) {
     
     success <- FALSE
     
-    if (.Platform$OS.type == "windows") {
+    # Detect VS Code Remote environment
+    in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
+                        grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
+    
+    # For VS Code Remote: use browseURL() which opens in client browser
+    if (in_vscode_remote) {
+      cli::cli_alert_info("Détection de VS Code Remote - ouverture dans le navigateur du client...")
+      tryCatch({
+        # Use file:// URL for browseURL
+        file_url <- paste0("file://", normalizePath(filepath, winslash = "/"))
+        utils::browseURL(file_url)
+        success <- TRUE
+        cli::cli_alert_success("✅ HTML ouvert dans le navigateur du client")
+      }, error = function(e) {
+        cli::cli_alert_warning("Échec de browseURL: {e$message}")
+      })
+    }
+    
+    # For local environments: use system commands
+    if (!success && .Platform$OS.type == "windows") {
       # Windows: use start command
       system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
       success <- (system_result == 0)
-    } else {
+      if (success) {
+        cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
+      }
+    } else if (!success) {
       # Linux/Mac: try multiple browser opening approaches
       
       # 1. Try xdg-open (standard Linux)
@@ -642,7 +664,17 @@ display_html_file <- function(filepath) {
         }
       }
       
-      # 2. Try firefox
+      # 2. Try Mac open
+      if (Sys.which("open") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
+        system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
+        if (system_result == 0) {
+          success <- TRUE
+          cli::cli_alert_success("✅ HTML ouvert avec open")
+        }
+      }
+      
+      # 3. Try firefox
       if (Sys.which("firefox") != "" && !success) {
         cli::cli_alert_info("Tentative d'ouverture avec Firefox...")
         system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null"), wait = FALSE)
@@ -652,7 +684,7 @@ display_html_file <- function(filepath) {
         }
       }
       
-      # 3. Try chromium/chrome
+      # 4. Try chromium/chrome
       chrome_browsers <- c("chromium-browser", "chromium", "google-chrome", "chrome")
       for (browser in chrome_browsers) {
         if (Sys.which(browser) != "" && !success) {
@@ -662,18 +694,6 @@ display_html_file <- function(filepath) {
             success <- TRUE
             cli::cli_alert_success("✅ HTML ouvert dans {browser}")
             break
-          }
-        }
-      }
-      
-      # 4. Mac fallback
-      if (.Platform$OS.type == "unix" && !success) {
-        if (Sys.which("open") != "") {
-          cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
-          system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
-          if (system_result == 0) {
-            success <- TRUE
-            cli::cli_alert_success("✅ HTML ouvert avec open")
           }
         }
       }
