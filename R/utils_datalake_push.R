@@ -142,6 +142,8 @@ interactive_datalake_push_flow <- function(file_or_folder, dataset_name, tag, me
 
 #' Check if files are image files
 #' @param files Vector of file paths
+#' Check if all files are images (PNG, JPG, JPEG)
+#' @param files Vector of file paths
 #' @return TRUE if all files are images, FALSE otherwise
 #' @keywords internal
 is_image_dataset <- function(files) {
@@ -155,17 +157,44 @@ is_image_dataset <- function(files) {
   all(extensions %in% image_extensions)
 }
 
+#' Check if all files are HTML
+#' @param files Vector of file paths
+#' @return TRUE if all files are HTML, FALSE otherwise
+#' @keywords internal
+is_html_dataset <- function(files) {
+  if (length(files) == 0) return(FALSE)
+  
+  # Get file extensions
+  extensions <- tools::file_ext(tolower(files))
+  html_extensions <- c("html", "htm")
+  
+  # Check if all files are HTML
+  all(extensions %in% html_extensions)
+}
+
+#' Check if dataset uses streamlined metadata (images or HTML)
+#' @param files Vector of file paths
+#' @return TRUE if streamlined metadata applies, FALSE otherwise
+#' @keywords internal
+is_streamlined_metadata_dataset <- function(files) {
+  is_image_dataset(files) || is_html_dataset(files)
+}
+
 #' Collect ALL metadata including required system fields
 #' @param files Vector of file paths being uploaded (optional)
 #' @keywords internal
 collect_all_metadata_interactive <- function(files = NULL) {
   cli::cli_h2("📊 Métadonnées du dataset")
   
-  # Check if dealing with images
+  # Check if dealing with streamlined metadata content (images or HTML)
   is_images <- !is.null(files) && is_image_dataset(files)
+  is_html <- !is.null(files) && is_html_dataset(files)
+  use_streamlined <- is_images || is_html
   
   if (is_images) {
     cli::cli_text("🖼️ Images détectées - métadonnées simplifiées")
+  } else if (is_html) {
+    cli::cli_text("📄 Fichiers HTML détectés - métadonnées simplifiées")
   } else {
     cli::cli_text("Ces informations sont importantes pour la gouvernance des données")
   }
@@ -173,7 +202,7 @@ collect_all_metadata_interactive <- function(files = NULL) {
   metadata <- list()
 
   # REQUIRED SYSTEM FIELDS
-  metadata <- collect_required_system_metadata(metadata, is_images)
+  metadata <- collect_required_system_metadata(metadata, use_streamlined)
 
   # OPTIONAL CUSTOM FIELDS
   metadata <- collect_optional_custom_metadata(metadata)
@@ -183,20 +212,22 @@ collect_all_metadata_interactive <- function(files = NULL) {
 
 #' Collect required system metadata fields
 #' @param metadata Existing metadata list
-#' @param is_images Whether the files being processed are images (if TRUE, only creation_date is collected)
+#' Collect required system metadata fields
+#' @param metadata Existing metadata list
+#' @param use_streamlined Whether to use streamlined metadata (for images, HTML, etc - only creation_date)
 #' @keywords internal
-collect_required_system_metadata <- function(metadata, is_images = FALSE) {
-  if (is_images) {
-    # For images, only collect creation date - other governance metadata not relevant
-    cli::cli_h3("📝 Métadonnées système pour images")
+collect_required_system_metadata <- function(metadata, use_streamlined = FALSE) {
+  if (use_streamlined) {
+    # For images/HTML, only collect creation date - other governance metadata not relevant
+    cli::cli_h3("📝 Métadonnées système simplifiées")
     
     # Creation date (default to today)
     default_date <- format(Sys.Date(), "%Y-%m-%d")
-    creation_date <- readline(prompt = paste0("📅 Date de création de l'image [", default_date, "]: "))
+    creation_date <- readline(prompt = paste0("📅 Date de création [", default_date, "]: "))
     if (nchar(creation_date) == 0) creation_date <- default_date
     metadata$creation_date <- creation_date
     
-    cli::cli_alert_info("🖼️ Images - autres métadonnées de gouvernance ignorées")
+    cli::cli_alert_info("� Contenu informationnel - autres métadonnées de gouvernance ignorées")
     return(metadata)
   }
   

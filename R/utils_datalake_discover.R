@@ -37,6 +37,7 @@ categorize_datasets_by_content <- function(result) {
   # Define file type categories
   tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
   image_extensions <- c("png", "jpg", "jpeg")
+  html_extensions <- c("html", "htm")
   
   data_datasets <- list()
   media_datasets <- list()
@@ -61,6 +62,7 @@ categorize_datasets_by_content <- function(result) {
     # Categorize based on predominant file types
     has_tabular <- any(all_extensions %in% tabular_extensions)
     has_images <- any(all_extensions %in% image_extensions)
+    has_html <- any(all_extensions %in% html_extensions)
     
     # Create dataset summary
     dataset_info <- list(
@@ -71,8 +73,8 @@ categorize_datasets_by_content <- function(result) {
       extensions = unique(all_extensions)
     )
     
-    # Categorize (images take precedence for mixed datasets)
-    if (has_images) {
+    # Categorize (images/HTML take precedence for mixed datasets)
+    if (has_images || has_html) {
       media_datasets[[length(media_datasets) + 1]] <- dataset_info
     } else if (has_tabular) {
       data_datasets[[length(data_datasets) + 1]] <- dataset_info
@@ -225,6 +227,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   # Detect content type based on file extensions
   tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
   image_extensions <- c("png", "jpg", "jpeg")
+  html_extensions <- c("html", "htm")
   
   all_extensions <- c()
   for (i in seq_len(nrow(result))) {
@@ -236,13 +239,16 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     }
   }
   
-  # Determine content type (images take precedence)
+  # Determine content type (images/HTML take precedence)
   has_images <- any(all_extensions %in% image_extensions)
+  has_html <- any(all_extensions %in% html_extensions)
   has_tabular <- any(all_extensions %in% tabular_extensions)
   
   # Use appropriate header and icon based on content type
   if (has_images) {
     cli::cli_h2(glue::glue("🖼️  Graphics Details: {dataset_name}"))
+  } else if (has_html) {
+    cli::cli_h2(glue::glue("📄 HTML Details: {dataset_name}"))
   } else {
     cli::cli_h2(glue::glue("📊  Dataset Details: {dataset_name}"))
   }
@@ -258,9 +264,13 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame with content-aware icons
   if (has_images) {
-    dataset_icon <- "🖼️ "
+    dataset_icon <- "🖼️"
     content_label <- "Graphics"
-    files_icon <- "🖼️ "
+    files_icon <- "🖼️"
+  } else if (has_html) {
+    dataset_icon <- "📄"
+    content_label <- "HTML"
+    files_icon <- "📄"
   } else {
     dataset_icon <- "📊"
     content_label <- "Dataset"
@@ -268,7 +278,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   }
   
   overview_data <- data.frame(
-    Property = c(paste(dataset_icon, content_label), "🏷️  Tags", paste(files_icon, "Total files")),
+    Property = c(paste(dataset_icon, content_label), "🏷️ Tags", paste(files_icon, "Total files")),
     Value = c(table_name, paste(tags_count, "(", tags_list, ")"), total_files),
     stringsAsFactors = FALSE,
     check.names = FALSE

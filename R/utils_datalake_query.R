@@ -27,13 +27,20 @@ ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL) {
         return(tibble::tibble())
       }
 
-      # Check if dataset contains images
+      # Check if dataset contains images or HTML files
       image_extensions <- c("png", "jpg", "jpeg")
+      html_extensions <- c("html", "htm")
       has_images <- any(files_metadata$file_extension %in% image_extensions)
+      has_html <- any(files_metadata$file_extension %in% html_extensions)
       
       if (has_images) {
         # Handle image files differently
         return(handle_image_dataset(files_metadata, creds, dataset, tag))
+      }
+      
+      if (has_html) {
+        # Handle HTML files differently
+        return(handle_html_dataset(files_metadata, creds, dataset, tag))
       }
 
       # Step 2: Download and read files (for non-image datasets)
@@ -311,5 +318,75 @@ display_image_from_s3 <- function(file_info, credentials) {
     cli::cli_alert_success("✅ Image affichée: {file_info$file_name}")
   }, error = function(e) {
     cli::cli_alert_danger("Erreur lors de l'affichage de l'image: {e$message}")
+  })
+}
+
+#' Handle HTML dataset queries with automatic display
+#' @param files_metadata Dataframe with file metadata
+#' @param credentials AWS credentials
+#' @param dataset Dataset name
+#' @param tag Tag name (optional)
+#' @return NULL (HTML files are displayed directly)
+#' @keywords internal
+handle_html_dataset <- function(files_metadata, credentials, dataset, tag = NULL) {
+  # Display available HTML files
+  if (!is.null(tag)) {
+    cli::cli_h2("📄 Fichiers HTML dans le dataset '{dataset}' (tag: '{tag}')")
+  } else {
+    cli::cli_h2("📄 Fichiers HTML dans le dataset '{dataset}' (tous les tags)")
+  }
+  
+  # Create a display table
+  display_data <- data.frame(
+    `#` = seq_len(nrow(files_metadata)),
+    `Nom` = files_metadata$file_name,
+    `Tag` = files_metadata$tag,
+    `Taille` = sapply(files_metadata$file_size_bytes, function(x) {
+      if (is.na(x) || x == 0) return("N/A")
+      if (x < 1024) return(paste(x, "B"))
+      if (x < 1024^2) return(paste(round(x / 1024, 1), "KB"))
+      if (x < 1024^3) return(paste(round(x / 1024^2, 1), "MB"))
+      paste(round(x / 1024^3, 1), "GB")
+    }),
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+  
+  # Display the table
+  print(display_data, row.names = FALSE)
+  cli::cli_text("")
+  
+  # Auto-display all HTML files (no interactive selection needed)
+  cli::cli_alert_info("Téléchargement et affichage de {nrow(files_metadata)} fichier(s) HTML...")
+  
+  for (i in seq_len(nrow(files_metadata))) {
+    selected_file <- files_metadata[i, ]
+    display_html_from_s3(selected_file, credentials)
+  }
+  
+  cli::cli_alert_success("✅ Tous les fichiers HTML ont été affichés.")
+  return(invisible(files_metadata))
+}
+
+#' Display an HTML file from S3 using browser
+#' @param file_info Single row from files_metadata
+#' @param credentials AWS credentials
+#' @keywords internal
+display_html_from_s3 <- function(file_info, credentials) {
+  cli::cli_alert_info("Téléchargement et affichage de: {file_info$file_name}")
+  
+  tryCatch({
+    # Download to temporary file
+    temp_file <- download_s3_file_to_temp(file_info$file_path, credentials)
+    
+    # Load and display HTML using appropriate method
+    display_html_file(temp_file)
+    
+    # Note: Don't delete temp file immediately as browser may need time to load
+    # Temp files will be cleaned up when R session ends
+    
+    cli::cli_alert_success("✅ Fichier HTML affiché: {file_info$file_name}")
+  }, error = function(e) {
+    cli::cli_alert_danger("Erreur lors de l'affichage du fichier HTML: {e$message}")
   })
 }
