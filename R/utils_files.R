@@ -641,25 +641,54 @@ display_html_file <- function(filepath) {
     }
     
     # Detect VS Code Remote environment
-    vscode_browser <- Sys.getenv("BROWSER")
     in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
-                        grepl("browser.sh", vscode_browser, fixed = TRUE)
+                        grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
     
-    # For VS Code Remote: use VS Code's browser helper script
-    if (!success && in_vscode_remote && nzchar(vscode_browser)) {
-      cli::cli_alert_info("Détection de VS Code Remote - tentative d'ouverture...")
-      tryCatch({
-        # Use VS Code's browser helper which properly forwards to client
-        file_url <- paste0("file://", normalizePath(filepath, winslash = "/"))
-        system_result <- system2(vscode_browser, args = c(file_url), wait = FALSE, 
-                                 stdout = FALSE, stderr = FALSE)
-        if (system_result == 0 || is.null(system_result)) {
+    # For VS Code Remote: serve via HTTP and use browseURL
+    if (!success && in_vscode_remote) {
+      cli::cli_alert_info("Détection de VS Code Remote - configuration du serveur HTTP...")
+      
+      # Check if httpuv is available for serving
+      if (requireNamespace("httpuv", quietly = TRUE)) {
+        tryCatch({
+          # Read HTML content
+          html_content <- readLines(filepath, warn = FALSE)
+          html_content <- paste(html_content, collapse = "\n")
+          
+          # Start a simple HTTP server on random port
+          port <- httpuv::randomPort()
+          
+          server <- httpuv::startServer("127.0.0.1", port,
+            list(
+              call = function(req) {
+                list(
+                  status = 200L,
+                  headers = list('Content-Type' = 'text/html; charset=UTF-8'),
+                  body = html_content
+                )
+              }
+            )
+          )
+          
+          # Open in browser via HTTP URL (VS Code will forward this)
+          http_url <- paste0("http://127.0.0.1:", port)
+          utils::browseURL(http_url)
+          
+          cli::cli_alert_success("✅ HTML servi sur {http_url}")
+          cli::cli_alert_info("💡 Le serveur restera actif pendant cette session R")
+          
           success <- TRUE
-          cli::cli_alert_success("✅ HTML envoyé au client")
-        }
-      }, error = function(e) {
-        cli::cli_alert_warning("Échec du helper VS Code: {e$message}")
-      })
+          
+          # Store server reference so it stays alive
+          assign(".tube_html_server", server, envir = .GlobalEnv)
+          
+        }, error = function(e) {
+          cli::cli_alert_warning("Échec du serveur HTTP: {e$message}")
+        })
+      } else {
+        cli::cli_alert_info("💡 Installez 'httpuv' pour l'affichage HTML dans VS Code Remote")
+        cli::cli_alert_info("   install.packages('httpuv')")
+      }
     }
     
     # For local environments: use system commands
