@@ -30,13 +30,31 @@ format_public_datalake_all_datasets <- function(con) {
 }
 
 #' Categorize datasets by content type based on file extensions
-#' @param result Query result from public-data-lake-content table
-#' @return List with data_datasets and media_datasets
+#'
+#' Analyzes file extensions in query results to categorize datasets as either data (tabular)
+#' or media (images/HTML). Images and HTML take precedence for mixed datasets as they are
+#' considered informational products.
+#'
+#' Categories:
+#' - **Tabular data**: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML
+#' - **Images**: PNG, JPG, JPEG
+#' - **HTML**: HTML, HTM
+#'
+#' @param result Query result dataframe from public-data-lake-content table with columns:
+#'   table_name, file_extensions (JSON array), file_count, creation_date
+#' @return List with two elements:
+#'   \describe{
+#'     \item{data_datasets}{List of dataset info for tabular data}
+#'     \item{media_datasets}{List of dataset info for images/HTML}
+#'   }
+#'   Each dataset info contains: name, tags_count, total_files, first_created, extensions
 #' @keywords internal
+#' @seealso [format_public_datalake_all_datasets()], [ellipse_discover()]
 categorize_datasets_by_content <- function(result) {
   # Define file type categories
   tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
   image_extensions <- c("png", "jpg", "jpeg")
+  html_extensions <- c("html", "htm")
   
   data_datasets <- list()
   media_datasets <- list()
@@ -61,6 +79,7 @@ categorize_datasets_by_content <- function(result) {
     # Categorize based on predominant file types
     has_tabular <- any(all_extensions %in% tabular_extensions)
     has_images <- any(all_extensions %in% image_extensions)
+    has_html <- any(all_extensions %in% html_extensions)
     
     # Create dataset summary
     dataset_info <- list(
@@ -71,8 +90,8 @@ categorize_datasets_by_content <- function(result) {
       extensions = unique(all_extensions)
     )
     
-    # Categorize (images take precedence for mixed datasets)
-    if (has_images) {
+    # Categorize (images/HTML take precedence for mixed datasets)
+    if (has_images || has_html) {
       media_datasets[[length(media_datasets) + 1]] <- dataset_info
     } else if (has_tabular) {
       data_datasets[[length(data_datasets) + 1]] <- dataset_info
@@ -225,6 +244,7 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
   # Detect content type based on file extensions
   tabular_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml")
   image_extensions <- c("png", "jpg", "jpeg")
+  html_extensions <- c("html", "htm")
   
   all_extensions <- c()
   for (i in seq_len(nrow(result))) {
@@ -236,13 +256,16 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
     }
   }
   
-  # Determine content type (images take precedence)
+  # Determine content type (images/HTML take precedence)
   has_images <- any(all_extensions %in% image_extensions)
+  has_html <- any(all_extensions %in% html_extensions)
   has_tabular <- any(all_extensions %in% tabular_extensions)
   
   # Use appropriate header and icon based on content type
   if (has_images) {
     cli::cli_h2(glue::glue("🖼️  Graphics Details: {dataset_name}"))
+  } else if (has_html) {
+    cli::cli_h2(glue::glue("📄 HTML Details: {dataset_name}"))
   } else {
     cli::cli_h2(glue::glue("📊  Dataset Details: {dataset_name}"))
   }
@@ -258,9 +281,13 @@ format_public_datalake_dataset_details <- function(con, dataset_name) {
 
   # Create overview data frame with content-aware icons
   if (has_images) {
-    dataset_icon <- "🖼️ "
+    dataset_icon <- "🖼️"
     content_label <- "Graphics"
     files_icon <- "🖼️ "
+  } else if (has_html) {
+    dataset_icon <- "📄"
+    content_label <- "HTML"
+    files_icon <- "📄"
   } else {
     dataset_icon <- "📊"
     content_label <- "Dataset"

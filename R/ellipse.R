@@ -364,8 +364,9 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #'
 #' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 #'   dans un pipeline `dplyr`. Pour datalake datasets: Un dataframe agrégé de tous les
-#'   fichiers du dataset. Pour datalake images: Interface interactive pour visualiser
-#'   les images une par une.
+#'   fichiers du dataset. Pour datalake images (PNG/JPEG): Télécharge et affiche
+#'   automatiquement toutes les images. Pour datalake HTML: Télécharge et affiche
+#'   automatiquement tous les fichiers HTML dans le navigateur.
 #' @export
 ellipse_query <- function(con, dataset, tag = NULL) {
   logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag))
@@ -389,7 +390,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'
 #' Cette fonction unifie l'injection de données vers différentes destinations:
 #' - Datalake public (pour connexions "datalake"): Upload direct avec métadonnées
-#'   Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG
+#'   Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG, HTML
 #' - Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 #'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
@@ -399,7 +400,7 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #' @param tag Pour connexions datalake: tag de version (obligatoire)
 #' @param metadata Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel).
 #'   Pour datasets: métadonnées système requises (éthique, consentement, etc.)
-#'   Pour images: métadonnées simplifiées (seulement date de création et champs personnalisés)
+#'   Pour images/HTML: métadonnées simplifiées (seulement date de création et champs personnalisés)
 #'   \itemize{
 #'     \item \code{creation_date} - Date de création des données (YYYY-MM-DD)
 #'     \item \code{consent_expiry_date} - Date d'expiration du consentement (datasets seulement)
@@ -409,8 +410,8 @@ ellipse_query <- function(con, dataset, tag = NULL) {
 #'   }
 #'   Exemple dataset: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
 #'     ethical_stamp = "false", custom_field = "valeur personnalisée")}
-#'   Exemple image: \code{list(creation_date = "2025-01-01", photographer = "Jean Doe",
-#'     title = "Photo de démonstration")}
+#'   Exemple image/HTML: \code{list(creation_date = "2025-01-01", author = "Jean Doe",
+#'     title = "Rapport de démonstration")}
 #' @param interactive Pour connexions datalake: mode interactif (défaut: TRUE)
 #' @param pipeline Pour connexions datawarehouse: nom du pipeline (obligatoire)
 #' @param file_batch Pour connexions datawarehouse: nom du batch (optionnel, NULL sinon)

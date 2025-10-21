@@ -523,11 +523,12 @@ display_image_file <- function(filepath) {
         success <- (system_result == 0)
       } else {
         # Try multiple Linux approaches in order of preference
-        
+
         # 1. Try VS Code directly
         if (Sys.which("code") != "" && !success) {
           cli::cli_alert_info("Tentative d'ouverture avec VS Code...")
-          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE, ignore.stdout = TRUE, ignore.stderr = TRUE)
+          system_result <- system(paste("code", shQuote(filepath)), wait = FALSE,
+            ignore.stdout = TRUE, ignore.stderr = TRUE)
           if (system_result == 0) {
             success <- TRUE
             cli::cli_alert_success("✅ Image ouverte dans VS Code")
@@ -587,6 +588,108 @@ display_image_file <- function(filepath) {
   }, error = function(e) {
     cli::cli_alert_danger("Impossible d'afficher l'image: {e$message}")
     cli::cli_alert_info("Fichier image disponible à: {filepath}")
-    return(invisible(filepath))
+    invisible(filepath)
+  })
+}
+
+#' Display an HTML file by opening it in a web browser
+#'
+#' Opens an HTML file in the default web browser with multiple fallback options for
+#' Linux/Mac/Windows. Tries multiple browser opening methods in order of preference:
+#' - Linux: xdg-open, firefox, chrome/chromium
+#' - Mac: open command
+#' - Windows: start command
+#'
+#' Temp files should persist as browser needs time to load them.
+#'
+#' @param filepath Path to HTML file to display
+#' @return Invisibly returns the filepath
+#' @keywords internal
+#' @seealso \code{\link{display_image_file}} for image display
+display_html_file <- function(filepath) {
+  if (!file.exists(filepath)) {
+    stop("HTML file not found: ", filepath, call. = FALSE)
+  }
+  
+  # Get file extension
+  ext <- tolower(tools::file_ext(filepath))
+  
+  # Validate it's HTML
+  if (!ext %in% c("html", "htm")) {
+    stop("Unsupported file format: ", ext, ". Expected HTML.", call. = FALSE)
+  }
+  
+  tryCatch({
+    cli::cli_alert_info("Ouverture du fichier HTML dans le navigateur...")
+    cli::cli_alert_info("Fichier: {filepath}")
+    
+    success <- FALSE
+    
+    if (.Platform$OS.type == "windows") {
+      # Windows: use start command
+      system_result <- system(paste("start", shQuote(filepath)), wait = FALSE)
+      success <- (system_result == 0)
+    } else {
+      # Linux/Mac: try multiple browser opening approaches
+      
+      # 1. Try xdg-open (standard Linux)
+      if (Sys.which("xdg-open") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec xdg-open...")
+        system_result <- system(paste("xdg-open", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        if (system_result == 0) {
+          success <- TRUE
+          cli::cli_alert_success("✅ HTML ouvert dans le navigateur par défaut")
+        }
+      }
+      
+      # 2. Try firefox
+      if (Sys.which("firefox") != "" && !success) {
+        cli::cli_alert_info("Tentative d'ouverture avec Firefox...")
+        system_result <- system(paste("firefox", shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+        if (system_result == 0) {
+          success <- TRUE
+          cli::cli_alert_success("✅ HTML ouvert dans Firefox")
+        }
+      }
+      
+      # 3. Try chromium/chrome
+      chrome_browsers <- c("chromium-browser", "chromium", "google-chrome", "chrome")
+      for (browser in chrome_browsers) {
+        if (Sys.which(browser) != "" && !success) {
+          cli::cli_alert_info("Tentative d'ouverture avec {browser}...")
+          system_result <- system(paste(browser, shQuote(filepath), "2>/dev/null &"), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ HTML ouvert dans {browser}")
+            break
+          }
+        }
+      }
+      
+      # 4. Mac fallback
+      if (.Platform$OS.type == "unix" && !success) {
+        if (Sys.which("open") != "") {
+          cli::cli_alert_info("Tentative d'ouverture avec open (Mac)...")
+          system_result <- system(paste("open", shQuote(filepath)), wait = FALSE)
+          if (system_result == 0) {
+            success <- TRUE
+            cli::cli_alert_success("✅ HTML ouvert avec open")
+          }
+        }
+      }
+    }
+    
+    if (!success) {
+      cli::cli_alert_warning("Impossible d'ouvrir le fichier HTML automatiquement.")
+      cli::cli_alert_info("📁 Fichier disponible à: {filepath}")
+      cli::cli_alert_info("💡 Vous pouvez l'ouvrir manuellement dans votre navigateur")
+    }
+
+    invisible(filepath)
+
+  }, error = function(e) {
+    cli::cli_alert_danger("Impossible d'afficher le fichier HTML: {e$message}")
+    cli::cli_alert_info("Fichier HTML disponible à: {filepath}")
+    invisible(filepath)
   })
 }

@@ -4,14 +4,24 @@
 \alias{collect_required_system_metadata}
 \title{Collect required system metadata fields}
 \usage{
-collect_required_system_metadata(metadata, is_images = FALSE)
+collect_required_system_metadata(metadata, use_streamlined = FALSE)
 }
 \arguments{
-\item{metadata}{Existing metadata list}
+\item{metadata}{Existing metadata list to append to}
 
-\item{is_images}{Whether the files being processed are images (if TRUE, only creation_date is collected)}
+\item{use_streamlined}{Whether to use streamlined metadata (for images, HTML - only creation_date)}
+}
+\value{
+Updated metadata list with system fields
 }
 \description{
-Collect required system metadata fields
+Collects system metadata with different requirements based on content type:
+\itemize{
+\item For informational products (images, HTML): Only creation_date
+\item For tabular datasets: Full governance metadata (ethics, consent, sensitivity, etc.)
+}
+}
+\seealso{
+\code{\link{is_streamlined_metadata_dataset}}
 }
 \keyword{internal}

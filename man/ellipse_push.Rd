@@ -28,7 +28,7 @@ Optionnel en mode interactif - l'utilisateur sera invité à sélectionner.}
 
 \item{metadata}{Pour connexions datalake: métadonnées personnalisées (liste nommée, optionnel).
 Pour datasets: métadonnées système requises (éthique, consentement, etc.)
-Pour images: métadonnées simplifiées (seulement date de création et champs personnalisés)
+Pour images/HTML: métadonnées simplifiées (seulement date de création et champs personnalisés)
 \itemize{
 \item \code{creation_date} - Date de création des données (YYYY-MM-DD)
 \item \code{consent_expiry_date} - Date d'expiration du consentement (datasets seulement)
@@ -38,8 +38,8 @@ Pour images: métadonnées simplifiées (seulement date de création et champs p
 }
 Exemple dataset: \code{list(creation_date = "2025-01-01", sensitivity_level = 1,
     ethical_stamp = "false", custom_field = "valeur personnalisée")}
-  Exemple image: \code{list(creation_date = "2025-01-01", photographer = "Jean Doe",
-    title = "Photo de démonstration")}}
+  Exemple image/HTML: \code{list(creation_date = "2025-01-01", author = "Jean Doe",
+    title = "Rapport de démonstration")}}
 
 \item{interactive}{Pour connexions datalake: mode interactif (défaut: TRUE)}
 
@@ -56,7 +56,7 @@ La liste des fichiers qui ont été injectés dans tube
 Cette fonction unifie l'injection de données vers différentes destinations:
 \itemize{
 \item Datalake public (pour connexions "datalake"): Upload direct avec métadonnées
-Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG
+Formats supportés: CSV, DTA, SAV, RDS, RDA, XLSX, XLS, DAT, XML, PNG, JPEG, HTML
 \item Landing zone (pour connexions "datawarehouse"): Pipeline traditionnel ETL
 }
 }
