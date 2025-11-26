@@ -8,7 +8,7 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install essential tools and R dependencies
-RUN apt-get update && \
+RUN apt-get update -o Acquire::Check-Valid-Until=false && \
     apt-get install -y --no-install-recommends \
         bash \
         curl \
@@ -44,40 +44,43 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 
-# Declare build-time argument with the correct GID from host Docker socket
-# This should match the group ownership of /var/run/docker.sock on the host
+# Declare build-time arguments for host user and Docker socket
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+ARG HOST_USER=vscode
+ARG HOST_GROUP=vscode
 ARG DOCKER_GID=988
 
-# Create user 'vscode' with UID and GID 1000, home directory, and sudo privileges
-RUN groupadd -g 1000 vscode && \
-    useradd -m -s /bin/bash -u 1000 -g 1000 vscode && \
-    echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode && \
-    chmod 0440 /etc/sudoers.d/vscode && \
-    passwd -d vscode && \
-    mkdir -p /home/vscode && \
-    chown -R vscode:vscode /home/vscode
+# Create group and user matching host
+RUN groupadd -g ${HOST_GID} ${HOST_GROUP} && \
+    useradd -m -s /bin/bash -u ${HOST_UID} -g ${HOST_GID} ${HOST_USER} && \
+    echo "${HOST_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${HOST_USER} && \
+    chmod 0440 /etc/sudoers.d/${HOST_USER} && \
+    passwd -d ${HOST_USER} && \
+    mkdir -p /home/${HOST_USER} && \
+    chown -R ${HOST_USER}:${HOST_GROUP} /home/${HOST_USER}
 
-# Create docker group with matching GID and add vscode user
+# Create docker group with matching GID and add user to it
 # Handle the case where the group might already exist with a different name
 RUN if ! getent group ${DOCKER_GID} > /dev/null 2>&1; then \
         groupadd -g ${DOCKER_GID} docker; \
     fi && \
     DOCKER_GROUP_NAME=$(getent group ${DOCKER_GID} | cut -d: -f1) && \
-    usermod -aG "$DOCKER_GROUP_NAME" vscode
+    usermod -aG "$DOCKER_GROUP_NAME" ${HOST_USER}
 
 # Install Docker CLI
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    apt-get update && \
+    apt-get update -o Acquire::Check-Valid-Until=false && \
     apt-get install -y --no-install-recommends docker-ce-cli && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /home/vscode
+WORKDIR /home/${HOST_USER}
 
 # Install latest R from CRAN
 RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
     echo "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" | tee /etc/apt/sources.list.d/cran.list && \
-    apt-get update && \
+    apt-get update -o Acquire::Check-Valid-Until=false && \
     apt-get install -y --no-install-recommends r-base r-base-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -98,49 +101,46 @@ RUN Rscript -e "install.packages('stringi', type = 'source', repos='https://clou
     Rscript -e "install.packages('languageserver', repos='https://cloud.r-project.org')"
 
 # Switch to the non-root user
-USER vscode 
+USER ${HOST_USER}
 
 # Set env vars and create necessary directories
-ENV VOLTA_HOME=/home/vscode/.volta
+ENV VOLTA_HOME=/home/${HOST_USER}/.volta
 ENV PATH=$VOLTA_HOME/bin:$PATH
-ENV PATH=/home/vscode/.local/bin:$PATH
+ENV PATH=/home/${HOST_USER}/.local/bin:$PATH
 
 # Install Node.js using Volta
 RUN curl https://get.volta.sh | bash \
-  && export VOLTA_HOME=/home/vscode/.volta \
+  && export VOLTA_HOME=/home/${HOST_USER}/.volta \
   && export PATH=$VOLTA_HOME/bin:$PATH \
   && $VOLTA_HOME/bin/volta install node@20.18.1 \
   && $VOLTA_HOME/bin/volta install yarn@1.22.22 
 
 # Create common directories if they don't exist
-RUN mkdir -p /home/vscode/.aws /home/vscode/.ssh /home/vscode/.awsvault /home/vscode/.local/lib/R/site-library
+RUN mkdir -p /home/${HOST_USER}/.aws /home/${HOST_USER}/.ssh /home/${HOST_USER}/.awsvault /home/${HOST_USER}/.local/lib/R/site-library
 
 # Set ownership (just in case)
-RUN chown -R vscode:vscode /home/vscode
+RUN chown -R ${HOST_USER}:${HOST_GROUP} /home/${HOST_USER}
 
 # Setup bash and radian history files
-RUN touch /home/vscode/.bash_history /home/vscode/.radian_history
+RUN touch /home/${HOST_USER}/.bash_history /home/${HOST_USER}/.radian_history
 
 # Install Radian in a virtual environment (single installation)
-RUN python3 -m venv /home/vscode/.venv && \
-    /home/vscode/.venv/bin/pip install --upgrade pip && \
-    /home/vscode/.venv/bin/pip install radian
+RUN python3 -m venv /home/${HOST_USER}/.venv && \
+    /home/${HOST_USER}/.venv/bin/pip install --upgrade pip && \
+    /home/${HOST_USER}/.venv/bin/pip install radian
 
 # Environment variables
 ENV RUN_MODE=devcontainer
 ENV AWS_SDK_LOAD_CONFIG=1
-ENV R_LIBS_USER=/home/vscode/.local/lib/R/site-library
+ENV R_LIBS_USER=/home/${HOST_USER}/.local/lib/R/site-library
 ENV AWS_VAULT_BACKEND=file
-ENV AWS_VAULT_FILE_DIR=/home/vscode/.aws-vault
+ENV AWS_VAULT_FILE_DIR=/home/${HOST_USER}/.aws-vault
 
-# Default to non-root vscode user
-USER vscode
+# Default to non-root user
+USER ${HOST_USER}
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
-
-COPY bashrc-addons /home/vscode/.bashrc-addons
-RUN echo "source /home/vscode/.bashrc-addons" >> /home/vscode/.bashrc
 
 # Default command to keep container running
 CMD [ "sleep", "infinity" ]
