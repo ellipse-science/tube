@@ -1,6 +1,6 @@
 test_that("ellipse_discover works with specific table name in datamarts", {
   skip_if_not(nzchar(Sys.getenv("AWS_ACCESS_KEY_ID_DEV")), 
-              "AWS credentials not available")
+    "AWS credentials not available")
   
   # Connect to DEV datamarts
   con <- ellipse_connect("DEV", "datamarts")
@@ -28,7 +28,7 @@ test_that("ellipse_discover works with specific table name in datamarts", {
 
 test_that("get_aws_account_id returns valid account ID", {
   skip_if_not(nzchar(Sys.getenv("AWS_ACCESS_KEY_ID_DEV")), 
-              "AWS credentials not available")
+    "AWS credentials not available")
   
   # Get credentials
   creds <- get_aws_credentials("DEV")
@@ -43,7 +43,7 @@ test_that("get_aws_account_id returns valid account ID", {
 
 test_that("list_glue_table_properties works with CatalogId", {
   skip_if_not(nzchar(Sys.getenv("AWS_ACCESS_KEY_ID_DEV")), 
-              "AWS credentials not available")
+    "AWS credentials not available")
   
   # Connect and get credentials
   con <- ellipse_connect("DEV", "datamarts")

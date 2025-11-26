@@ -6,7 +6,7 @@
 get_aws_account_id <- function(credentials) {
   sts_client <- paws.security.identity::sts(config = credentials)
   identity <- sts_client$get_caller_identity()
-  return(identity$Account)
+  identity$Account
 }
 
 #' List all the databases in the AWS Glue Data Catalog
