@@ -8,7 +8,9 @@
 #' @param file Optional specific filename to download/display
 #' @keywords internal
 ellipse_query_datalake_aggregator <- function(con, dataset, tag = NULL, file = NULL) {
-  logger::log_debug(paste("[ellipse_query_datalake_aggregator] entering with dataset =", dataset, ", tag =", tag, ", file =", file))
+  logger::log_debug(paste(
+    "[ellipse_query_datalake_aggregator] entering with dataset =", dataset,
+    ", tag =", tag, ", file =", file))
 
   tryCatch(
     {

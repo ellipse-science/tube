@@ -1,3 +1,14 @@
+#' Get AWS Account ID from credentials
+#' @param credentials A list of AWS credentials in the format compliant
+#' with the paws package
+#' @return The AWS account ID as a string
+#' @keywords internal
+get_aws_account_id <- function(credentials) {
+  sts_client <- paws.security.identity::sts(config = credentials)
+  identity <- sts_client$get_caller_identity()
+  identity$Account
+}
+
 #' List all the databases in the AWS Glue Data Catalog
 #' @param credentials A list of AWS credentials in the format compliant
 #' with the paws package
@@ -47,9 +58,12 @@ list_glue_tables <- function(credentials, schema, tablename_filter = NULL, simpl
   glue_client <- paws.analytics::glue(
     config = credentials
   )
+  
+  # Get AWS account ID for CatalogId
+  account_id <- get_aws_account_id(credentials)
 
   logger::log_debug("[tube::list_glue_tables] listing tables")
-  tables <- glue_client$get_tables("", schema)
+  tables <- glue_client$get_tables(account_id, schema)
 
   if (!is.null(tablename_filter)) {
     tables$TableList <- tables$TableList[grep(tablename_filter, sapply(tables$TableList, function(x) x$Name))]
@@ -84,9 +98,13 @@ list_glue_table_properties <- function(credentials, schema, table) {
   glue_client <- paws.analytics::glue(
     config = credentials,
   )
+  
+  # Get AWS account ID for CatalogId
+  account_id <- get_aws_account_id(credentials)
 
   logger::log_debug(paste("[tube::list_glue_table_properties] getting table", table, "in schema", schema))
   props <- glue_client$get_table(
+    CatalogId = account_id,
     DatabaseName = schema,
     Name = table
   )
@@ -145,12 +163,16 @@ delete_glue_table <- function(credentials, database_name, table_name) {
   glue_client <- paws.analytics::glue(
     config = credentials
   )
+  
+  # Get AWS account ID for CatalogId
+  account_id <- get_aws_account_id(credentials)
 
   result <- tryCatch(
     {
       logger::log_debug("[tube::delete_glue_table] deleting table")
       suppress_console_output({
         glue_client$delete_table(
+          CatalogId = account_id,
           DatabaseName = database_name,
           Name = table_name
         )
@@ -520,7 +542,12 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
 
   # Get the table details
   logger::log_debug("[tube::update_glue_table_tags] Getting table details")
+  
+  # Get AWS account ID for CatalogId
+  account_id <- get_aws_account_id(credentials)
+  
   table_details <- glue_client$get_table(
+    CatalogId = account_id,
     DatabaseName = schema,
     Name = table
   )
@@ -584,6 +611,7 @@ update_glue_table_tags <- function(creds, schema, table, new_table_tags) {
   }
 
   glue_client$update_table(
+    CatalogId = account_id,
     DatabaseName = schema,
     TableInput = table_input
   )
@@ -619,7 +647,12 @@ update_glue_table_desc <- function(creds, schema, table, desc) {
 
   # Get the table details
   logger::log_debug("[tube::update_glue_table_desc] Getting table details")
+  
+  # Get AWS account ID for CatalogId
+  account_id <- get_aws_account_id(credentials)
+  
   table_details <- glue_client$get_table(
+    CatalogId = account_id,
     DatabaseName = schema,
     Name = table
   )
@@ -636,6 +669,7 @@ update_glue_table_desc <- function(creds, schema, table, desc) {
   )
 
   r <- glue_client$update_table(
+    CatalogId = account_id,
     DatabaseName = schema,
     TableInput = table_input
   )

@@ -938,8 +938,11 @@ format_public_datalake_tag_details <- function(con, dataset_name, tag_name) {
     
     # Print file info header
     cli::cli_text(glue::glue("📄 File {file_idx}: {name}"))
-    cli::cli_text(glue::glue("   � Size: {size_display} | 📅 Created: {creation_date} | ⚠️  Sensitivity: {file_data$sensitivity_level} | {ethical_icon} Ethical"))
     
+    # nolint start
+    cli::cli_text(glue::glue("   � Size: {size_display} | 📅 Created: {creation_date} | ⚠️  Sensitivity: {file_data$sensitivity_level} | {ethical_icon} Ethical"))
+    # nolint end
+
     # Print custom metadata if present
     if (!is.null(file_data$user_metadata) && length(file_data$user_metadata) > 0) {
       metadata_lines <- sapply(names(file_data$user_metadata), function(key) {
