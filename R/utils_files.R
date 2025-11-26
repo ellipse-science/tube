@@ -641,8 +641,8 @@ display_html_file <- function(filepath) {
     }
     
     # Detect VS Code Remote environment
-    in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) && 
-                        grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
+    in_vscode_remote <- nzchar(Sys.getenv("VSCODE_IPC_HOOK_CLI")) &&  
+      grepl("vscode-server", Sys.getenv("PATH"), fixed = TRUE)
     
     # For VS Code Remote: serve via HTTP and use browseURL
     if (!success && in_vscode_remote) {

@@ -451,7 +451,11 @@ prepare_files_for_upload <- function(file_or_folder) {
     all_files <- list.files(file_or_folder, recursive = TRUE, full.names = TRUE)
 
     # Filter for supported formats
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg", "html", "htm")
+    supported_extensions <- c(
+      "csv", "dta", "sav", "rds", "rda",
+      "xlsx", "xls", "dat", "xml", "png",
+      "jpg", "jpeg", "html", "htm")
+
     files <- all_files[tools::file_ext(tolower(all_files)) %in% supported_extensions]
 
     if (length(files) == 0) {
@@ -464,7 +468,10 @@ prepare_files_for_upload <- function(file_or_folder) {
   } else {
     # Single file
     extension <- tools::file_ext(tolower(file_or_folder))
-    supported_extensions <- c("csv", "dta", "sav", "rds", "rda", "xlsx", "xls", "dat", "xml", "png", "jpg", "jpeg", "html", "htm")
+    supported_extensions <- c(
+      "csv", "dta", "sav", "rds", "rda",
+      "xlsx", "xls", "dat", "xml", "png",
+      "jpg", "jpeg", "html", "htm")
 
     if (!extension %in% supported_extensions) {
       cli::cli_alert_danger("Format de fichier non supporté: {extension}")
