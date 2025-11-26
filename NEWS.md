@@ -1,3 +1,14 @@
+# tube 0.9.1
+
+## 🔧 Bug Fixes
+
+### AWS Glue CatalogId Parameter Fix
+* **FIXED**: Added missing `CatalogId` parameter to all AWS Glue API calls
+* **FIXED**: `ellipse_discover()` now works correctly when querying specific table names
+* **NEW**: `get_aws_account_id()` helper function to dynamically retrieve AWS account ID
+* **IMPROVED**: All Glue API calls (`get_table`, `get_tables`, `delete_table`, `update_table`) now include proper CatalogId
+* **RESOLVED**: "InvalidInputException: CatalogId ID cannot be empty" error
+
 # tube 0.9.0
 
 ## 🌐 New Feature: HTML File Support
