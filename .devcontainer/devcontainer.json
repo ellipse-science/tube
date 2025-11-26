@@ -32,13 +32,13 @@
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
-        "r.rterm.linux": "~/.venv/bin/radian",
+        "r.rterm.linux": "/home/${localEnv:USER}/.venv/bin/radian",
         "r.bracketedPaste": true,
         "r.sessionWatcher": true,
         "r.libPaths": [
-          "~/.venv/R/library"
+          "/home/${localEnv:USER}/.venv/R/library"
         ],
-        "r.lsp.path": "~/.local/R/library/languageserver/R/languageserver",
+        "r.lsp.path": "/home/${localEnv:USER}/.local/R/library/languageserver/R/languageserver",
         "editor.formatOnSave": false,
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"

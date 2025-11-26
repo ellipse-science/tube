@@ -10,7 +10,7 @@ services:
         HOST_GID: ${HOST_GID:-1000}
         HOST_USER: ${HOST_USER:-vscode}
         HOST_GROUP: ${HOST_GROUP:-vscode}
-        DOCKER_GID: 988
+        DOCKER_GID: ${DOCKER_GID:-999}
     volumes:
       - ../..:/workspaces:cached
       - ${HOME}/.aws:/home/${HOST_USER}/.aws:cached
