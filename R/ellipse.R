@@ -368,7 +368,7 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #' @returns Pour datawarehouse/datamarts: Une table Athena qui peut être interrogée
 #'   dans un pipeline `dplyr`. Pour datalake datasets: Un dataframe agrégé de tous les
 #'   fichiers du dataset. Pour datalake images (PNG/JPEG): Télécharge et affiche
-#'   automatiquement les images (toutes ou celle spécifiée par 'file'). Pour datalake 
+#'   automatiquement les images (toutes ou celle spécifiée par 'file'). Pour datalake
 #'   HTML: Télécharge et affiche automatiquement les fichiers HTML dans le navigateur
 #'   (tous ou celui spécifié par 'file').
 #'
@@ -393,7 +393,12 @@ ellipse_discover <- function(con, table = NULL, tag = NULL) {
 #' }
 #' @export
 ellipse_query <- function(con, dataset, tag = NULL, file = NULL) {
-  logger::log_debug(paste("[ellipse_query] entering function with dataset = ", dataset, ", tag = ", tag, ", file = ", file))
+  logger::log_debug(
+    paste(
+      "[ellipse_query] entering function with dataset = ", dataset,
+      ", tag = ", tag, ", file = ", file
+    )
+  )
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
   # Detect if this is a datalake connection (same logic as ellipse_discover)
