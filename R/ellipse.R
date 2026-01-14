@@ -493,11 +493,17 @@ ellipse_push_landingzone_mode <- function(con, file_or_folder, pipeline, file_ba
 
   landing_zone_bucket <- list_landing_zone_bucket(creds)
 
-  if (is.null(landing_zone_bucket)) {
+  if (is.null(landing_zone_bucket) || length(landing_zone_bucket) == 0) {
     cli::cli_alert_danger(
       paste0(
-        "Oups, il semble que le bucket de la landing zone n'a ",
-        "pas été trouvé! Contacter votre ingénieur de données 😅"
+        "Oups, impossible de trouver le bucket de la landing zone! 😅\n\n",
+        "Le bucket doit contenir 'landingzonebucket' dans son nom.\n",
+        "Vérifications possibles:\n",
+        "  • Vos credentials AWS sont-elles valides?\n",
+        "  • Avez-vous les permissions pour lister les buckets S3?\n",
+        "  • Le bucket existe-t-il dans l'environnement ", env, "?\n\n",
+        "Activez le mode DEBUG avec Sys.setenv(LOG_LEVEL='DEBUG') pour plus de détails.\n",
+        "Contactez votre ingénieur de données si le problème persiste."
       )
     )
     return(invisible(NULL))

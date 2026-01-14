@@ -16,13 +16,37 @@ list_s3_buckets <- function(credentials, type) {
   )
 
   logger::log_debug("[tube::list_s3_buckets] listing buckets")
-  r <- s3_client$list_buckets()
+  r <- tryCatch(
+    {
+      s3_client$list_buckets()
+    },
+    error = function(e) {
+      logger::log_error(paste("[tube::list_s3_buckets] AWS API error:", e$message))
+      return(NULL)
+    }
+  )
 
-  # TODO: error management if no bucket is returned
+  if (is.null(r) || is.null(r$Buckets) || length(r$Buckets) == 0) {
+    logger::log_warn("[tube::list_s3_buckets] no buckets returned from AWS API")
+    return(NULL)
+  }
 
   logger::log_debug("[tube::list_s3_buckets] wrangling result")
   list <- unlist(r$Buckets)
+  logger::log_debug(paste("[tube::list_s3_buckets] found", length(list), "total buckets"))
+  logger::log_debug(paste("[tube::list_s3_buckets] searching for pattern:", type))
+  
   bucket_list <- list[grep(type, list)]
+  logger::log_debug(paste("[tube::list_s3_buckets] found", length(bucket_list), "buckets matching pattern"))
+  
+  if (length(bucket_list) == 0) {
+    logger::log_warn(paste0(
+      "[tube::list_s3_buckets] no bucket found with pattern '", type, "'. ",
+      "Available buckets: ", paste(list, collapse = ", ")
+    ))
+    return(NULL)
+  }
+  
   bucket_list <- as.list(bucket_list)
 
   # Only assign names if bucket_list is not empty
@@ -31,6 +55,7 @@ list_s3_buckets <- function(credentials, type) {
   }
 
   bucket_list <- unlist(bucket_list)
+  logger::log_debug(paste("[tube::list_s3_buckets] returning bucket:", bucket_list))
 
   logger::log_debug("[tube::list_s3_buckets] returning results")
   bucket_list
