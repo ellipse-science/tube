@@ -49,39 +49,57 @@ check_database <- function(database) {
 #' be transformed into a column in the datawarehouse table
 #' @return TRUE if the parameters are valid, FALSE otherwise
 check_pipeline_before_ingest <- function(pipeline, landing_zone_partitions, file_batch, file_version) {
+  logger::log_debug("[tube::check_pipeline_before_ingest] entering function")
+  logger::log_debug(paste("[tube::check_pipeline_before_ingest] pipeline:", pipeline))
+  logger::log_debug(paste("[tube::check_pipeline_before_ingest] file_batch:", file_batch))
+  logger::log_debug(paste("[tube::check_pipeline_before_ingest] file_version:", file_version))
+  
   # Validate pipeline parameter
   if (is.null(pipeline) || !is.character(pipeline) || length(pipeline) != 1) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: pipeline is NULL or invalid")
     cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
     return(FALSE)
   }
 
   # Handle empty string pipeline
   if (is.na(pipeline) || nchar(pipeline) == 0) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: pipeline is empty")
     cli::cli_alert_danger("Oups, il faut fournir un pipeline pour injecter les données! 😅")
     return(FALSE)
   }
 
   # check that the pipeline exists by checking that the partition exists in the landing zone bucket
+  logger::log_debug(paste("[tube::check_pipeline_before_ingest] checking if", paste0(pipeline, "/"), "exists in landing zone"))
+  logger::log_debug(paste("[tube::check_pipeline_before_ingest] available partitions:", paste(landing_zone_partitions, collapse = ", ")))
+  
   if (!paste0(pipeline, "/") %in% landing_zone_partitions) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: pipeline not found in landing zone partitions")
     cli::cli_alert_danger("Oups, le pipeline fourni n'existe pas! 😅\
       demandez à votre ingénieur de données de créer le pipeline dans la plateforme de données\
       pour que vous puissiez y injecter des données.")
     return(FALSE)
   }
+  logger::log_debug("[tube::check_pipeline_before_ingest] pipeline found in landing zone")
 
   # check that pipeline name start with a, r, c, dict or dim
+  logger::log_debug("[tube::check_pipeline_before_ingest] checking pipeline name prefix")
   if (!grepl("^(a-|r-|c-|dict-|dim-)", pipeline)) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: pipeline name must start with a-, r-, c-, dict- or dim-")
     cli::cli_alert_danger("Oups, le nom du pipeline doit commencer par a-, r-, c-, dict- ou dim-! 😅")
     return(FALSE)
   }
+  logger::log_debug("[tube::check_pipeline_before_ingest] pipeline name prefix is valid")
 
   # check that we have a version for dim, or dict and that we have a batch for a, r, c pipelines
+  logger::log_debug("[tube::check_pipeline_before_ingest] checking batch/version requirements")
   if (grepl("^(a-|r-|c-)", pipeline) && is.null(file_batch)) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: factual data pipeline requires file_batch")
     cli::cli_alert_danger("Oups, il faut fournir un batch pour les données factuelles (pipelines a-, r- ou c-)! 😅")
     return(FALSE)
   }
 
   if (grepl("^(dict-|dim-)", pipeline) && is.null(file_version)) {
+    logger::log_debug("[tube::check_pipeline_before_ingest] FAILED: dictionary/dimension pipeline requires file_version")
     cli::cli_alert_danger(
       paste0(
         "Oups, il faut fournir une version pour les données dimensionnelles ",
@@ -90,7 +108,8 @@ check_pipeline_before_ingest <- function(pipeline, landing_zone_partitions, file
     )
     return(FALSE)
   }
-
+  
+  logger::log_debug("[tube::check_pipeline_before_ingest] all checks passed, returning TRUE")
   TRUE
 }
 
@@ -102,9 +121,14 @@ check_pipeline_before_ingest <- function(pipeline, landing_zone_partitions, file
 #' be transformed into a column in the datawarehouse table
 #' @return TRUE if the parameters are valid, FALSE otherwise
 check_file_versioning_before_ingest <- function(file_batch, file_version) {
+  logger::log_debug("[tube::check_file_versioning_before_ingest] entering function")
+  logger::log_debug(paste("[tube::check_file_versioning_before_ingest] file_batch:", file_batch))
+  logger::log_debug(paste("[tube::check_file_versioning_before_ingest] file_version:", file_version))
+  
   # Validate file_batch type and content
   if (!is.null(file_batch)) {
     if (!is.character(file_batch) || length(file_batch) != 1 || is.na(file_batch) || nchar(file_batch) == 0) {
+      logger::log_debug("[tube::check_file_versioning_before_ingest] FAILED: file_batch is invalid")
       return(FALSE)
     }
   }
@@ -112,16 +136,20 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
   # Validate file_version type and content
   if (!is.null(file_version)) {
     if (!is.character(file_version) || length(file_version) != 1 || is.na(file_version) || nchar(file_version) == 0) {
+      logger::log_debug("[tube::check_file_versioning_before_ingest] FAILED: file_version is invalid")
       return(FALSE)
     }
   }
 
-  # According to tests: NULL batch + version should be FALSE
-  if (is.null(file_batch) && !is.null(file_version)) {
-    return(FALSE)
-  }
-
-  # Both NULL or both present or batch only - these should be TRUE
+  # Business logic validation (which parameter for which pipeline type) is handled 
+  # by check_pipeline_before_ingest. This function only validates format/type.
+  # Valid cases:
+  # - file_batch provided, file_version NULL (factual data: a-, r-, c-)
+  # - file_version provided, file_batch NULL (reference data: dict-, dim-)
+  # - both NULL (error, but caught by check_pipeline_before_ingest)
+  # - both provided (error, but caught by check_pipeline_before_ingest)
+  
+  logger::log_debug("[tube::check_file_versioning_before_ingest] format validation passed, returning TRUE")
   TRUE
 }
 

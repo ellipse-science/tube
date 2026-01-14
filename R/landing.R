@@ -13,9 +13,16 @@
 #' @returns A string containing the name of the datalake bucket
 list_landing_zone_bucket <- function(credentials) {
   logger::log_debug("[tube::list_landing_zone_bucket] entering function")
+  logger::log_debug("[tube::list_landing_zone_bucket] searching for bucket with pattern: landingzonebucket")
 
   datalake_list <- list_s3_buckets(credentials, "landingzonebucket")
 
+  if (is.null(datalake_list) || length(datalake_list) == 0) {
+    logger::log_error("[tube::list_landing_zone_bucket] no landing zone bucket found")
+    return(NULL)
+  }
+  
+  logger::log_debug(paste("[tube::list_landing_zone_bucket] found bucket:", datalake_list))
   logger::log_debug("[tube::list_landing_zone_bucket] returning results")
   datalake_list
 }
