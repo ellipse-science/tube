@@ -141,14 +141,15 @@ check_file_versioning_before_ingest <- function(file_batch, file_version) {
     }
   }
 
-  # According to tests: NULL batch + version should be FALSE
-  if (is.null(file_batch) && !is.null(file_version)) {
-    logger::log_debug("[tube::check_file_versioning_before_ingest] FAILED: file_batch is NULL but file_version is provided")
-    return(FALSE)
-  }
-
-  # Both NULL or both present or batch only - these should be TRUE
-  logger::log_debug("[tube::check_file_versioning_before_ingest] all checks passed, returning TRUE")
+  # Business logic validation (which parameter for which pipeline type) is handled 
+  # by check_pipeline_before_ingest. This function only validates format/type.
+  # Valid cases:
+  # - file_batch provided, file_version NULL (factual data: a-, r-, c-)
+  # - file_version provided, file_batch NULL (reference data: dict-, dim-)
+  # - both NULL (error, but caught by check_pipeline_before_ingest)
+  # - both provided (error, but caught by check_pipeline_before_ingest)
+  
+  logger::log_debug("[tube::check_file_versioning_before_ingest] format validation passed, returning TRUE")
   TRUE
 }
 
