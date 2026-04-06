@@ -482,15 +482,15 @@ prepare_files_for_upload <- function(file_or_folder) {
   }
 }
 
-# Threshold above which multipart upload is used (100 MB).
+# Threshold above which multipart upload is used (500 MB).
 # Files larger than this exceed curl's 32-bit POSTFIELDSIZE limit on some
 # systems when approaching 2 GiB, causing "NAs introduced by coercion to
 # integer range" / "Invalid or unsupported value" errors.
-MULTIPART_THRESHOLD_BYTES <- 100L * 1024L * 1024L
+MULTIPART_THRESHOLD_BYTES <- 500L * 1024L * 1024L
 
-# Each part uploaded during a multipart upload is this large (100 MB).
+# Each part uploaded during a multipart upload is this large (500 MB).
 # AWS S3 requires parts >= 5 MB (except the last one).
-MULTIPART_PART_SIZE_BYTES <- 100L * 1024L * 1024L
+MULTIPART_PART_SIZE_BYTES <- 500L * 1024L * 1024L
 
 #' Perform a multipart upload of a single file to S3
 #'
