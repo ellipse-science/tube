@@ -548,7 +548,7 @@ multipart_upload_to_s3 <- function(
 
   parts <- list()
   part_number <- 1L
-  bytes_uploaded <- 0L
+  bytes_uploaded <- 0
 
   cli::cli_progress_bar(
     name = paste0("⬆️  ", basename(file_path)),
