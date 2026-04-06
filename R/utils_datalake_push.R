@@ -482,6 +482,95 @@ prepare_files_for_upload <- function(file_or_folder) {
   }
 }
 
+# Threshold above which multipart upload is used (100 MB).
+# Files larger than this exceed curl's 32-bit POSTFIELDSIZE limit on some
+# systems when approaching 2 GiB, causing "NAs introduced by coercion to
+# integer range" / "Invalid or unsupported value" errors.
+MULTIPART_THRESHOLD_BYTES <- 100L * 1024L * 1024L
+
+# Each part uploaded during a multipart upload is this large (100 MB).
+# AWS S3 requires parts >= 5 MB (except the last one).
+MULTIPART_PART_SIZE_BYTES <- 100L * 1024L * 1024L
+
+#' Perform a multipart upload of a single file to S3
+#'
+#' Used internally for files larger than MULTIPART_THRESHOLD_BYTES to avoid
+#' curl integer-overflow issues on 32-bit POSTFIELDSIZE.
+#' @param s3_client A paws S3 client object.
+#' @param bucket Target bucket name.
+#' @param key Destination S3 key.
+#' @param file_path Local path of the file to upload.
+#' @param metadata Named list of S3 object metadata strings.
+#' @param content_type MIME type string for the object.
+#' @keywords internal
+multipart_upload_to_s3 <- function(s3_client, bucket, key, file_path, metadata, content_type) {
+  logger::log_debug(paste("[multipart_upload_to_s3] initiating multipart upload:", file_path))
+
+  response <- s3_client$create_multipart_upload(
+    Bucket = bucket,
+    Key = key,
+    Metadata = metadata,
+    ContentType = content_type
+  )
+  upload_id <- response$UploadId
+
+  con <- file(file_path, "rb")
+  on.exit(close(con), add = TRUE)
+
+  parts <- list()
+  part_number <- 1L
+
+  tryCatch(
+    {
+      repeat {
+        chunk <- readBin(con, what = "raw", n = MULTIPART_PART_SIZE_BYTES)
+        if (length(chunk) == 0L) break
+
+        part_response <- s3_client$upload_part(
+          Bucket = bucket,
+          Key = key,
+          PartNumber = part_number,
+          UploadId = upload_id,
+          Body = chunk
+        )
+
+        parts[[part_number]] <- list(
+          ETag = part_response$ETag,
+          PartNumber = part_number
+        )
+
+        logger::log_debug(paste("[multipart_upload_to_s3] uploaded part", part_number))
+        part_number <- part_number + 1L
+      }
+
+      s3_client$complete_multipart_upload(
+        Bucket = bucket,
+        Key = key,
+        UploadId = upload_id,
+        MultipartUpload = list(Parts = parts)
+      )
+
+      logger::log_debug("[multipart_upload_to_s3] multipart upload complete")
+    },
+    error = function(e) {
+      tryCatch(
+        s3_client$abort_multipart_upload(
+          Bucket = bucket,
+          Key = key,
+          UploadId = upload_id
+        ),
+        error = function(abort_err) {
+          logger::log_error(paste(
+            "[multipart_upload_to_s3] failed to abort upload:",
+            abort_err$message
+          ))
+        }
+      )
+      stop(e$message, call. = FALSE)
+    }
+  )
+}
+
 #' Upload files to public datalake S3 bucket
 #' @keywords internal
 upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, metadata) {
@@ -521,14 +610,31 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
         # Prepare metadata for S3
         s3_metadata <- prepare_s3_metadata(metadata)
 
-        # Upload file
-        s3_client$put_object(
-          Bucket = bucket,
-          Key = s3_key,
-          Body = file_path,
-          Metadata = s3_metadata,
-          ContentType = get_content_type(file_path)
-        )
+        # Use multipart upload for large files to avoid curl's 32-bit integer
+        # overflow when setting CURLOPT_POSTFIELDSIZE on files > ~2 GiB.
+        file_size <- file.info(file_path)$size
+        if (!is.na(file_size) && file_size > MULTIPART_THRESHOLD_BYTES) {
+          logger::log_debug(paste(
+            "[upload_files_to_public_datalake] large file, using multipart upload:",
+            file_path
+          ))
+          multipart_upload_to_s3(
+            s3_client = s3_client,
+            bucket = bucket,
+            key = s3_key,
+            file_path = file_path,
+            metadata = s3_metadata,
+            content_type = get_content_type(file_path)
+          )
+        } else {
+          s3_client$put_object(
+            Bucket = bucket,
+            Key = s3_key,
+            Body = file_path,
+            Metadata = s3_metadata,
+            ContentType = get_content_type(file_path)
+          )
+        }
 
         success_count <- success_count + 1
         logger::log_debug(paste("[upload_files_to_public_datalake] uploaded:", s3_key))
