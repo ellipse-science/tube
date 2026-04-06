@@ -498,14 +498,32 @@ MULTIPART_PART_SIZE_BYTES <- 50L * 1024L * 1024L
 #'
 #' Used internally for files larger than MULTIPART_THRESHOLD_BYTES to avoid
 #' curl integer-overflow issues on 32-bit POSTFIELDSIZE.
-#' @param s3_client A paws S3 client object.
+#' A dedicated S3 client is created without close_connection so that the
+#' TCP/TLS connection is reused across all upload_part calls, preventing
+#' per-part reconnect stalls.
+#' @param creds AWS credentials list compatible with paws.
 #' @param bucket Target bucket name.
 #' @param key Destination S3 key.
 #' @param file_path Local path of the file to upload.
 #' @param metadata Named list of S3 object metadata strings.
 #' @param content_type MIME type string for the object.
+#' @param s3_client Optional pre-built paws S3 client. When NULL (default) a
+#'   new client is created from \code{creds} without \code{close_connection}
+#'   so that the TCP/TLS connection is reused across all parts. Exposed
+#'   primarily for unit testing.
 #' @keywords internal
-multipart_upload_to_s3 <- function(s3_client, bucket, key, file_path, metadata, content_type) {
+multipart_upload_to_s3 <- function(
+  creds, bucket, key, file_path, metadata, content_type,
+  s3_client = NULL) {
+  # Create a persistent-connection client so curl reuses the TCP/TLS connection
+  # for every upload_part call instead of doing a full TLS handshake per part.
+  # close_connection = TRUE (used by the regular put_object path) forces a new
+  # TLS negotiation for each request, which can cause visible stalls on the 43+
+  # upload_part calls needed for a large file.
+  if (is.null(s3_client)) {
+    s3_client <- paws.storage::s3(config = creds)
+    logger::log_debug("[multipart_upload_to_s3] s3 client created (connection reuse enabled)")
+  }
   file_size <- file.info(file_path)$size
   file_size_mb <- round(file_size / 1024 / 1024, 1)
   total_parts_est <- ceiling(file_size / MULTIPART_PART_SIZE_BYTES)
@@ -660,7 +678,7 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
             "- using multipart upload:", file_path
           ))
           multipart_upload_to_s3(
-            s3_client = s3_client,
+            creds = creds,
             bucket = bucket,
             key = s3_key,
             file_path = file_path,

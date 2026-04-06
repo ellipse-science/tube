@@ -29,16 +29,14 @@ test_that("multipart_upload_to_s3 uploads all parts and completes successfully",
     }
   )
 
-  withr::with_environment(
-    new.env(parent = asNamespace("tube")),
-    tube:::multipart_upload_to_s3(
-      s3_client = mock_s3,
-      bucket = "test-bucket",
-      key = "test/key.rds",
-      file_path = tmp,
-      metadata = list(),
-      content_type = "application/octet-stream"
-    )
+  tube:::multipart_upload_to_s3(
+    creds = list(),
+    bucket = "test-bucket",
+    key = "test/key.rds",
+    file_path = tmp,
+    metadata = list(),
+    content_type = "application/octet-stream",
+    s3_client = mock_s3
   )
 
   expect_true(completed)
@@ -64,12 +62,13 @@ test_that("multipart_upload_to_s3 aborts and re-throws on upload_part error", {
 
   expect_error(
     tube:::multipart_upload_to_s3(
-      s3_client = mock_s3,
+      creds = list(),
       bucket = "test-bucket",
       key = "test/key.rds",
       file_path = tmp,
       metadata = list(),
-      content_type = "application/octet-stream"
+      content_type = "application/octet-stream",
+      s3_client = mock_s3
     ),
     "simulated upload failure"
   )
