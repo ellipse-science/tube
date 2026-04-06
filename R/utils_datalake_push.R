@@ -560,6 +560,9 @@ multipart_upload_to_s3 <- function(
     ),
     clear = FALSE
   )
+  # Force an immediate render before the first blocking HTTP call so the bar
+  # appears without waiting for cli's internal redraw timer.
+  cli::cli_progress_update(set = 0, force = TRUE)
 
   tryCatch(
     {
@@ -590,7 +593,7 @@ multipart_upload_to_s3 <- function(
           PartNumber = part_number
         )
 
-        cli::cli_progress_update(set = bytes_uploaded)
+        cli::cli_progress_update(set = bytes_uploaded, force = TRUE)
         logger::log_debug(paste(
           "[multipart_upload_to_s3] part", part_number, "done -",
           pct, "% complete - ETag:", part_response$ETag
