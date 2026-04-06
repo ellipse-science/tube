@@ -1,4 +1,16 @@
-# tube 0.9.1
+# tube 0.9.3
+
+## 🔧 Bug Fixes
+
+### Support de fichiers > 2 GB dans `ellipse_push()`
+* **FIXED**: Les fichiers de plus de ~2 GB causaient une erreur curl (`Invalid or unsupported value when setting curl option 'postfieldsize'`) due à un dépassement d'entier 32-bit
+* **NEW**: Utilisation automatique du multipart upload S3 pour les fichiers > 500 MB
+* **FIXED**: Dépassement d'entier 32-bit dans le compteur `bytes_uploaded` lors d'uploads > 2 GB
+* **IMPROVED**: Réutilisation de la connexion TCP/TLS entre les parts pour éviter les stalls
+* **IMPROVED**: Progress bar en temps réel pendant le multipart upload avec rendu forcé (`force = TRUE`)
+* **IMPROVED**: Logs de chunking réduits au niveau DEBUG pour ne pas masquer la progress bar
+
+# tube 0.9.2
 
 ## 🔧 Bug Fixes
 
