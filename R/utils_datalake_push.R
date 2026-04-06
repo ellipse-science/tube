@@ -568,7 +568,7 @@ multipart_upload_to_s3 <- function(
         if (length(chunk) == 0L) break
 
         chunk_mb <- round(length(chunk) / 1024 / 1024, 1)
-        logger::log_info(paste(
+        logger::log_debug(paste(
           "[multipart_upload_to_s3] uploading part", part_number,
           "of", total_parts_est,
           paste0("(", chunk_mb, " MB)")
@@ -591,7 +591,7 @@ multipart_upload_to_s3 <- function(
         )
 
         cli::cli_progress_update(set = bytes_uploaded)
-        logger::log_info(paste(
+        logger::log_debug(paste(
           "[multipart_upload_to_s3] part", part_number, "done -",
           pct, "% complete - ETag:", part_response$ETag
         ))
