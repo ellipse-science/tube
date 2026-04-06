@@ -550,6 +550,17 @@ multipart_upload_to_s3 <- function(
   part_number <- 1L
   bytes_uploaded <- 0L
 
+  cli::cli_progress_bar(
+    name = paste0("⬆️  ", basename(file_path)),
+    total = file_size,
+    format = paste0(
+      "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
+      " | {format_file_size(cli::pb_current)}/{format_file_size(cli::pb_total)}",
+      " | ETA: {cli::pb_eta}"
+    ),
+    clear = FALSE
+  )
+
   tryCatch(
     {
       repeat {
@@ -579,6 +590,7 @@ multipart_upload_to_s3 <- function(
           PartNumber = part_number
         )
 
+        cli::cli_progress_update(set = bytes_uploaded)
         logger::log_info(paste(
           "[multipart_upload_to_s3] part", part_number, "done -",
           pct, "% complete - ETag:", part_response$ETag
@@ -586,6 +598,7 @@ multipart_upload_to_s3 <- function(
         part_number <- part_number + 1L
       }
 
+      cli::cli_progress_done()
       logger::log_info(paste(
         "[multipart_upload_to_s3] completing multipart upload -",
         length(parts), "parts -", key
@@ -603,6 +616,7 @@ multipart_upload_to_s3 <- function(
       ))
     },
     error = function(e) {
+      cli::cli_progress_done()
       logger::log_error(paste(
         "[multipart_upload_to_s3] error on part", part_number, ":", e$message,
         "- aborting upload_id:", upload_id
