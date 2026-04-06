@@ -528,7 +528,7 @@ multipart_upload_to_s3 <- function(
   file_size_mb <- round(file_size / 1024 / 1024, 1)
   total_parts_est <- ceiling(file_size / MULTIPART_PART_SIZE_BYTES)
 
-  logger::log_info(paste(
+  logger::log_debug(paste(
     "[multipart_upload_to_s3] initiating multipart upload:",
     file_path,
     paste0("(", file_size_mb, " MB, ~", total_parts_est, " parts)")
@@ -541,7 +541,7 @@ multipart_upload_to_s3 <- function(
     ContentType = content_type
   )
   upload_id <- response$UploadId
-  logger::log_info(paste("[multipart_upload_to_s3] upload_id:", upload_id))
+  logger::log_debug(paste("[multipart_upload_to_s3] upload_id:", upload_id))
 
   con <- file(file_path, "rb")
   on.exit(close(con), add = TRUE)
@@ -599,7 +599,7 @@ multipart_upload_to_s3 <- function(
       }
 
       cli::cli_progress_done()
-      logger::log_info(paste(
+      logger::log_debug(paste(
         "[multipart_upload_to_s3] completing multipart upload -",
         length(parts), "parts -", key
       ))
@@ -610,7 +610,7 @@ multipart_upload_to_s3 <- function(
         MultipartUpload = list(Parts = parts)
       )
 
-      logger::log_info(paste(
+      logger::log_debug(paste(
         "[multipart_upload_to_s3] upload complete:", file_path,
         paste0("(", file_size_mb, " MB in ", length(parts), " parts)")
       ))
@@ -628,7 +628,7 @@ multipart_upload_to_s3 <- function(
             Key = key,
             UploadId = upload_id
           )
-          logger::log_info(paste("[multipart_upload_to_s3] upload aborted:", upload_id))
+          logger::log_debug(paste("[multipart_upload_to_s3] upload aborted:", upload_id))
         },
         error = function(abort_err) {
           logger::log_error(paste(
@@ -686,7 +686,7 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
         file_size <- file.info(file_path)$size
         if (!is.na(file_size) && file_size > MULTIPART_THRESHOLD_BYTES) {
           file_size_mb <- round(file_size / 1024 / 1024, 1)
-          logger::log_info(paste(
+          logger::log_debug(paste(
             "[upload_files_to_public_datalake] large file detected",
             paste0("(", file_size_mb, " MB)"),
             "- using multipart upload:", file_path
@@ -713,7 +713,7 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
         }
 
         success_count <- success_count + 1
-        logger::log_info(paste(
+        logger::log_debug(paste(
           "[upload_files_to_public_datalake] uploaded successfully:", s3_key
         ))
       },
