@@ -482,6 +482,169 @@ prepare_files_for_upload <- function(file_or_folder) {
   }
 }
 
+# Threshold above which multipart upload is used (500 MB).
+# Files larger than this exceed curl's 32-bit POSTFIELDSIZE limit on some
+# systems when approaching 2 GiB, causing "NAs introduced by coercion to
+# integer range" / "Invalid or unsupported value" errors.
+MULTIPART_THRESHOLD_BYTES <- 500L * 1024L * 1024L
+
+# Each part uploaded during a multipart upload is this large (50 MB).
+# AWS S3 requires parts >= 5 MB (except the last one).
+# Keeping parts small ensures progress logs appear frequently and avoids
+# long blocking HTTP calls that appear as stalls.
+MULTIPART_PART_SIZE_BYTES <- 50L * 1024L * 1024L
+
+#' Perform a multipart upload of a single file to S3
+#'
+#' Used internally for files larger than MULTIPART_THRESHOLD_BYTES to avoid
+#' curl integer-overflow issues on 32-bit POSTFIELDSIZE.
+#' A dedicated S3 client is created without close_connection so that the
+#' TCP/TLS connection is reused across all upload_part calls, preventing
+#' per-part reconnect stalls.
+#' @param creds AWS credentials list compatible with paws.
+#' @param bucket Target bucket name.
+#' @param key Destination S3 key.
+#' @param file_path Local path of the file to upload.
+#' @param metadata Named list of S3 object metadata strings.
+#' @param content_type MIME type string for the object.
+#' @param s3_client Optional pre-built paws S3 client. When NULL (default) a
+#'   new client is created from \code{creds} without \code{close_connection}
+#'   so that the TCP/TLS connection is reused across all parts. Exposed
+#'   primarily for unit testing.
+#' @keywords internal
+multipart_upload_to_s3 <- function(
+  creds, bucket, key, file_path, metadata, content_type,
+  s3_client = NULL) {
+  # Create a persistent-connection client so curl reuses the TCP/TLS connection
+  # for every upload_part call instead of doing a full TLS handshake per part.
+  # close_connection = TRUE (used by the regular put_object path) forces a new
+  # TLS negotiation for each request, which can cause visible stalls on the 43+
+  # upload_part calls needed for a large file.
+  if (is.null(s3_client)) {
+    s3_client <- paws.storage::s3(config = creds)
+    logger::log_debug("[multipart_upload_to_s3] s3 client created (connection reuse enabled)")
+  }
+  file_size <- file.info(file_path)$size
+  file_size_mb <- round(file_size / 1024 / 1024, 1)
+  total_parts_est <- ceiling(file_size / MULTIPART_PART_SIZE_BYTES)
+
+  logger::log_debug(paste(
+    "[multipart_upload_to_s3] initiating multipart upload:",
+    file_path,
+    paste0("(", file_size_mb, " MB, ~", total_parts_est, " parts)")
+  ))
+
+  response <- s3_client$create_multipart_upload(
+    Bucket = bucket,
+    Key = key,
+    Metadata = metadata,
+    ContentType = content_type
+  )
+  upload_id <- response$UploadId
+  logger::log_debug(paste("[multipart_upload_to_s3] upload_id:", upload_id))
+
+  con <- file(file_path, "rb")
+  on.exit(close(con), add = TRUE)
+
+  parts <- list()
+  part_number <- 1L
+  bytes_uploaded <- 0
+
+  cli::cli_progress_bar(
+    name = paste0("⬆️  ", basename(file_path)),
+    total = file_size,
+    format = paste0(
+      "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
+      " | {format_file_size(cli::pb_current)}/{format_file_size(cli::pb_total)}",
+      " | ETA: {cli::pb_eta}"
+    ),
+    clear = FALSE
+  )
+  # Force an immediate render before the first blocking HTTP call so the bar
+  # appears without waiting for cli's internal redraw timer.
+  cli::cli_progress_update(set = 0, force = TRUE)
+
+  tryCatch(
+    {
+      repeat {
+        chunk <- readBin(con, what = "raw", n = MULTIPART_PART_SIZE_BYTES)
+        if (length(chunk) == 0L) break
+
+        chunk_mb <- round(length(chunk) / 1024 / 1024, 1)
+        logger::log_debug(paste(
+          "[multipart_upload_to_s3] uploading part", part_number,
+          "of", total_parts_est,
+          paste0("(", chunk_mb, " MB)")
+        ))
+
+        part_response <- s3_client$upload_part(
+          Bucket = bucket,
+          Key = key,
+          PartNumber = part_number,
+          UploadId = upload_id,
+          Body = chunk
+        )
+
+        bytes_uploaded <- bytes_uploaded + length(chunk)
+        pct <- round(bytes_uploaded / file_size * 100, 1)
+
+        parts[[part_number]] <- list(
+          ETag = part_response$ETag,
+          PartNumber = part_number
+        )
+
+        cli::cli_progress_update(set = bytes_uploaded, force = TRUE)
+        logger::log_debug(paste(
+          "[multipart_upload_to_s3] part", part_number, "done -",
+          pct, "% complete - ETag:", part_response$ETag
+        ))
+        part_number <- part_number + 1L
+      }
+
+      cli::cli_progress_done()
+      logger::log_debug(paste(
+        "[multipart_upload_to_s3] completing multipart upload -",
+        length(parts), "parts -", key
+      ))
+      s3_client$complete_multipart_upload(
+        Bucket = bucket,
+        Key = key,
+        UploadId = upload_id,
+        MultipartUpload = list(Parts = parts)
+      )
+
+      logger::log_debug(paste(
+        "[multipart_upload_to_s3] upload complete:", file_path,
+        paste0("(", file_size_mb, " MB in ", length(parts), " parts)")
+      ))
+    },
+    error = function(e) {
+      cli::cli_progress_done()
+      logger::log_error(paste(
+        "[multipart_upload_to_s3] error on part", part_number, ":", e$message,
+        "- aborting upload_id:", upload_id
+      ))
+      tryCatch(
+        {
+          s3_client$abort_multipart_upload(
+            Bucket = bucket,
+            Key = key,
+            UploadId = upload_id
+          )
+          logger::log_debug(paste("[multipart_upload_to_s3] upload aborted:", upload_id))
+        },
+        error = function(abort_err) {
+          logger::log_error(paste(
+            "[multipart_upload_to_s3] failed to abort upload:",
+            abort_err$message
+          ))
+        }
+      )
+      stop(e$message, call. = FALSE)
+    }
+  )
+}
+
 #' Upload files to public datalake S3 bucket
 #' @keywords internal
 upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, metadata) {
@@ -521,17 +684,41 @@ upload_files_to_public_datalake <- function(creds, files, dataset_name, tag, met
         # Prepare metadata for S3
         s3_metadata <- prepare_s3_metadata(metadata)
 
-        # Upload file
-        s3_client$put_object(
-          Bucket = bucket,
-          Key = s3_key,
-          Body = file_path,
-          Metadata = s3_metadata,
-          ContentType = get_content_type(file_path)
-        )
+        # Use multipart upload for large files to avoid curl's 32-bit integer
+        # overflow when setting CURLOPT_POSTFIELDSIZE on files > ~2 GiB.
+        file_size <- file.info(file_path)$size
+        if (!is.na(file_size) && file_size > MULTIPART_THRESHOLD_BYTES) {
+          file_size_mb <- round(file_size / 1024 / 1024, 1)
+          logger::log_debug(paste(
+            "[upload_files_to_public_datalake] large file detected",
+            paste0("(", file_size_mb, " MB)"),
+            "- using multipart upload:", file_path
+          ))
+          multipart_upload_to_s3(
+            creds = creds,
+            bucket = bucket,
+            key = s3_key,
+            file_path = file_path,
+            metadata = s3_metadata,
+            content_type = get_content_type(file_path)
+          )
+        } else {
+          logger::log_debug(paste(
+            "[upload_files_to_public_datalake] uploading via put_object:", file_path
+          ))
+          s3_client$put_object(
+            Bucket = bucket,
+            Key = s3_key,
+            Body = file_path,
+            Metadata = s3_metadata,
+            ContentType = get_content_type(file_path)
+          )
+        }
 
         success_count <- success_count + 1
-        logger::log_debug(paste("[upload_files_to_public_datalake] uploaded:", s3_key))
+        logger::log_debug(paste(
+          "[upload_files_to_public_datalake] uploaded successfully:", s3_key
+        ))
       },
       error = function(e) {
         logger::log_error(paste("[upload_files_to_public_datalake] failed to upload:", file_path, "-", e$message))
