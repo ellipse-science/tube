@@ -20,6 +20,13 @@
 #' @param env The environnement ("DEV" or "PROD")
 #' @returns a list structure compliant with the paws functions calls containing the AWS credentials
 #' for the specified environment
+is_missing_aws_credential <- function(value) {
+  !is.character(value) ||
+    length(value) != 1 ||
+    is.na(value) ||
+    !nzchar(value)
+}
+
 get_aws_credentials <- function(env) {
   logger::log_debug("[get_aws_credentials] entering function")
 
@@ -33,7 +40,11 @@ get_aws_credentials <- function(env) {
   aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
   aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
 
-  if (aws_access_key_id == "" || aws_secret_access_key == "") {
+  # Defensively ensure both credentials are scalar, non-missing, non-empty strings.
+  missing_access_key <- is_missing_aws_credential(aws_access_key_id)
+  missing_secret_key <- is_missing_aws_credential(aws_secret_access_key)
+
+  if (missing_access_key || missing_secret_key) {
     usage <-
       paste(
         "Nous n'avons pas trouvé vos clés d'accès AWS\n\n",

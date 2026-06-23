@@ -52,7 +52,11 @@ ellipse_connect <- function(
     ) |>
     Sys.getenv()
 
-  if (aws_access_key_id == "" || aws_secret_access_key == "") {
+  # Defensively ensure both credentials are scalar, non-missing, non-empty strings.
+  missing_access_key <- is_missing_aws_credential(aws_access_key_id)
+  missing_secret_key <- is_missing_aws_credential(aws_secret_access_key)
+
+  if (missing_access_key || missing_secret_key) {
     usage <-
       paste(
         "On a besoin de vos clés d'accès sur AWS pour se connecter!\n\n",
