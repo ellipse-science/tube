@@ -27,6 +27,28 @@ is_missing_aws_credential <- function(value) {
     !nzchar(value)
 }
 
+mask_secret_for_log <- function(value) {
+  if (!is.character(value) || length(value) == 0) {
+    return("<non-character-or-empty>")
+  }
+
+  vapply(value, function(item) {
+    if (is.na(item)) {
+      return("<NA>")
+    }
+    if (!nzchar(item)) {
+      return("<empty>")
+    }
+
+    item_nchar <- nchar(item)
+    if (item_nchar <= 8) {
+      return("********")
+    }
+
+    paste0(substr(item, 1, 4), "...", substr(item, item_nchar - 3, item_nchar))
+  }, character(1))
+}
+
 get_aws_credentials <- function(env) {
   logger::log_debug("[get_aws_credentials] entering function")
 
@@ -39,6 +61,17 @@ get_aws_credentials <- function(env) {
 
   aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
   aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
+
+  logger::log_debug(paste0(
+    "[get_aws_credentials] AWS_ACCESS_KEY_ID_", env,
+    " length=", length(aws_access_key_id),
+    " value=", paste(mask_secret_for_log(aws_access_key_id), collapse = " | ")
+  ))
+  logger::log_debug(paste0(
+    "[get_aws_credentials] AWS_SECRET_ACCESS_KEY_", env,
+    " length=", length(aws_secret_access_key),
+    " value=", paste(mask_secret_for_log(aws_secret_access_key), collapse = " | ")
+  ))
 
   # Defensively ensure both credentials are scalar, non-missing, non-empty strings.
   missing_access_key <- is_missing_aws_credential(aws_access_key_id)
