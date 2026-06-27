@@ -244,6 +244,17 @@ ellipse_query_table_mode <- function(con, table) {
   logger::log_debug(paste("[ellipse_query_table_mode] entering function with table = ", table))
   schema_name <- DBI::dbGetInfo(con)$dbms.name
 
+  if (!requireNamespace("dbplyr", quietly = TRUE)) {
+    stop("Le package 'dbplyr' est requis pour interroger les tables Athena. Installez dbplyr et redéployez.", call. = FALSE)
+  }
+
+  logger::log_info(paste0(
+    "[ellipse_query_table_mode] package versions dplyr=",
+    as.character(utils::packageVersion("dplyr")),
+    " dbplyr=",
+    as.character(utils::packageVersion("dbplyr"))
+  ))
+
   logger::log_debug(paste("[ellipse_query_table_mode] about to dbGetQuery on schema_name = ", schema_name))
   tables <- DBI::dbGetQuery(
     con, paste0("SHOW TABLES IN ", schema_name)
@@ -260,12 +271,16 @@ ellipse_query_table_mode <- function(con, table) {
 
   r <- tryCatch(
     {
-      dplyr::tbl(con, table)
+      dbplyr::tbl(con, table)
     },
     error = function(e) {
+      err_msg <- paste0(
+        "Lecture de la table impossible via dbplyr::tbl: ", e$message,
+        ". Vérifiez la compatibilité des versions dplyr/dbplyr/noctua."
+      )
       cli::cli_alert_danger("Oups, il semble que la table n'a pas pu être lue! 😅")
-      logger::log_error(paste("[ellipse_query_table_mode] error in dplyr::tbl", e$message))
-      NULL
+      logger::log_error(paste("[ellipse_query_table_mode]", err_msg))
+      stop(err_msg, call. = FALSE)
     }
   )
 
