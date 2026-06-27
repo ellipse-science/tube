@@ -271,11 +271,11 @@ ellipse_query_table_mode <- function(con, table) {
 
   r <- tryCatch(
     {
-      dbplyr::tbl(con, table)
+      dplyr::tbl(con, table)
     },
     error = function(e) {
       err_msg <- paste0(
-        "Lecture de la table impossible via dbplyr::tbl: ", e$message,
+        "Lecture de la table impossible via dplyr::tbl: ", e$message,
         ". Vérifiez la compatibilité des versions dplyr/dbplyr/noctua."
       )
       cli::cli_alert_danger("Oups, il semble que la table n'a pas pu être lue! 😅")
