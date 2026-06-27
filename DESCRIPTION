@@ -27,7 +27,7 @@ RoxygenNote: 7.3.3
 Imports:
     cli,
     DBI,
-  dbplyr (== 2.5.0),
+    dbplyr (== 2.5.0),
     dplyr,
     glue,
     haven,
