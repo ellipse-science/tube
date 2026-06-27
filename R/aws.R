@@ -62,12 +62,12 @@ get_aws_credentials <- function(env) {
   aws_access_key_id <- Sys.getenv(paste0("AWS_ACCESS_KEY_ID_", env))
   aws_secret_access_key <- Sys.getenv(paste0("AWS_SECRET_ACCESS_KEY_", env))
 
-  logger::log_debug(paste0(
+  logger::log_info(paste0(
     "[get_aws_credentials] AWS_ACCESS_KEY_ID_", env,
     " length=", length(aws_access_key_id),
     " value=", paste(mask_secret_for_log(aws_access_key_id), collapse = " | ")
   ))
-  logger::log_debug(paste0(
+  logger::log_info(paste0(
     "[get_aws_credentials] AWS_SECRET_ACCESS_KEY_", env,
     " length=", length(aws_secret_access_key),
     " value=", paste(mask_secret_for_log(aws_secret_access_key), collapse = " | ")
