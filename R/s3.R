@@ -32,29 +32,29 @@ list_s3_buckets <- function(credentials, type) {
   }
 
   logger::log_debug("[tube::list_s3_buckets] wrangling result")
-  list <- unlist(r$Buckets)
-  logger::log_debug(paste("[tube::list_s3_buckets] found", length(list), "total buckets"))
+  bucket_names <- vapply(r$Buckets, function(bucket) {
+    if (is.null(bucket$Name) || length(bucket$Name) == 0 || is.na(bucket$Name[[1]])) {
+      return("")
+    }
+    as.character(bucket$Name[[1]])
+  }, character(1))
+  bucket_names <- bucket_names[nzchar(bucket_names)]
+
+  logger::log_debug(paste("[tube::list_s3_buckets] found", length(bucket_names), "total buckets"))
   logger::log_debug(paste("[tube::list_s3_buckets] searching for pattern:", type))
-  
-  bucket_list <- list[grep(type, list)]
+
+  bucket_list <- grep(type, bucket_names, value = TRUE)
+  bucket_list <- unique(bucket_list)
   logger::log_debug(paste("[tube::list_s3_buckets] found", length(bucket_list), "buckets matching pattern"))
-  
+
   if (length(bucket_list) == 0) {
     logger::log_warn(paste0(
       "[tube::list_s3_buckets] no bucket found with pattern '", type, "'. ",
-      "Available buckets: ", paste(list, collapse = ", ")
+      "Available buckets: ", paste(bucket_names, collapse = ", ")
     ))
     return(NULL)
   }
-  
-  bucket_list <- as.list(bucket_list)
 
-  # Only assign names if bucket_list is not empty
-  if (length(bucket_list) > 0) {
-    names(bucket_list) <- ""
-  }
-
-  bucket_list <- unlist(bucket_list)
   logger::log_debug(paste("[tube::list_s3_buckets] returning bucket:", bucket_list))
 
   logger::log_debug("[tube::list_s3_buckets] returning results")

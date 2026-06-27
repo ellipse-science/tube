@@ -59,3 +59,4 @@ docs
 test/*
 sample_data/*
 *.csv
+debug.log

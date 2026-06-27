@@ -94,6 +94,32 @@ ellipse_connect <- function(
   logger::log_debug(paste("[ellipse_connect] athena_staging_bucket = ", athena_staging_bucket))
   logger::log_debug(paste("[ellipse_connect] schema_name = ", schema_name))
 
+  if (!is.null(schema_name) && length(schema_name) > 1) {
+    logger::log_warn(paste0(
+      "[ellipse_connect] multiple schema_name values detected, using first value: ",
+      paste(schema_name, collapse = " | ")
+    ))
+    schema_name <- schema_name[1]
+  }
+
+  if (!is.null(athena_staging_bucket) && length(athena_staging_bucket) > 1) {
+    logger::log_warn(paste0(
+      "[ellipse_connect] multiple athena_staging_bucket values detected, using first value: ",
+      paste(athena_staging_bucket, collapse = " | ")
+    ))
+    athena_staging_bucket <- athena_staging_bucket[1]
+  }
+
+  if (is.null(schema_name) || length(schema_name) == 0 || is.na(schema_name) || !nzchar(schema_name)) {
+    cli::cli_alert_danger("Oups, impossible de déterminer le schema Athena! 😅")
+    return(invisible(NULL))
+  }
+
+  if (is.null(athena_staging_bucket) || length(athena_staging_bucket) == 0 || is.na(athena_staging_bucket) || !nzchar(athena_staging_bucket)) {
+    cli::cli_alert_danger("Oups, impossible de déterminer le compartiment Athena! 😅")
+    return(invisible(NULL))
+  }
+
   cli::cli_alert_info("Connexion en cours...")
 
   con <- DBI::dbConnect(noctua::athena(),

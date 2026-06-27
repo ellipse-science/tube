@@ -31,14 +31,20 @@ list_glue_databases <- function(credentials, type) {
   r <- glue_client$get_databases()
 
   logger::log_debug("[tube::list_glue_databases] wrangling result")
-  list <- unlist(r$DatabaseList)
-  database_list <- list[grep(type, list)]
-  database_list <- as.list(database_list)
+  database_names <- vapply(r$DatabaseList, function(db) {
+    if (is.null(db$Name) || length(db$Name) == 0 || is.na(db$Name[[1]])) {
+      return("")
+    }
+    as.character(db$Name[[1]])
+  }, character(1))
+  database_names <- database_names[nzchar(database_names)]
+
+  database_list <- grep(type, database_names, value = TRUE)
+  database_list <- unique(database_list)
+
   if (length(database_list) == 0) {
     return(NULL)
   }
-  names(database_list) <- ""
-  database_list <- unlist(database_list)
 
   logger::log_debug("[tube::list_glue_databases] wrangling result")
   database_list
