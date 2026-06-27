@@ -37,6 +37,7 @@ Imports:
     noctua,
     paws.analytics,
     paws.compute,
+    paws.security.identity,
     paws.storage,
     purrr,
     readr,
@@ -45,10 +46,24 @@ Imports:
     tools,
     xml2
 Suggests:
-    rmarkdown,
+    covr,
+    data.table,
+    devtools,
+    goodpractice,
+    httpuv,
+    lintr,
+    lubridate,
     magick,
+    optparse,
+    paws,
     png,
-    jpeg
+    jpeg,
+    pkgdown,
+    rmarkdown,
+    rstudioapi,
+    spelling,
+    testthat,
+    usethis
 URL: https://github.com/ellipse-science/tube/
 BugReports: https://github.com/ellipse-science/tube/issues
 Roxygen: list(markdown = TRUE)
