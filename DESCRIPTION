@@ -22,6 +22,8 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Language: fr
 Depends: R (>= 4.1.0)
+Remotes:
+  tidyverse/dbplyr@v2.5.0
 RoxygenNote: 7.3.3
 Imports:
   cli,
