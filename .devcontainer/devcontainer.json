@@ -36,9 +36,9 @@
         "r.bracketedPaste": true,
         "r.sessionWatcher": true,
         "r.libPaths": [
-          "/home/${localEnv:USER}/.venv/R/library"
+          "/home/${localEnv:USER}/.local/lib/R/site-library"
         ],
-        "r.lsp.path": "/home/${localEnv:USER}/.local/R/library/languageserver/R/languageserver",
+        "r.lsp.path": "/home/${localEnv:USER}/.local/lib/R/site-library/languageserver",
         "editor.formatOnSave": false,
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
@@ -49,5 +49,5 @@
   "overrideCommand": false,
   "remoteUser": "${localEnv:USER}",
   "initializeCommand": ".devcontainer/initialize.sh",
-  "postCreateCommand": "sudo chown root:$(stat -c '%g' /var/run/docker.sock) /var/run/docker.sock && sudo chmod 664 /var/run/docker.sock"
+  "postCreateCommand": "sudo chown root:$(stat -c '%g' /var/run/docker.sock) /var/run/docker.sock && sudo chmod 664 /var/run/docker.sock && Rscript -e \"if (!requireNamespace('languageserver', quietly = TRUE)) install.packages('languageserver', repos='https://cloud.r-project.org')\""
 }

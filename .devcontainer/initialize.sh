@@ -5,6 +5,9 @@ HOST_GID=$(id -g)
 HOST_USER=$USER
 HOST_GROUP=$USER
 DOCKER_GID=$(getent group docker | cut -d: -f3)
+R_LIBS_HOST_DIR=${HOME}/.devcontainer-r/site-library
+
+mkdir -p "${R_LIBS_HOST_DIR}"
 
 ENV_FILE="$(dirname "$0")/.env"
 NEW_ENV_CONTENT="HOST_UID=${HOST_UID}
@@ -12,7 +15,8 @@ HOST_GID=${HOST_GID}
 HOST_USER=${HOST_USER}
 HOST_GROUP=${HOST_GROUP}
 HOME=${HOME}
-DOCKER_GID=${DOCKER_GID}"
+DOCKER_GID=${DOCKER_GID}
+R_LIBS_HOST_DIR=${R_LIBS_HOST_DIR}"
 
 # Only update .env file if content has changed
 if [ ! -f "$ENV_FILE" ] || [ "$(cat "$ENV_FILE")" != "$NEW_ENV_CONTENT" ]; then

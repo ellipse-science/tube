@@ -20,7 +20,7 @@ services:
       - ${HOME}/.Renviron:/home/${HOST_USER}/.Renviron:cached
       - ${HOME}/.bash_history:/home/${HOST_USER}/.bash_history:cached
       - ${HOME}/.radian_history:/home/${HOST_USER}/.radian_history:cached
-      - ${HOME}/.local/lib/R/site-library:/home/${HOST_USER}/.local/lib/R/site-library:cached
+      - ${R_LIBS_HOST_DIR}:/home/${HOST_USER}/.local/lib/R/site-library:cached
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - RUN_MODE=devcontainer
