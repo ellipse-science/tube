@@ -38,7 +38,6 @@
         "r.libPaths": [
           "/home/${localEnv:USER}/.local/lib/R/site-library"
         ],
-        "r.lsp.path": "/home/${localEnv:USER}/.local/lib/R/site-library/languageserver",
         "editor.formatOnSave": false,
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"

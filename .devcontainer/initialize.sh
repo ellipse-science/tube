@@ -5,7 +5,7 @@ HOST_GID=$(id -g)
 HOST_USER=$USER
 HOST_GROUP=$USER
 DOCKER_GID=$(getent group docker | cut -d: -f3)
-R_LIBS_HOST_DIR=${HOME}/.devcontainer-r/site-library
+R_LIBS_HOST_DIR=${HOME}/.local/share/devcontainer-r/site-library
 
 mkdir -p "${R_LIBS_HOST_DIR}"
 

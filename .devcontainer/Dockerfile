@@ -18,6 +18,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
         libssl-dev \
         libcurl4-openssl-dev \
         libxml2-dev \
+        libuv1-dev \
         locales \
         software-properties-common \
         wget \
