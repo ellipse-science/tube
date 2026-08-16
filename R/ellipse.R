@@ -1107,7 +1107,9 @@ ellipse_process <- function(con, table) {
     database, " schema = ", schema, " table = ", table
   ))
 
-  r <- run_glue_job(creds, glue_job, database, table, NULL, NULL)
+  # run_glue_job expects prefix as "datamart/table"; table name uses "-" as separator
+  prefix <- sub("-", "/", table)
+  r <- run_glue_job(creds, glue_job, database, prefix, NULL, NULL)
 
   if (r) {
     if (r == -1) {

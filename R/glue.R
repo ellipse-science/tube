@@ -341,6 +341,11 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       )
     })
 
+    if (length(r) == 0) {
+      logger::log_debug("[tube::run_glue_job] no subfolders found under prefix")
+      return(-1)
+    }
+
     r <- r[[1]]
   }
 
