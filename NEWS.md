@@ -1,3 +1,12 @@
+# tube 0.9.4
+
+## 🔧 Bug Fixes
+
+### Correction de `ellipse_process()` pour les tables inexistantes dans Glue
+* **FIXED**: `ellipse_process()` plantait avec `Error in r[[1]] : subscript out of bounds` quand la table Glue n'existait pas encore mais que des fichiers CSV étaient présents dans le dossier `unprocessed` du bucket
+* **FIXED**: Le préfixe S3 était mal construit (`vitrine_datamart-radar_annotated` au lieu de `vitrine_datamart/radar_annotated`), empêchant la détection des dossiers dans le bucket
+* **FIXED**: `run_glue_job()` retourne maintenant `-1` proprement quand aucun sous-dossier n'est trouvé sous le préfixe, au lieu de planter
+
 # tube 0.9.3
 
 ## 🔧 Bug Fixes
