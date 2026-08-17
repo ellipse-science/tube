@@ -1,3 +1,10 @@
+# tube 0.9.6
+
+## 🔧 Bug Fixes
+
+### Correction de `ask_yes_no()` en mode non-interactif (Rscript)
+* **FIXED**: `ask_yes_no()` retournait toujours `FALSE` en mode non-interactif (ex. via `Rscript`) car `readline()` retourne `""` immédiatement quand `!interactive()` — remplacé par `readLines(stdin())` qui bloque correctement en attendant la saisie
+
 # tube 0.9.5
 
 ## 🔧 Bug Fixes
