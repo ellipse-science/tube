@@ -891,7 +891,7 @@ ellipse_unpublish <- function(con, datamart, table) {
   # confirm by the user
   if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?")) {
     cli::cli_alert_info("Retrait de la table abandonné.")
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   cli::cli_alert_info("Retrait de la table en cours...")
