@@ -1,3 +1,10 @@
+# tube 0.9.5
+
+## 🔧 Bug Fixes
+
+### Correction du retour de `ellipse_unpublish()`
+* **FIXED**: `ellipse_unpublish()` ne retournait pas correctement `invisible(FALSE)` quand l'utilisateur annulait l'opération — l'exécution se poursuivait au lieu de s'arrêter
+
 # tube 0.9.4
 
 ## 🔧 Bug Fixes
