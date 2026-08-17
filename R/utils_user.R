@@ -8,7 +8,14 @@ ask_yes_no <- function(question, unattended_option = NULL) {
   if (!is.null(unattended_option)) {
     return(tolower(unattended_option) %in% c("oui", "o"))
   }
-  answer <- readline(prompt = paste0(cli::symbol$fancy_question_mark, question, " (oui/non) "))
+  prompt <- paste0(cli::symbol$fancy_question_mark, question, " (oui/non) ")
+  # readline() retourne "" immédiatement en Rscript (R non-interactif)
+  if (interactive()) {
+    answer <- readline(prompt = prompt)
+  } else {
+    cat(prompt)
+    answer <- readLines(con = "stdin", n = 1)
+  }
   return(invisible(tolower(answer) %in% c("oui", "o")))
 }
 
