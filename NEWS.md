@@ -1,3 +1,10 @@
+# tube 0.9.7
+
+## ✨ New Features
+
+### Mode non-interactif pour `ellipse_unpublish()`
+* **NEW**: `ellipse_unpublish()` accepte maintenant `unattended_options = list(are_you_sure = "oui")` pour bypasser l'invite de confirmation — cohérent avec le pattern de `ellipse_publish()`
+
 # tube 0.9.6
 
 ## 🔧 Bug Fixes

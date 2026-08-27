@@ -848,10 +848,12 @@ ellipse_publish <- function(
 #' @param datamart Le nom du datamart contenant la table à retirer.
 #' @param table Le nom de la table à retirer.  Lorsque toutes les tables sont retirées,
 #' le datamart est détruit et supprimé de la plateforme
+#' @param unattended_options Liste nommée pour le mode non-interactif.
+#'   `are_you_sure` : "oui" pour confirmer le retrait sans invite.
 #'
 #' @returns TRUE si la table a été retirée avec succès, FALSE sinon.
 #' @export
-ellipse_unpublish <- function(con, datamart, table) {
+ellipse_unpublish <- function(con, datamart, table, unattended_options = NULL) {
   env <- DBI::dbGetInfo(con)$profile_name
   schema <- DBI::dbGetInfo(con)$dbms.name
 
@@ -889,7 +891,9 @@ ellipse_unpublish <- function(con, datamart, table) {
   }
 
   # confirm by the user
-  if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?")) {
+  if (!ask_yes_no("Êtes-vous certain.e de vouloir retirer la table?",
+      unattended_option = unattended_options$are_you_sure
+    )) {
     cli::cli_alert_info("Retrait de la table abandonné.")
     return(invisible(FALSE))
   }
