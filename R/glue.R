@@ -162,7 +162,7 @@ delete_glue_table <- function(credentials, database_name, table_name) {
   # ensure the database name is the datamart
   if (!grepl("datamart", database_name)) {
     logger::log_error("[tube::delete_glue_table] only datamarts tables can be deleted")
-    return(FALSE)
+    FALSE
   }
 
   logger::log_debug("[tube::delete_glue_table] instanciating glue client")
