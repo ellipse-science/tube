@@ -907,7 +907,25 @@ ellipse_unpublish <- function(con, datamart, table, unattended_options = NULL) {
   r2 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table))
   r3 <- delete_s3_folder(creds, dm_bucket, paste0(datamart, "/", table, "-output"))
 
-  if (r1 && r2 && r3) {
+  # Normalize to strict booleans to avoid `if` crashes when a helper returns
+  # NA/NULL/length-0 in transient AWS failure paths.
+  as_bool <- function(x) {
+    is.logical(x) && length(x) == 1L && !is.na(x) && isTRUE(x)
+  }
+  ok1 <- as_bool(r1)
+  ok2 <- as_bool(r2)
+  ok3 <- as_bool(r3)
+
+  logger::log_debug(
+    paste0(
+      "[tube::ellipse_unpublish] delete results ",
+      "glue=", paste(capture.output(str(r1)), collapse = " "),
+      "; table_prefix=", paste(capture.output(str(r2)), collapse = " "),
+      "; output_prefix=", paste(capture.output(str(r3)), collapse = " ")
+    )
+  )
+
+  if (ok1 && ok2 && ok3) {
     cli::cli_alert_success("La table a été retirée avec succès.")
     invisible(TRUE)
   } else {
