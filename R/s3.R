@@ -256,51 +256,71 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
   )
 
   logger::log_debug(paste("[tube::delete_s3_folder] listing objects in bucket", bucket, "prefix", prefix))
-  pass <- 1
-  r <- s3_client$list_objects_v2(
-    Bucket = bucket,
-    Prefix = prefix,
-    MaxKeys = 1000
-  )
+  continuation_token <- NULL
+  page <- 0L
+  total_deleted <- 0L
+  has_objects <- FALSE
 
-  object_list <- r$Contents
+  repeat {
+    page <- page + 1L
 
-  while (!is.null(r$NextContinuationToken) && length(r$NextContinuationToken) > 0) {
-    pass <- pass + 1
-    logger::log_debug(paste("[tube::delete_s3_folder] more objects to list in pass", pass))
-    r <- s3_client$list_objects_v2(
+    list_args <- list(
       Bucket = bucket,
       Prefix = prefix,
-      MaxKeys = 1000,
-      ContinuationToken = r$NextContinuationToken
+      MaxKeys = 1000
     )
-    object_list <- c(object_list, r$Contents)
-  }
 
-  # Check if the folder is empty
-  if (length(object_list) > 0) {
-    logger::log_debug(paste("[tube::delete_s3_folder] folder contains", length(object_list), "objects"))
+    if (!is.null(continuation_token) && nzchar(continuation_token)) {
+      list_args$ContinuationToken <- continuation_token
+    }
 
-    # Loop through each object and delete it
-    for (object in object_list) {
-      if (startsWith(object$Key, prefix)) {
+    r <- do.call(s3_client$list_objects_v2, list_args)
+    object_list <- r$Contents
+
+    if (!is.null(object_list) && length(object_list) > 0) {
+      has_objects <- TRUE
+      keys <- vapply(object_list, function(object) object$Key, character(1))
+      keys <- keys[startsWith(keys, prefix)]
+
+      if (length(keys) > 0) {
+        logger::log_debug(
+          paste(
+            "[tube::delete_s3_folder] deleting",
+            length(keys),
+            "objects from listing page",
+            page
+          )
+        )
+
+        delete_payload <- lapply(keys, function(key) list(Key = key))
+
         tryCatch(
           {
-            logger::log_debug("[tube::delete_s3_folder] deleting object")
-            s3_client$delete_object(
+            s3_client$delete_objects(
               Bucket = bucket,
-              Key = object$Key
+              Delete = list(
+                Objects = delete_payload,
+                Quiet = TRUE
+              )
             )
+            total_deleted <- total_deleted + length(keys)
           },
           error = function(e) {
-            logger::log_error("[tube::delete_s3_folder] error deleting object")
+            logger::log_error("[tube::delete_s3_folder] error deleting object batch")
             logger::log_error(e$message)
-            FALSE
+            stop(e)
           }
         )
       }
     }
-  } else {
+
+    continuation_token <- r$NextContinuationToken
+    if (is.null(continuation_token) || !nzchar(continuation_token)) {
+      break
+    }
+  }
+
+  if (!has_objects) {
     logger::log_debug("[tube::delete_s3_folder] folder is empty : deleting folder only")
     # Delete the folder
     tryCatch(
@@ -317,6 +337,8 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
         FALSE
       }
     )
+  } else {
+    logger::log_debug(paste("[tube::delete_s3_folder] deleted", total_deleted, "objects"))
   }
 
   logger::log_debug("[tube::delete_s3_folder] returning results")
