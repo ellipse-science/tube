@@ -237,9 +237,17 @@ upload_file_to_s3 <- function(credentials, file, bucket, key) {
 delete_s3_folder <- function(credentials, bucket, prefix) {
   logger::log_debug("[tube::delete_s3_folder] entering function")
 
+  is_non_empty_scalar_string <- function(x) {
+    is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
+  }
+
   # Input validation
-  if (is.null(bucket) || nchar(bucket) == 0) {
+  if (!is_non_empty_scalar_string(bucket)) {
     stop("bucket parameter cannot be NULL or empty", call. = FALSE)
+  }
+
+  if (!is_non_empty_scalar_string(prefix)) {
+    stop("prefix parameter cannot be NULL or empty", call. = FALSE)
   }
 
   # if prefix does not end with / add it
@@ -270,7 +278,7 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
       MaxKeys = 1000
     )
 
-    if (!is.null(continuation_token) && nzchar(continuation_token)) {
+    if (is_non_empty_scalar_string(continuation_token)) {
       list_args$ContinuationToken <- continuation_token
     }
 
@@ -314,8 +322,9 @@ delete_s3_folder <- function(credentials, bucket, prefix) {
       }
     }
 
-    continuation_token <- r$NextContinuationToken
-    if (is.null(continuation_token) || !nzchar(continuation_token)) {
+    next_token <- r$NextContinuationToken
+    continuation_token <- if (is_non_empty_scalar_string(next_token)) next_token else NULL
+    if (is.null(continuation_token)) {
       break
     }
   }
