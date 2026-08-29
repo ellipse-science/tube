@@ -862,11 +862,11 @@ ellipse_unpublish <- function(con, datamart, table, unattended_options = NULL) {
     cli::cli_alert_danger(
       "L'opération ellipse_unpublish n'est pas permis dans l'entrepôt de données (datawarehouse)! 😅"
     )
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   if (!check_params_before_unpublish(env, datamart, table)) {
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   creds <- get_aws_credentials(env)
@@ -876,10 +876,10 @@ ellipse_unpublish <- function(con, datamart, table, unattended_options = NULL) {
 
   # check that the datamart exists by checking that the 1st level partition exists in the datamart bucket
   dm_partitions <- list_s3_partitions(creds, dm_bucket)
-  dm_list <- lapply(dm_partitions, function(x) gsub("/$", "", x))
+  dm_list <- vapply(dm_partitions, function(x) gsub("/$", "", x), character(1))
   if (!datamart %in% dm_list) {
     cli::cli_alert_danger("Le datamart fourni n'existe pas! 😅")
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   # check that the table exists in the datamart in the form of s3://datamarts-bucket/datamart/table
@@ -887,7 +887,7 @@ ellipse_unpublish <- function(con, datamart, table, unattended_options = NULL) {
 
   if (!table %in% dm_folders) {
     cli::cli_alert_danger("La table demandée n'existe pas! 😅")
-    invisible(FALSE)
+    return(invisible(FALSE))
   }
 
   # confirm by the user

@@ -159,10 +159,19 @@ delete_glue_table <- function(credentials, database_name, table_name) {
     )
   )
 
-  # ensure the database name is the datamart
-  if (!grepl("datamart", database_name)) {
+  is_non_empty_scalar_string <- function(x) {
+    is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
+  }
+
+  # ensure the database and table names are valid datamart identifiers
+  if (!is_non_empty_scalar_string(database_name) || !grepl("datamart", database_name)) {
     logger::log_error("[tube::delete_glue_table] only datamarts tables can be deleted")
-    FALSE
+    return(FALSE)
+  }
+
+  if (!is_non_empty_scalar_string(table_name)) {
+    logger::log_error("[tube::delete_glue_table] table_name must be a non-empty string")
+    return(FALSE)
   }
 
   logger::log_debug("[tube::delete_glue_table] instanciating glue client")
