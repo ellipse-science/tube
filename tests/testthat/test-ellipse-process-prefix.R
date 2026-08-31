@@ -66,3 +66,32 @@ test_that("normalize_glue_partitions keeps full values for datamarts", {
     c("DEFAULT", "2026-01-01")
   )
 })
+
+test_that("resolve_unprocessed_prefixes handles datamarts direct unprocessed partition", {
+  expect_equal(
+    tube:::resolve_unprocessed_prefixes(
+      database = "datamarts",
+      prefix = "vitrine_datamart/radar_annotated",
+      partition = "unprocessed",
+      common_prefixes = NULL
+    ),
+    "vitrine_datamart/radar_annotated/unprocessed/"
+  )
+})
+
+test_that("resolve_unprocessed_prefixes extracts unprocessed from common prefixes", {
+  common_prefixes <- list(
+    list(Prefix = "a-qc-press-releases/PLQ/processed/"),
+    list(Prefix = "a-qc-press-releases/PLQ/unprocessed/")
+  )
+
+  expect_equal(
+    tube:::resolve_unprocessed_prefixes(
+      database = "datawarehouse",
+      prefix = "a-qc-press-releases",
+      partition = "PLQ",
+      common_prefixes = common_prefixes
+    ),
+    "a-qc-press-releases/PLQ/unprocessed/"
+  )
+})

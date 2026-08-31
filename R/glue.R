@@ -279,6 +279,30 @@ normalize_glue_partitions <- function(partitions, database) {
   unique(partitions[nzchar(partitions)])
 }
 
+resolve_unprocessed_prefixes <- function(database, prefix, partition, common_prefixes) {
+  normalized_prefix <- ifelse(
+    substr(prefix, nchar(prefix), nchar(prefix)) != "/",
+    paste0(prefix, "/"),
+    prefix
+  )
+
+  # Datamarts can have direct table-level folders:
+  # datamart/table/unprocessed and datamart/table/processed.
+  if (identical(database, "datamarts") && identical(partition, "unprocessed")) {
+    return(paste0(normalized_prefix, "unprocessed/"))
+  }
+
+  if (is.null(common_prefixes) || length(common_prefixes) == 0) {
+    return(character(0))
+  }
+
+  has_unprocessed <- function(prefix_list) {
+    grepl("unprocessed", prefix_list$Prefix)
+  }
+
+  vapply(Filter(has_unprocessed, common_prefixes), function(x) x$Prefix, character(1))
+}
+
 run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
     paste(
@@ -401,10 +425,6 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
     return(-1)
   }
 
-  has_unprocessed <- function(prefix_list) {
-    grepl("unprocessed", prefix_list$Prefix)
-  }
-
   # for each partition, list the ones containing an "unprocessed" folder
   logger::log_debug("[tube::run_glue_job] looping through partitions")
 
@@ -418,14 +438,18 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       prefix
     ))
 
-    r <- s3_client$list_objects_v2(
+    partition_listing <- s3_client$list_objects_v2(
       Bucket = bucket,
       Prefix = paste0(prefix, "/", partition),
       Delimiter = "/"
     )
 
-    unprocessed_prefixes <- Filter(has_unprocessed, r$CommonPrefixes)
-    unprocessed_prefixes <- lapply(unprocessed_prefixes, function(x) x$Prefix)
+    unprocessed_prefixes <- resolve_unprocessed_prefixes(
+      database = database,
+      prefix = prefix,
+      partition = partition,
+      common_prefixes = partition_listing$CommonPrefixes
+    )
 
     logger::log_debug(paste(
       "[tube::run_glue_job] found",

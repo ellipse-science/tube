@@ -830,10 +830,26 @@ ellipse_publish <- function(
     unattended_option = unattended_options$process_data
   )) {
     glue_job <- list_glue_jobs(creds)
-    run_glue_job(creds, glue_job, "datamarts", paste0(datamart, "/", table), table_tags, table_description)
-    success("Le traitement des données a été déclenché avec succès.")
-    info("Les données seront disponibles dans les prochaines minutes\n")
-    info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+      r_process <- run_glue_job(
+        creds,
+        glue_job,
+        "datamarts",
+        paste0(datamart, "/", table),
+        table_tags,
+        table_description
+      )
+
+      if (isTRUE(r_process)) {
+        success("Le traitement des données a été déclenché avec succès.")
+        info("Les données seront disponibles dans les prochaines minutes\n")
+        info("N'oubliez pas de vous déconnecter de la plateforme ellipse avec `ellipse_disconnect(...)` 👋.")
+      } else if (identical(r_process, -1)) {
+        info("Il n'y a aucune nouvelle donnée à traiter.")
+      } else {
+        danger("Il y a eu une erreur lors du rafraîchissement de la table! 😅")
+        danger("Veuillez contacter votre ingénieur de données.")
+        invisible(FALSE)
+      }
   } else {
     success("Publication des données complétée avec succès")
     info("Les données seront disponibles dans les 6 prochaines heures")
