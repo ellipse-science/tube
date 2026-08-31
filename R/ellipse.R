@@ -1089,6 +1089,29 @@ ellipse_describe <- function(con, table, new_table_tags = NULL, new_table_desc =
 
 #' Traiter les données en attente d'être insérées dans une table
 #'
+#' Internal helper to build the S3 prefix for pipeline processing
+#' @param database Database family detected from connection schema
+#' @param table Table name provided by the user
+#' @return Prefix to pass to the Glue pipeline runner
+#' @keywords internal
+build_process_prefix <- function(database, table) {
+  if (identical(database, "datamarts")) {
+    return(sub("-", "/", table))
+  }
+
+  table
+}
+
+#' Internal helper to detect "no new data" Glue result
+#' @param glue_result Result returned by run_glue_job
+#' @return TRUE if Glue indicates there is no new data to process
+#' @keywords internal
+is_no_new_data_result <- function(glue_result) {
+  identical(glue_result, -1)
+}
+
+#' Traiter les données en attente d'être insérées dans une table
+#'
 #' @param con Un objet de connexion tel qu'obtenu via `tube::ellipse_connect()`.
 #' @param table Le nom de la table qui doit traitée
 #'
@@ -1129,12 +1152,11 @@ ellipse_process <- function(con, table) {
     database, " schema = ", schema, " table = ", table
   ))
 
-  # run_glue_job expects prefix as "datamart/table"; table name uses "-" as separator
-  prefix <- sub("-", "/", table)
+  prefix <- build_process_prefix(database, table)
   r <- run_glue_job(creds, glue_job, database, prefix, NULL, NULL)
 
   if (r) {
-    if (r == -1) {
+    if (is_no_new_data_result(r)) {
       cli::cli_alert_info("Il n'y a aucune nouvelle donnée à traiter.")
     } else {
       cli::cli_alert_success("Le traitement des données a été déclenché avec succès.")
