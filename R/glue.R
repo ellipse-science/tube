@@ -248,6 +248,37 @@ list_glue_jobs <- function(credentials) {
 #' @param table_tags Optional tags to associate with the table
 #' @param table_description Optional description for the table
 #' @returns A boolean indicating wether or not the job was started
+extract_partitions_from_common_prefixes <- function(common_prefixes, parent_prefix) {
+  if (is.null(common_prefixes) || length(common_prefixes) == 0) {
+    return(character(0))
+  }
+
+  prefix_pattern <- paste0("^", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", parent_prefix), "/")
+
+  partitions <- vapply(common_prefixes, function(x) {
+    ret <- gsub(prefix_pattern, "", x$Prefix)
+    ret <- gsub("/$", "", ret)
+    ret
+  }, character(1))
+
+  partitions[nzchar(partitions)]
+}
+
+normalize_glue_partitions <- function(partitions, database) {
+  if (is.null(partitions) || length(partitions) == 0) {
+    return(character(0))
+  }
+
+  if (identical(database, "datawarehouse")) {
+    # Datawarehouse partitions are top-level pipeline partitions (e.g., PLQ).
+    # In some S3 listings we may receive nested values like "PLQ/processed";
+    # keep only the first segment to probe both processed/unprocessed folders.
+    partitions <- vapply(strsplit(partitions, "/", fixed = TRUE), `[`, character(1), 1)
+  }
+
+  unique(partitions[nzchar(partitions)])
+}
+
 run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
     paste(
@@ -325,6 +356,7 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
   tmp_prefix <- gsub("^/", "", prefix)
   tmp_prefix <- gsub("/$", "", tmp_prefix)
   tmp_prefix_split <- strsplit(tmp_prefix, "/")
+  partitions <- character(0)
 
   if (length(tmp_prefix_split[[1]]) == 2) {
     r <- s3_client$list_objects_v2(
@@ -332,6 +364,8 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       Prefix = ifelse(substr(prefix, nchar(prefix), nchar(prefix)) != "/", paste0(prefix, "/"), prefix),
       Delimiter = "/"
     )
+
+    partitions <- extract_partitions_from_common_prefixes(r$CommonPrefixes, prefix)
   }
 
   if (length(tmp_prefix_split[[1]]) == 1) {
@@ -341,30 +375,31 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       Delimiter = "/"
     )
 
-    # only get the commonprefixes$Prefix values
-    r <- lapply(first_level$CommonPrefixes, \(x) {
-      s3_client$list_objects_v2(
-        Bucket = bucket,
-        Prefix = x$Prefix,
-        Delimiter = "/"
-      )
-    })
+    partitions <- extract_partitions_from_common_prefixes(first_level$CommonPrefixes, prefix)
 
-    if (length(r) == 0) {
+    if (length(partitions) == 0) {
       logger::log_debug("[tube::run_glue_job] no subfolders found under prefix")
       return(-1)
     }
-
-    r <- r[[1]]
   }
 
   logger::log_debug("[tube::run_glue_job] wrangling partitions")
-  partitions <- sapply(r$CommonPrefixes, function(x) {
-    ret <- gsub(prefix, "", x$Prefix)
-    ret <- gsub("^/", "", ret)
-    ret <- gsub("/$", "", ret)
-    ret
-  })
+
+  if (length(partitions) == 0) {
+    logger::log_debug("[tube::run_glue_job] no partitions found under prefix")
+    return(-1)
+  }
+
+  partitions <- normalize_glue_partitions(partitions, database)
+  logger::log_debug(paste(
+    "[tube::run_glue_job] normalized partitions:",
+    paste(partitions, collapse = ", ")
+  ))
+
+  if (length(partitions) == 0) {
+    logger::log_debug("[tube::run_glue_job] no partitions remaining after normalization")
+    return(-1)
+  }
 
   has_unprocessed <- function(prefix_list) {
     grepl("unprocessed", prefix_list$Prefix)
