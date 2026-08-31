@@ -95,3 +95,15 @@ test_that("resolve_unprocessed_prefixes extracts unprocessed from common prefixe
     "a-qc-press-releases/PLQ/unprocessed/"
   )
 })
+
+test_that("build_partition_listing_prefix always ends with slash", {
+  expect_equal(
+    tube:::build_partition_listing_prefix("a-qc-press-releases", "PLQ"),
+    "a-qc-press-releases/PLQ/"
+  )
+
+  expect_equal(
+    tube:::build_partition_listing_prefix("a-qc-press-releases/", "PLQ/"),
+    "a-qc-press-releases/PLQ/"
+  )
+})

@@ -303,6 +303,15 @@ resolve_unprocessed_prefixes <- function(database, prefix, partition, common_pre
   vapply(Filter(has_unprocessed, common_prefixes), function(x) x$Prefix, character(1))
 }
 
+build_partition_listing_prefix <- function(prefix, partition) {
+  paste0(
+    gsub("/$", "", prefix),
+    "/",
+    gsub("/$", "", partition),
+    "/"
+  )
+}
+
 run_glue_job <- function(credentials, job_name, database, prefix, table_tags = NULL, table_description = NULL) {
   logger::log_debug(
     paste(
@@ -438,9 +447,11 @@ run_glue_job <- function(credentials, job_name, database, prefix, table_tags = N
       prefix
     ))
 
+    partition_prefix <- build_partition_listing_prefix(prefix, partition)
+
     partition_listing <- s3_client$list_objects_v2(
       Bucket = bucket,
-      Prefix = paste0(prefix, "/", partition),
+      Prefix = partition_prefix,
       Delimiter = "/"
     )
 
