@@ -19,6 +19,7 @@ services:
       - ${HOME}/.gitconfig:/home/${HOST_USER}/.gitconfig:cached
       - ${HOME}/.Renviron:/home/${HOST_USER}/.Renviron:cached
       - ${HOME}/.bash_history:/home/${HOST_USER}/.bash_history:cached
+      - ${HOST_BASHRC:-/dev/null}:/home/${HOST_USER}/.bashrc:cached
       - ${HOME}/.radian_history:/home/${HOST_USER}/.radian_history:cached
       - ${R_LIBS_HOST_DIR}:/home/${HOST_USER}/.local/lib/R/site-library:cached
       - /var/run/docker.sock:/var/run/docker.sock
