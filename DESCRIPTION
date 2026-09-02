@@ -1,7 +1,7 @@
 Package: tube
 Type: Package
 Title: Access Ellipse Data Hub on AWS
-Version: 0.9.7
+Version: 0.9.8
 Authors@R:
   c(person(
       given = "Patrick",
@@ -22,9 +22,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Language: fr
 Depends: R (>= 4.1.0)
-Remotes:
-  tidyverse/dbplyr@v2.5.0
-RoxygenNote: 7.3.3
 Imports:
   cli,
   DBI,
@@ -35,7 +32,7 @@ Imports:
   jsonlite,
   logger,
   magrittr,
-  noctua,
+  methods,
   paws.analytics,
   paws.compute,
   paws.security.identity,
@@ -68,3 +65,4 @@ Suggests:
 URL: https://github.com/ellipse-science/tube/
 BugReports: https://github.com/ellipse-science/tube/issues
 Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0

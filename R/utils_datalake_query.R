@@ -276,7 +276,7 @@ ellipse_query_table_mode <- function(con, table) {
     error = function(e) {
       err_msg <- paste0(
         "Lecture de la table impossible via dplyr::tbl: ", e$message,
-        ". Vérifiez la compatibilité des versions dplyr/dbplyr/noctua."
+        ". Vérifiez la compatibilité des versions dplyr/dbplyr."
       )
       cli::cli_alert_danger("Oups, il semble que la table n'a pas pu être lue! 😅")
       logger::log_error(paste("[ellipse_query_table_mode]", err_msg))

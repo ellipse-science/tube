@@ -122,7 +122,7 @@ ellipse_connect <- function(
 
   cli::cli_alert_info("Connexion en cours...")
 
-  con <- DBI::dbConnect(noctua::athena(),
+  con <- DBI::dbConnect(athena_ellipse_driver(),
     aws_access_key_id = aws_access_key_id,
     aws_secret_access_key = aws_secret_access_key,
     profile_name = env,

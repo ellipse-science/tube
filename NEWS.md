@@ -1,3 +1,12 @@
+# tube 0.9.8
+
+## ✨ New Features
+
+### Remplacement de `noctua` par un pilote DBI Athena maison
+* **NEW**: `tube` implémente maintenant son propre pilote DBI pour AWS Athena (`R/athena_dbi.R`), basé directement sur `paws.analytics` — `noctua` a été retiré de CRAN et n'est plus une dépendance
+* **NEW**: `dplyr::tbl()` / requêtes paresseuses continuent de fonctionner via l'interface moderne (edition 2) de `dbplyr`, sans traduction SQL personnalisée
+* **CHANGED**: Le pin `Remotes: tidyverse/dbplyr@v2.5.0` a été retiré — `dbplyr` (version CRAN courante) fonctionne maintenant sans épinglage
+
 # tube 0.9.7
 
 ## ✨ New Features
