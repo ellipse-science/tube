@@ -23,6 +23,7 @@
   schema_name,
   s3_staging_dir,
   work_group = NULL,
+  timezone = "UTC",
   ...
 )
 

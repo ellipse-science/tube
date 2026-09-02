@@ -18,6 +18,41 @@ test_that("athena_coerce_column leaves unknown/varchar types as character", {
   expect_equal(athena_coerce_column(c("a", "b"), "array"), c("a", "b"))
 })
 
+test_that("athena_coerce_column respects a custom timezone for timestamp", {
+  result <- athena_coerce_column("2024-01-15 10:00:00", "timestamp", timezone = "America/Toronto")
+  expect_equal(result, as.POSIXct("2024-01-15 10:00:00", tz = "America/Toronto"))
+})
+
+test_that("athena_coerce_timestamp_tz honours the embedded zone when valid", {
+  result <- athena_coerce_timestamp_tz("2021-07-30 14:07:08 UTC", default_timezone = "UTC")
+  expect_equal(result, as.POSIXct("2021-07-30 14:07:08", tz = "UTC"))
+})
+
+test_that("athena_coerce_timestamp_tz falls back to the default timezone for unknown zones", {
+  result <- athena_coerce_timestamp_tz("2021-07-30 14:07:08 XYZ", default_timezone = "UTC")
+  expect_equal(result, as.POSIXct("2021-07-30 14:07:08", tz = "UTC"))
+})
+
+test_that("athena_coerce_timestamp_tz preserves NA values", {
+  result <- athena_coerce_timestamp_tz(c("2021-07-30 14:07:08 UTC", NA), default_timezone = "UTC")
+  expect_true(is.na(result[2]))
+})
+
+test_that("dbConnect rejects an invalid timezone", {
+  drv <- athena_ellipse_driver()
+  expect_error(
+    DBI::dbConnect(drv,
+      aws_access_key_id = "fake_id",
+      aws_secret_access_key = "fake_secret",
+      profile_name = "DEV",
+      schema_name = "my_schema",
+      s3_staging_dir = "s3://fake-bucket",
+      timezone = "Not/A_Real_Zone"
+    ),
+    "not supported in R"
+  )
+})
+
 test_that("athena_rows_to_tibble builds a typed tibble from Athena rows", {
   column_info <- list(
     list(Name = "id", Type = "bigint"),
@@ -78,6 +113,7 @@ make_fake_conn <- function(client, schema_name = "test_schema") {
   ptr$profile_name <- "DEV"
   ptr$work_group <- "ellipse-work-group"
   ptr$s3_staging_dir <- "s3://fake-bucket"
+  ptr$timezone <- "UTC"
   ptr$valid <- TRUE
   methods::new("EllipseAthenaConnection", ptr = ptr)
 }
@@ -299,6 +335,7 @@ test_that("dbConnect builds a connection with the expected dbGetInfo fields", {
   expect_equal(info$dbms.name, "my_schema")
   expect_equal(info$profile_name, "DEV")
   expect_equal(info$work_group, "ellipse-work-group")
+  expect_equal(info$timezone, "UTC")
 
   DBI::dbDisconnect(con)
   expect_false(DBI::dbIsValid(con))

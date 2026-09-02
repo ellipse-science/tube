@@ -39,7 +39,11 @@ athena_ellipse_driver <- function() {
 #' @rdname athena_dbi
 setMethod("dbConnect", "EllipseAthenaDriver", function(drv,
     aws_access_key_id, aws_secret_access_key, profile_name,
-    schema_name, s3_staging_dir, work_group = NULL, ...) {
+    schema_name, s3_staging_dir, work_group = NULL, timezone = "UTC", ...) {
+  if (!is.null(timezone) && !(timezone %in% OlsonNames())) {
+    stop(sprintf("`timezone` \"%s\" is not supported in R.", timezone), call. = FALSE)
+  }
+
   creds <- list(credentials = list(creds = list(
     access_key_id = aws_access_key_id,
     secret_access_key = aws_secret_access_key
@@ -53,10 +57,13 @@ setMethod("dbConnect", "EllipseAthenaDriver", function(drv,
   ptr$profile_name <- profile_name
   ptr$work_group <- work_group
   ptr$s3_staging_dir <- s3_staging_dir
+  ptr$timezone <- timezone %||% "UTC"
   ptr$valid <- TRUE
 
   methods::new("EllipseAthenaConnection", ptr = ptr)
 })
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
 
 #' @rdname athena_dbi
 setMethod("dbDisconnect", "EllipseAthenaConnection", function(conn, ...) {
@@ -77,6 +84,7 @@ setMethod("dbGetInfo", "EllipseAthenaConnection", function(dbObj, ...) {
     profile_name = dbObj@ptr$profile_name,
     work_group = dbObj@ptr$work_group,
     s3_staging_dir = dbObj@ptr$s3_staging_dir,
+    timezone = dbObj@ptr$timezone,
     db.version = NA_character_
   )
 })
@@ -142,34 +150,66 @@ athena_execute_query <- function(conn, statement, poll_interval_sec = 1, timeout
 }
 
 #' Convertir les lignes brutes retournées par Athena en un vecteur R typé
+#'
+#' Les conversions reproduisent le comportement par défaut de `noctua`
+#' (`noctua_options()$bigint == "integer64"`), notamment pour `bigint` qui est
+#' converti en `bit64::integer64` plutôt qu'en `double`, afin d'éviter toute
+#' perte de précision sur les entiers de plus de 2^53 (ex.: `COUNT(*)` via
+#' `ellipse_partitions()`).
 #' @param x Un vecteur de chaînes de caractères
 #' @param type Le type de colonne Athena (ex.: "varchar", "bigint", "double")
+#' @param timezone Le fuseau horaire de la connexion (voir le paramètre
+#'   `timezone` de `dbConnect()`, par défaut `"UTC"` comme dans `noctua`)
 #' @return Un vecteur R du type approprié
 #' @keywords internal
-athena_coerce_column <- function(x, type) {
+athena_coerce_column <- function(x, type, timezone = "UTC") {
   switch(type,
     "tinyint" = ,
     "smallint" = ,
     "integer" = as.integer(x),
-    "bigint" = ,
+    "bigint" = bit64::as.integer64(x),
     "double" = ,
     "float" = ,
     "real" = ,
     "decimal" = as.numeric(x),
     "boolean" = as.logical(x),
     "date" = as.Date(x),
-    "timestamp" = as.POSIXct(x, tz = "UTC"),
+    "timestamp" = as.POSIXct(x, tz = timezone),
+    # Athena renvoie "yyyy-mm-dd HH:MM:SS.sss <zone>" (ex.: "... UTC"); on respecte
+    # cette zone quand elle est valide en R, sinon on retombe sur celle de la connexion.
+    "timestamp with time zone" = athena_coerce_timestamp_tz(x, timezone),
     x
   )
+}
+
+#' Convertir une colonne Athena `timestamp with time zone`
+#' @param x Un vecteur de chaînes "yyyy-mm-dd HH:MM:SS.sss <zone>"
+#' @param default_timezone Fuseau de repli si la zone embarquée est invalide
+#' @return Un vecteur `POSIXct`
+#' @keywords internal
+athena_coerce_timestamp_tz <- function(x, default_timezone = "UTC") {
+  zone <- sub("^.*\\s(\\S+)$", "\\1", x)
+  datetime <- sub("\\s+\\S+$", "", x)
+
+  secs <- vapply(seq_along(x), function(i) {
+    if (is.na(x[i])) {
+      return(NA_real_)
+    }
+    tz <- if (isTRUE(zone[i] %in% OlsonNames())) zone[i] else default_timezone
+    as.numeric(as.POSIXct(datetime[i], tz = tz))
+  }, numeric(1))
+
+  as.POSIXct(secs, origin = "1970-01-01", tz = default_timezone)
 }
 
 #' Transformer les lignes retournées par `GetQueryResults` en tibble typé
 #' @param rows Une liste de lignes Athena (chacune une liste `Data`)
 #' @param column_info La métadonnée de colonnes retournée par Athena
 #'   (`ResultSet$ResultSetMetadata$ColumnInfo`)
+#' @param timezone Le fuseau horaire de la connexion (voir `dbConnect()`)
 #' @return Un `tibble`
 #' @keywords internal
-athena_rows_to_tibble <- function(rows, column_info) {
+athena_rows_to_tibble <- function(rows, column_info, timezone = "UTC") {
   col_names <- vapply(column_info, function(ci) ci$Name, character(1))
   col_types <- vapply(column_info, function(ci) ci$Type, character(1))
 
@@ -189,7 +229,7 @@ athena_rows_to_tibble <- function(rows, column_info) {
   colnames(result) <- col_names
 
   for (j in seq_len(m)) {
-    result[[j]] <- athena_coerce_column(result[[j]], col_types[j])
+    result[[j]] <- athena_coerce_column(result[[j]], col_types[j], timezone)
   }
 
   result
@@ -235,7 +275,7 @@ athena_fetch_results <- function(conn, query_execution_id, statement) {
     }
   }
 
-  athena_rows_to_tibble(rows, column_info)
+  athena_rows_to_tibble(rows, column_info, conn@ptr$timezone)
 }
 
 #' @rdname athena_dbi

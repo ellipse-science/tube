@@ -23,6 +23,7 @@ Encoding: UTF-8
 Language: fr
 Depends: R (>= 4.1.0)
 Imports:
+  bit64,
   cli,
   DBI,
   dbplyr,

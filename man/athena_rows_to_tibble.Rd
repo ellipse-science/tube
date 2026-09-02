@@ -4,13 +4,15 @@
 \alias{athena_rows_to_tibble}
 \title{Transformer les lignes retournées par \code{GetQueryResults} en tibble typé}
 \usage{
-athena_rows_to_tibble(rows, column_info)
+athena_rows_to_tibble(rows, column_info, timezone = "UTC")
 }
 \arguments{
 \item{rows}{Une liste de lignes Athena (chacune une liste \code{Data})}
 
 \item{column_info}{La métadonnée de colonnes retournée par Athena
 (\code{ResultSet$ResultSetMetadata$ColumnInfo})}
+
+\item{timezone}{Le fuseau horaire de la connexion (voir \code{dbConnect()})}
 }
 \value{
 Un \code{tibble}

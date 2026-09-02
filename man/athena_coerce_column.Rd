@@ -4,17 +4,24 @@
 \alias{athena_coerce_column}
 \title{Convertir les lignes brutes retournées par Athena en un vecteur R typé}
 \usage{
-athena_coerce_column(x, type)
+athena_coerce_column(x, type, timezone = "UTC")
 }
 \arguments{
 \item{x}{Un vecteur de chaînes de caractères}
 
 \item{type}{Le type de colonne Athena (ex.: "varchar", "bigint", "double")}
+
+\item{timezone}{Le fuseau horaire de la connexion (voir le paramètre
+\code{timezone} de \code{dbConnect()}, par défaut \code{"UTC"} comme dans \code{noctua})}
 }
 \value{
 Un vecteur R du type approprié
 }
 \description{
-Convertir les lignes brutes retournées par Athena en un vecteur R typé
+Les conversions reproduisent le comportement par défaut de \code{noctua}
+(\code{noctua_options()$bigint == "integer64"}), notamment pour \code{bigint} qui est
+converti en \code{bit64::integer64} plutôt qu'en \code{double}, afin d'éviter toute
+perte de précision sur les entiers de plus de 2^53 (ex.: \verb{COUNT(*)} via
+\code{ellipse_partitions()}).
 }
 \keyword{internal}
