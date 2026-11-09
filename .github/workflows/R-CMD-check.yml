@@ -1,7 +1,9 @@
 name: R-CMD-check
 on: 
   push:
-    branches: [main, master, develop, release/*, feature/*, bugfix/*, fix/*]
+    # Uniquement sur les branches stables : les branches feature/fix sont
+    # déjà couvertes par le trigger pull_request (évite de rouler 2x le même check)
+    branches: [main, master, develop, release/*]
   pull_request:
     branches: [main, master, develop, release/*, feature/*, bugfix/*, fix/*]
 
