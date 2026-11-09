@@ -1,3 +1,17 @@
+# tube 0.9.8
+
+## ✨ New Features
+
+### Remplacement de `noctua` par un pilote DBI Athena maison
+* **NEW**: `tube` implémente maintenant son propre pilote DBI pour AWS Athena (`R/athena_dbi.R`), basé directement sur `paws.analytics` — `noctua` a été retiré de CRAN et n'est plus une dépendance
+* **NEW**: `dplyr::tbl()` / requêtes paresseuses continuent de fonctionner via l'interface moderne (edition 2) de `dbplyr`, sans traduction SQL personnalisée
+* **CHANGED**: Le pin `Remotes: tidyverse/dbplyr@v2.5.0` a été retiré — `dbplyr` (version CRAN courante) fonctionne maintenant sans épinglage
+
+## 🔧 Bug Fixes
+
+### Workgroup Athena
+* **FIXED**: `ellipse_connect()` utilisait le workgroup `ellipse-work-group`, un résidu de l'ancienne stack `pipeline-stack` (aws-infra) encore actif en prod mais destiné à être supprimé — `ellipse_connect()` cible maintenant `ellipse-athena-workgroup`, le workgroup géré par `athena-stack` (présent en DEV et en PROD)
+
 # tube 0.9.7
 
 ## ✨ New Features
