@@ -111,7 +111,7 @@ make_fake_conn <- function(client, schema_name = "test_schema") {
   ptr$client <- client
   ptr$schema_name <- schema_name
   ptr$profile_name <- "DEV"
-  ptr$work_group <- "ellipse-work-group"
+  ptr$work_group <- "ellipse-athena-workgroup"
   ptr$s3_staging_dir <- "s3://fake-bucket"
   ptr$timezone <- "UTC"
   ptr$valid <- TRUE
@@ -326,7 +326,7 @@ test_that("dbConnect builds a connection with the expected dbGetInfo fields", {
     profile_name = "DEV",
     schema_name = "my_schema",
     s3_staging_dir = "s3://fake-bucket",
-    work_group = "ellipse-work-group"
+    work_group = "ellipse-athena-workgroup"
   )
   on.exit(DBI::dbDisconnect(con))
 
@@ -334,7 +334,7 @@ test_that("dbConnect builds a connection with the expected dbGetInfo fields", {
   info <- DBI::dbGetInfo(con)
   expect_equal(info$dbms.name, "my_schema")
   expect_equal(info$profile_name, "DEV")
-  expect_equal(info$work_group, "ellipse-work-group")
+  expect_equal(info$work_group, "ellipse-athena-workgroup")
   expect_equal(info$timezone, "UTC")
 
   DBI::dbDisconnect(con)
