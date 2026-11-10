@@ -1,3 +1,15 @@
+# tube 0.9.9
+
+## ✨ New Features
+
+### Dialecte SQL Athena dans le pilote DBI maison
+* **NEW**: le pilote enregistre maintenant un dialecte Athena (`R/athena_dialect.R`, porté de noctua) au lieu du dialecte ANSI par défaut de dbplyr
+* **FIXED**: `Sys.Date()` / `Sys.time()` dans une requête lazy généraient du SQL invalide (`FUNCTION_NOT_FOUND: sys.date`) — traduits maintenant en `current_date` / `now()`
+* **FIXED**: `lubridate::floor_date()` sans traduction — traduite en `date_trunc()` ; durées (`days()`, `hours()`…) traduites en `INTERVAL ...`
+* **FIXED**: `stringr::str_detect()` générait `INSTR(...)` (inexistant sur Athena) — traduit maintenant en `REGEXP_LIKE(...)` ; `str_locate` → `strpos`, `str_replace*` → `regexp_replace`, etc.
+* **FIXED**: les littéraux `Date` / `POSIXct` sont échappés en `DATE '...'` / `TIMESTAMP '...'`
+* **NOTE**: comparer une colonne typée (date, int…) à un littéral string échoue toujours sur Athena (`TYPE_MISMATCH`) — passer `as.Date()` / `as.POSIXct()` / un nombre côté appelant
+
 # tube 0.9.8
 
 ## ✨ New Features
