@@ -9,9 +9,9 @@
 ## Prochaines étapes suggérées
 1. Ouvrir une PR `feature/011-fix-athena-show-tables-header-row` → `main`
    (ou branche d'intégration finale) et merger.
-2. Après merge : bump de version + rebuild du tarball si release décidée,
-   puis `remotes::install_local()` côté utilisateurs pour sortir le vieux
-   0.9.9 de `site-library`.
+2. Version déjà bumpée en **0.9.10** sur cette branche (DESCRIPTION + NEWS.md).
+   Après merge : `remotes::install_local()` côté utilisateurs pour sortir le
+   vieux 0.9.9 de `site-library`.
 3. Prochaine feature : à définir avec le user — créer
    `git checkout -b feature/012-<slug>` depuis l'état commité courant.
 

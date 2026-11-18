@@ -1,3 +1,10 @@
+# tube 0.9.10
+
+## 🔧 Bug Fixes
+
+### Pilote DBI Athena — `SHOW TABLES` tronqué
+* **FIXED**: `athena_fetch_results()` supprimait la première ligne des résultats pour toute requête `SHOW`/`DESCRIBE`, mais Athena n'y renvoie pas de ligne d'en-tête (seuls les `SELECT` en ont une) : la table alphabétiquement première du schéma (ex. `a-ca-parliament-debates` en PROD dans `gluestackdatawarehousedbe64d5725`) disparaissait de `SHOW TABLES`, et `ellipse_query()` / `ellipse_discover()` répondaient « La table demandée est inconnue. » La première ligne n'est désormais supprimée que si elle correspond exactement aux noms de colonnes des métadonnées (`ResultSetMetadata$ColumnInfo`)
+
 # tube 0.9.9
 
 ## ✨ New Features
