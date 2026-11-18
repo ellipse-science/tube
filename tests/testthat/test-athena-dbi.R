@@ -219,6 +219,28 @@ test_that("athena_fetch_results paginates across multiple pages and drops the he
   expect_equal(result$id, c(1, 2))
 })
 
+test_that("athena_fetch_results keeps the first row of SHOW TABLES (no header row sent by Athena)", {
+  column_info <- make_column_info(tab_name = "string")
+  client <- list(
+    get_query_results = function(QueryExecutionId, MaxResults, NextToken = NULL) {
+      list(
+        ResultSet = list(
+          ResultSetMetadata = list(ColumnInfo = column_info),
+          Rows = list(
+            list(Data = list(list(VarCharValue = "a-ca-parliament-debates"))),
+            list(Data = list(list(VarCharValue = "a-ca-press-releases")))
+          )
+        ),
+        NextToken = NULL
+      )
+    }
+  )
+  conn <- make_fake_conn(client)
+
+  result <- athena_fetch_results(conn, "qid-show", "SHOW TABLES IN test_schema")
+  expect_equal(result$tab_name, c("a-ca-parliament-debates", "a-ca-press-releases"))
+})
+
 test_that("athena_fetch_results keeps all rows for non-SELECT statements", {
   column_info <- make_column_info(rows = "bigint")
   client <- list(

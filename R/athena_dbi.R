@@ -247,7 +247,6 @@ athena_fetch_results <- function(conn, query_execution_id, statement) {
   column_info <- NULL
   next_token <- NULL
   first_page <- TRUE
-  is_select <- grepl("^\\s*(SELECT|WITH|SHOW|DESCRIBE)", statement, ignore.case = TRUE)
 
   repeat {
     page_args <- list(QueryExecutionId = query_execution_id, MaxResults = 1000)
@@ -261,8 +260,19 @@ athena_fetch_results <- function(conn, query_execution_id, statement) {
     }
 
     page_rows <- page$ResultSet$Rows
-    if (first_page && is_select && length(page_rows) > 0) {
-      page_rows <- page_rows[-1]
+    # Athena n'inclut la ligne d'en-tête (noms de colonnes) que pour certaines
+    # requêtes (ex.: SELECT) : pour SHOW TABLES, la première ligne est une
+    # donnée. On ne la supprime donc que si elle correspond vraiment aux noms
+    # de colonnes des métadonnées.
+    if (first_page && length(page_rows) > 0 && !is.null(column_info)) {
+      first_values <- vapply(page_rows[[1]]$Data, function(d) {
+        val <- d$VarCharValue
+        if (length(val) == 0) NA_character_ else val
+      }, character(1))
+      header_names <- vapply(column_info, function(ci) ci$Name, character(1))
+      if (identical(first_values, header_names)) {
+        page_rows <- page_rows[-1]
+      }
     }
     rows <- c(rows, page_rows)
 
