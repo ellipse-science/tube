@@ -35,7 +35,7 @@ ca-central-1, workgroup `ellipse-athena-workgroup`) :
 - La version installée dans la bibliothèque R (`tube 0.9.9` dans
   `site-library`) contient encore l'ancien code : réinstaller via
   `remotes::install_local()` après merge.
-- Ne pas bump de version ici (0.9.9) sans décision explicite de release.
+- Version bumpée en **0.9.10** (patch) sur cette branche : `DESCRIPTION` + entrée `NEWS.md`.
 
 ## Branch
 `feature/011-fix-athena-show-tables-header-row`, commit `0917836`, branchée
